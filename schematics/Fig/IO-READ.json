@@ -1,0 +1,38 @@
+{
+    signal: [
+    {name: 'Z80 State', wave: '23.3.3|3.3.3.3.2',
+                        data: ['','T1', 'T2', 'Tw*', 'Tw', 'Tw', 'Tw', 'T3']},
+    {name: '4MHz',      wave: 'lhlhlhlhLhLhLhLh',
+                        node: '............l.m.'},
+    {name: 'A0-7',      wave: 'z.4............z',
+                        node: '.......d........',
+                        data: 'Address'},
+    {name: '/IORQ',     wave: '1..0..|........1',
+                        node: '...a............'},
+    {name: '/RD',       wave: '1..0..|........1',
+                        node: '...b............'},
+    {name: '/WAIT',     wave: '1...0.|....1....',
+                        node: '...........jk...'},
+    {},
+    {name: 'AVR INT Handler',
+                        wave: '0.....2....0....',
+                        node: '......c....p....',
+                        data: ['executing']},
+    {name: 'D0-7',      wave: 'z...x.|..4.....z',
+                        node: '.........g....n.',
+                        data: ['Data', '']},
+    {name: '/RELWAIT',  wave: '1.....|..0.1....',
+                        node: '.........hio....'},
+    {name: '74AC574 /OE',
+                        wave: '1...0.|........1',
+                        node: '....q...........'},
+    ],
+    edge:[
+        'a~b', 'b~->c', 'b~>q', 'c|->d Read I/O Address', 'c~>g Set I/O Data',
+        'c~->h Release', 'h->o', 'o-p', 'i~-j', 'j->k', 'kl',
+        'm|n Read I/O Data'
+    ],
+    head:{
+        text: 'I/O READ Cycle'
+    }
+}

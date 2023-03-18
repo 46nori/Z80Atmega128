@@ -1,0 +1,37 @@
+{
+    signal: [
+    {name: 'Z80 State', wave: '2.2.3.3.3.3|3.3.2.',
+                        data: ['', '', 'T1', 'T2', 'Tw*', 'Tw*', 'Tw', 'Tw', 'T3']},
+    {name: '4MHz',      wave: '1lHlhlhlhlHLhLhLHl',
+                        node: '..b............lm.'},
+    {name: '/M1',       wave: '1...0......|.....1',
+                        node: '....c.............'},
+    {name: '/IORQ',     wave: '1........0.|.....1',
+                        node: '.........d........'},
+    {name: '/WAIT',     wave: '1.........0|..1...',
+                        node: '..............jk..'},
+    {},
+    {name: 'AVR INT Handler',
+                        wave: '0..........2..0...',
+                        node: '...........e..p...',
+                        data: ['executing']},
+    {name: '/XINT',     wave: '10.........|1.....',
+                        node: '..a.........f.....'},
+    {name: 'D0-7',      wave: 'z........x.|4....z',
+                        node: '............g...n.',
+                        data: ['INT Vector', '']},
+    {name: '/RELWAIT',  wave: '1..........|0.1...',
+                        node: '............hio...'},
+    {name: '74AC574 /OE',
+                        wave: '1........0.|.....1',
+                        node: '.........q........'},
+    ],
+    edge:[
+        'a|b', 'c-~d', 'd~->e', 'd~>q', 'e~>f Clear', 'e~->g Write',
+        'e|->h Release', 'h->o', 'o-p', 'i~-j', 'j->k', 'kl',
+        'm|n Reads INT Vector'
+    ],
+    head:{
+        text: 'INTERRUPT Cycle'
+    }
+}
