@@ -306,16 +306,16 @@ WRITEはタイミングに余裕があり、どの型番の組み合わせでも
     |---------------|-----|-------|
     | SUT1          |  5  |   0   |
     | SUT0          |  4  |   0   |
-    | CKSEL3-1      | 3-1 |101-111|
-    | CKSEL0        |  0  |   0   |
+    | CKSEL3-1      | 3-1 |  111  |
+    | CKSEL0        |  0  |   1   |
 
 * 最終的な値は以下となる。上記以外のbitの設定はデフォルトのまま。  
   値はMicrochip StudioのDevice ProgrammingメニューからISP経由で変更できる。
     |                    |  Value  |(Default)|
     |--------------------|---------|---------|
-    | Extended Fuse Byte |  0xff   | (0xfd)  |
-    | Fuse High Byte     |  0x81   | (0x99)  |
-    | Fuse Low  Byte     |  0xcd   | (0xe1)  |
+    | Extended Fuse Byte |  0xFF   | (0xFD)  |
+    | Fuse High Byte     |  0x89   | (0x99)  |
+    | Fuse Low  Byte     |  0xCF   | (0xE1)  |
 
 ### IO Port
 #### PortA

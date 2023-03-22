@@ -45,7 +45,7 @@
 #define SYSCLK_SRC_EXTERNAL   5
 
 /* =====  Select connected clock source */
-#define  SYSCLK_SOURCE         SYSCLK_SRC_RC16MHZ
+/* #define  SYSCLK_SOURCE       SYSCLK_SRC_RC16MHZ  */
 /* #define SYSCLK_SOURCE        SYSCLK_SRC_RC128KHZ */
 /* #define SYSCLK_SOURCE        SYSCLK_SRC_TRS16MHZ */
 #define SYSCLK_SOURCE        SYSCLK_SRC_XOC16MHZ
