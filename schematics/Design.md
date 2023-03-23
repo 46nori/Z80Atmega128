@@ -375,6 +375,8 @@ AVRがDMAを行うとき、XMEMインターフェース機能により上位ア�
   UART CH0受信、およびSPI Programming InterfaceのMOSIとして使用する。両者は74HC125のスリーステートゲートで排他制御される。リセット信号がHighの時にはRXD0が選択される。
 * PE1 (TXD0/MISO)  
   UART CH0送信、およびSPI Programming InterfaceのMOSIとして使用する。両者は74HC125のスリーステートゲートで排他制御される。リセット信号がHighの時にはTXD0が選択される。
+* PE4 (/INT4)  
+  PD4出力でZ80へ割り込み要求をかけると、Z80の割り込みサイクルにより生成されるAVRへの割り込み信号。この割り込みハンドラの中で、Z80に対し割り込みベクタを与える。
 
 #### PortF
 PF0-7は常に入力にセットしておく。  
