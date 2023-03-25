@@ -16,9 +16,7 @@
 void board_init(void)
 {
 	sysclk_init();
-	board_init();
 	ioport_init();
-	
 	delay_init(sysclk_get_cpu_hz());
 
 	/* This function is meant to contain board-specific initialization code
@@ -30,8 +28,8 @@ void board_init(void)
 	ioport_set_pin_dir(Z80_CLRWAIT, IOPORT_DIR_OUTPUT);
 	ioport_set_pin_dir(Z80_BUSRQ,   IOPORT_DIR_OUTPUT);
 	ioport_set_pin_dir(Z80_BUSACK,  IOPORT_DIR_INPUT);
-	ioport_set_port_dir(PORTF, IOPORT_DIR_INPUT);
-	
+	DDRF = 0x00;	// Set PORTF as input
+
 	// Test
 	while (1) {
 		ioport_set_pin_level(Z80_BUSRQ, IOPORT_PIN_LEVEL_LOW);
