@@ -44,6 +44,14 @@
 /** \name IOPORT port numbers */
 /** @{ */
 
+#if	AVR8_PART_IS_DEFINED(ATmega128) || AVR8_PART_IS_DEFINED(ATmega128A)
+#define IOPORT_PORTA    0x19
+#define IOPORT_PORTB    0x16
+#define IOPORT_PORTC    0x13
+#define IOPORT_PORTD    0x10
+#define IOPORT_PORTE    0x01
+#else
+
 #if MEGA_XX0_1 || MEGA_RF || MEGA_UNSPECIFIED || MEGA_XX4 || MEGA_XX4_A
 #define IOPORT_PORTA    0 /* not connected to pins for megaRF*/
 #endif
@@ -74,6 +82,7 @@
 // base address for ports with addresses greater 0x100
 #define IOPORT_BASE_ADDRESS_H 0x100
 #endif
+#endif /* ATmega128 */
 /** @} */
 
 /**
