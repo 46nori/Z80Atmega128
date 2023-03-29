@@ -37,10 +37,10 @@
 #define BOARD_XOSC_STARTUP_US  500000
 
 // IO Port
-#define Z80_RESET            IOPORT_CREATE_PIN(PORTB, 5)
-#define Z80_INT              IOPORT_CREATE_PIN(PORTD, 4)
-#define Z80_CLRWAIT          IOPORT_CREATE_PIN(PORTD, 5)
-#define Z80_BUSRQ            IOPORT_CREATE_PIN(PORTD, 6)
-#define Z80_BUSACK           IOPORT_CREATE_PIN(PORTD, 7)
+#define Z80_RESET            (PORTB, 5)
+#define Z80_INT              (PORTD, 4)
+#define Z80_CLRWAIT          (PORTD, 5)
+#define Z80_BUSRQ            (PORTD, 6)
+#define Z80_BUSACK           (PORTD, 7)
 
 #endif // USER_BOARD_H

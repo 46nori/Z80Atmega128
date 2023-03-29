@@ -32,9 +32,8 @@
       <framework-data>
   <options>
     <option id="common.boards" value="Add" config="" content-id="Atmel.ASF" />
-    <option id="common.services.delay" value="Add" config="" content-id="Atmel.ASF" />
     <option id="common.utils.interrupt" value="Add" config="" content-id="Atmel.ASF" />
-    <option id="common.services.ioport" value="Add" config="" content-id="Atmel.ASF" />
+    <option id="common.services.delay" value="Add" config="" content-id="Atmel.ASF" />
   </options>
   <configurations />
   <files>
@@ -56,15 +55,13 @@
     <file path="src/ASF/mega/utils/preprocessor/tpaste.h" framework="" version="" source="mega/utils/preprocessor/tpaste.h" changed="False" content-id="Atmel.ASF" />
     <file path="src/ASF/mega/utils/progmem.h" framework="" version="" source="mega/utils/progmem.h" changed="False" content-id="Atmel.ASF" />
     <file path="src/ASF/mega/utils/status_codes.h" framework="" version="" source="mega/utils/status_codes.h" changed="False" content-id="Atmel.ASF" />
-    <file path="src/ASF/mega/drivers/cpu/mega_reset_cause.h" framework="" version="3.52.0" source="mega\drivers\cpu\mega_reset_cause.h" changed="False" content-id="Atmel.ASF" />
     <file path="src/ASF/common/services/clock/mega/sysclk.c" framework="" version="3.52.0" source="common\services\clock\mega\sysclk.c" changed="False" content-id="Atmel.ASF" />
     <file path="src/ASF/common/services/clock/mega/sysclk.h" framework="" version="3.52.0" source="common\services\clock\mega\sysclk.h" changed="False" content-id="Atmel.ASF" />
     <file path="src/ASF/common/services/clock/sysclk.h" framework="" version="3.52.0" source="common\services\clock\sysclk.h" changed="False" content-id="Atmel.ASF" />
     <file path="src/Config/conf_clock.h" framework="" version="3.52.0" source="common\services\clock\mega\module_config\conf_clock.h" changed="False" content-id="Atmel.ASF" />
     <file path="src/ASF/common/services/delay/mega/cycle_counter.h" framework="" version="3.52.0" source="common\services\delay\mega\cycle_counter.h" changed="False" content-id="Atmel.ASF" />
     <file path="src/ASF/common/services/delay/delay.h" framework="" version="3.52.0" source="common\services\delay\delay.h" changed="False" content-id="Atmel.ASF" />
-    <file path="src/ASF/common/services/ioport/ioport.h" framework="" version="3.52.0" source="common\services\ioport\ioport.h" changed="False" content-id="Atmel.ASF" />
-    <file path="src/ASF/common/services/ioport/mega/ioport.h" framework="" version="3.52.0" source="common\services\ioport\mega\ioport.h" changed="False" content-id="Atmel.ASF" />
+    <file path="src/ASF/mega/drivers/cpu/mega_reset_cause.h" framework="" version="3.52.0" source="mega\drivers\cpu\mega_reset_cause.h" changed="False" content-id="Atmel.ASF" />
   </files>
   <documentation help="https://asf.microchip.com/docs/3.52.0/common.applications.user_application.user_board.mega/html/index.html" />
   <offline-documentation help="" />
@@ -75,8 +72,8 @@
   <board id="board.user_board.mega" value="Add" config="" content-id="Atmel.ASF" />
 </framework-data>
     </AsfFrameworkConfig>
-    <avrtool>com.atmel.avrdbg.tool.simulator</avrtool>
-    <avrtoolserialnumber />
+    <avrtool>com.atmel.avrdbg.tool.ispmk2</avrtool>
+    <avrtoolserialnumber>000200144385</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x1E9702</avrdeviceexpectedsignature>
     <custom>
       <ToolOptions>
@@ -90,7 +87,7 @@
       </ToolNumber>
       <ToolName>Custom Programming Tool</ToolName>
     </custom>
-    <avrtoolinterface />
+    <avrtoolinterface>ISP</avrtoolinterface>
     <com_atmel_avrdbg_tool_simulator>
       <ToolOptions xmlns="">
         <InterfaceProperties>
@@ -103,6 +100,18 @@
       </ToolNumber>
       <ToolName xmlns="">Simulator</ToolName>
     </com_atmel_avrdbg_tool_simulator>
+    <avrtoolinterfaceclock>125000</avrtoolinterfaceclock>
+    <com_atmel_avrdbg_tool_ispmk2>
+      <ToolOptions>
+        <InterfaceProperties>
+          <IspClock>125000</IspClock>
+        </InterfaceProperties>
+        <InterfaceName>ISP</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.ispmk2</ToolType>
+      <ToolNumber>000200144385</ToolNumber>
+      <ToolName>AVRISP mkII</ToolName>
+    </com_atmel_avrdbg_tool_ispmk2>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -133,7 +142,6 @@
       <Value>../src/ASF/mega/drivers/cpu</Value>
       <Value>../src/ASF/common/services/clock</Value>
       <Value>../src/ASF/common/services/delay</Value>
-      <Value>../src/ASF/common/services/ioport</Value>
     </ListValues>
   </avrgcc.compiler.directories.IncludePaths>
   <avrgcc.compiler.optimization.level>Optimize for size (-Os)</avrgcc.compiler.optimization.level>
@@ -162,7 +170,6 @@
       <Value>../src/ASF/mega/drivers/cpu</Value>
       <Value>../src/ASF/common/services/clock</Value>
       <Value>../src/ASF/common/services/delay</Value>
-      <Value>../src/ASF/common/services/ioport</Value>
     </ListValues>
   </avrgcc.assembler.general.IncludePaths>
 </AvrGcc>
@@ -197,7 +204,6 @@
       <Value>../src/ASF/mega/drivers/cpu</Value>
       <Value>../src/ASF/common/services/clock</Value>
       <Value>../src/ASF/common/services/delay</Value>
-      <Value>../src/ASF/common/services/ioport</Value>
     </ListValues>
   </avrgcc.compiler.directories.IncludePaths>
   <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
@@ -227,7 +233,6 @@
       <Value>../src/ASF/mega/drivers/cpu</Value>
       <Value>../src/ASF/common/services/clock</Value>
       <Value>../src/ASF/common/services/delay</Value>
-      <Value>../src/ASF/common/services/ioport</Value>
     </ListValues>
   </avrgcc.assembler.general.IncludePaths>
   <avrgcc.assembler.debugging.DebugLevel>Default (-Wa,-g)</avrgcc.assembler.debugging.DebugLevel>
@@ -245,8 +250,6 @@
     <Folder Include="src\ASF\common\services\clock\mega\" />
     <Folder Include="src\ASF\common\services\delay\" />
     <Folder Include="src\ASF\common\services\delay\mega\" />
-    <Folder Include="src\ASF\common\services\ioport\" />
-    <Folder Include="src\ASF\common\services\ioport\mega\" />
     <Folder Include="src\ASF\common\utils\" />
     <Folder Include="src\ASF\common\utils\interrupt\" />
     <Folder Include="src\ASF\common\utils\make\" />
@@ -259,33 +262,6 @@
     <Folder Include="src\config\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\ASF\common\services\clock\mega\sysclk.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <None Include="src\ASF\common\services\ioport\mega\ioport.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common\services\ioport\ioport.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common\services\delay\delay.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common\services\delay\mega\cycle_counter.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\config\conf_clock.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common\services\clock\sysclk.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\common\services\clock\mega\sysclk.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\mega\drivers\cpu\mega_reset_cause.h">
-      <SubType>compile</SubType>
-    </None>
     <None Include="src\asf.h">
       <SubType>compile</SubType>
     </None>
@@ -338,6 +314,27 @@
       <SubType>compile</SubType>
     </None>
     <None Include="src\ASF\mega\utils\preprocessor\tpaste.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\common\services\clock\mega\sysclk.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\common\services\clock\mega\sysclk.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\common\services\clock\sysclk.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\config\conf_clock.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\common\services\delay\mega\cycle_counter.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\common\services\delay\delay.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\mega\drivers\cpu\mega_reset_cause.h">
       <SubType>compile</SubType>
     </None>
     <Compile Include="src\main.c">
