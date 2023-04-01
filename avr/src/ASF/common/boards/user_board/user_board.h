@@ -36,7 +36,11 @@
 // External oscillator startup time
 #define BOARD_XOSC_STARTUP_US  500000
 
-// IO Port
+// GPIO
+#define SET_BIT(port, bit)   ((port) |=  _BV(bit))
+#define CLR_BIT(port, bit)   ((port) &= ~_BV(bit))
+#define SET_BYTE(port, byte) ((port) = (uint8_t)(byte))
+
 #define Z80_RESET            (PORTB, 5)
 #define Z80_INT              (PORTD, 4)
 #define Z80_CLRWAIT          (PORTD, 5)
