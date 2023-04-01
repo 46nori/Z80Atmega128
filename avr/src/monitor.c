@@ -9,11 +9,73 @@
 #include "monitor.h"
 #include "usart.h"
 
-static int r_xmodem(uint8_t *dest, size_t *size);
-static int s_xmodem(uint8_t *src, size_t size);
+static int r_xmodem(uint8_t *dst, size_t *size);
+static int s_xmodem(uint8_t *src, size_t blocks);
 
-void monitor()
+
+void monitor(void)
 {
+#if 0
+	// measure accuracy of timeout parameter 
+	int c;
+	while (1) {
+		c = x_getchar_tout(400000);
+		if (c == EOF) {
+			x_putchar('/');
+			continue;		
+		}
+		x_putchar(c);
+	}
+#endif
+	
+#if 0
+	// s_xmodem() test
+	static uint8_t test[1024];
+	for (int i = 0; i < 1024; i++) {
+		test[i] = i;
+	}
+	int st = s_xmodem(test, 1024/128);
+	switch (st) {
+		case -1:
+			x_puts("Transfer error");
+			break;
+		case -2:
+			x_puts("Timed out.");
+			break;
+		case -3:
+			x_puts("Aborted by receiver.");
+			break;
+		default:
+			x_puts("Success.");
+			break;
+	}
+	while(1);
+#endif
+
+#if 1
+	// r_xmodem() test
+	size_t size;
+	static uint8_t test[1024];
+	int st = r_xmodem(test, &size);
+	switch (st) {
+		case -1:
+		x_puts("Transfer error");
+		break;
+		case -2:
+		x_puts("Timed out.");
+		break;
+		case -4:
+		x_puts("Copy error.");
+		break;
+		default:
+		x_puts("Success.");
+		break;
+	}
+	if (size == 1024) {
+		x_puts("size is 1024.");
+	}
+	while(1);
+#endif
 	
 }
 
@@ -34,11 +96,20 @@ void monitor()
 #define CAN     0x18
 #define CCC     0x43
 
-#define TOUT    (uint32_t)1000000		// 1 sec
-#define TOUT0   (uint32_t)10000000		// 10 sec
+#define TOUT    (uint32_t)400000		// 1 sec
+#define TOUT0   (uint32_t)4000000		// 10 sec
 #define PKT_SIZE  128
-#define MAX_RETRY 10
+#define MAX_RETRY 20
 
+/**
+ *    @brief copy receive data 
+ *
+ *    @param [in] dst  : destination address
+ *           [in] src  : source buffer address
+ *           [in] size : copy bytes
+ *    @retval  0  Success
+ *    @retval -4  copy error
+ */
 static int copy(uint8_t *dst, uint8_t *src, size_t size) {
 	memcpy(dst, src, size);
 	return 0;
@@ -47,59 +118,62 @@ static int copy(uint8_t *dst, uint8_t *src, size_t size) {
 /**
  *    @brief XMODEM(128-SUM) receive
  *
- *    @param [in]  dest : destination memory address
+ *    @param [in]  dst : destination memory address
  *           [out] size : received data bytes
  *    @retval  0  Success
  *    @retval -1  Transfer failed
  *    @retval -2  Timed out
+ *    @retval -4  copy error
  */
-static int r_xmodem(uint8_t *dest, size_t *size)
+static int r_xmodem(uint8_t *dst, size_t *size)
 {
-    int i, retry;
     int seq, sum, c, c2;
-    size_t blk, count;
     uint8_t buf[128];
 
-    *size   = 0;
-    count   = 0;
-    blk     = 1;
-    retry   = 0;
+    size_t count = 0;
+    int retry = 0;
+    *size = 0;
     while (1) {
         switch (c = x_getchar_tout(TOUT0)) {
         case SOH:
-            seq   = 0xff & blk;
-            c     = x_getchar_tout(TOUT);			// Get <blk>
-            c2    = x_getchar_tout(TOUT);			// Get <~blk>
+            seq = 0xff & (count + 1);
+            c   = x_getchar_tout(TOUT);	// Get <blk>
+            c2  = x_getchar_tout(TOUT);	// Get <~blk>
             if ((c == seq) && (c2 == (0xff & ~seq))) {
-                sum = 0;							// Header was correct
-                for (i = 0; i < PKT_SIZE; i++) {
+				// Header was correct
+                sum = 0;
+                for (int i = 0; i < PKT_SIZE; i++) {
                     if ((c = x_getchar_tout(TOUT)) == EOF) {
-                        x_putchar(NAK);				// Resending request due to time out
+                        x_putchar(NAK);	// Retry due to time out
                         goto skip_this_block;
                     }
                     buf[i] = c;
                     sum += c ;
                 }
-                if ((sum & 0xff) == x_getchar_tout(TOUT0)) {	// Get <sum>
-                    if ((c = copy(dest, buf, 128)) != 0) {
+				// Check <sum>
+                if ((sum & 0xff) == x_getchar_tout(TOUT0)) {
+                    if ((c = copy(dst, buf, 128)) != 0) {
                         x_putchar(CAN);
                         return c;
                     }
-                    x_putchar(ACK);					// <sum> was correct
+                    x_putchar(ACK);	// <sum> was correct
+		            *size = count * PKT_SIZE;
                     retry = 0;
-                    blk++;
                     count++;
-                    dest += PKT_SIZE;
-                } else {							// <sum> was incorrect
+                    dst += PKT_SIZE;
+                } else {
+					// <sum> was incorrect
                     if (++retry > MAX_RETRY) {
-                        x_putchar(CAN);				// Give up
+                        x_putchar(CAN);	// Give up
                         return -1;
                     }
-                    x_putchar(NAK);					// Retry to receive
+                    x_putchar(NAK);	// Retry due to check sum error
                 }
-            } else {								// Header was incorrect
+            } else {
+				// Header was incorrect
                 retry++;
-                for (i = 0; i < PKT_SIZE+1; i++) {	// Skip this block
+                for (int i = 0; i < PKT_SIZE+1; i++) {
+					// Skip this block
                     if ((c = x_getchar_tout(TOUT0)) == EOF) {
                         if (++retry > MAX_RETRY) {
                             x_putchar(CAN);
@@ -127,14 +201,14 @@ static int r_xmodem(uint8_t *dest, size_t *size)
         case EOF:
             if (++retry > MAX_RETRY) {
                 x_putchar(CAN);
-                if (count > 0)
-                    return -1;
-                else
+                if (count > 0) {
+                    return -1;		// Transfer failed
+                } else {
                     return -2;		// Timed out
+				}
             }
             x_putchar(NAK);
             break;
-
         }
     }
 }
@@ -142,55 +216,48 @@ static int r_xmodem(uint8_t *dest, size_t *size)
 /**
  *    @brief XMODEM(128-CRC/SUM) send
  *
- *    @param [in] src  : source address
- *           [in] size : transfer bytes
+ *    @param [in] src    : source address
+ *           [in] blocks : transfer blocks
  *    @retval  0  Success
  *    @retval -1  Transfer failed
- *    @retval -2  Aborted by receiver
+ *    @retval -3  Aborted by receiver
  */
-static int s_xmodem(uint8_t *src, size_t size)
+static int s_xmodem(uint8_t *src, size_t blocks)
 {
-    int i, j, retry;
-    int seq, sum, c, d, crc_flag, complete;
-    size_t blk, count;
-    unsigned short crc;
+    int seq, sum, crc, c, d;
 
-    retry = 0;
-    count = 0;
-    blk   = 1;
-    crc_flag = 0;
-    complete = 0;
+    size_t count = 0;
+    int retry = 0;
+    int is_crc = 0;
+    int is_end = 0;
     do {
-
         switch (c = x_getchar_tout(TOUT0)) {
-
         case CCC:					// CRC mode
-            crc_flag = 1;
+            is_crc = 1;
             goto SEND;
 
         case NAK:
             if (count > 0) {		// Retry to send a packet
                 --count;
-                --blk;
                 src -= PKT_SIZE;
             } else {
-                crc_flag = 0;		// Check-sum mode
+                is_crc = 0;		// Check-sum mode
             }
 
         SEND:
         case ACK:
-            if (count < size) {	//  Send a packet
-                seq = 0xff & blk;
+            if (count < blocks) {	//  Send a packet
+                seq = 0xff & (count + 1);
                 x_putchar(SOH);
                 x_putchar(seq);
                 x_putchar(~seq);
                 crc = sum = 0;
-                for (i = 0; i < PKT_SIZE; i++) {
+                for (int i = 0; i < PKT_SIZE; i++) {
                     d = *src++;
-                    x_putchar((char)d);
-                    if (crc_flag) {
-                        crc = crc ^ (unsigned short)d << 8;
-                        for (j = 0; j < 8; ++j) {
+                    x_putchar(d);
+                    if (is_crc) {
+                        crc = crc ^ (uint16_t)d << 8;
+                        for (int j = 0; j < 8; ++j) {
                             if (crc & 0x8000)
                                 crc = crc << 1 ^ 0x1021;
                             else
@@ -200,22 +267,21 @@ static int s_xmodem(uint8_t *src, size_t size)
                         sum += d;
                     }
                 }
-                if (crc_flag) {
+                if (is_crc) {
                     x_putchar((crc >> 8) & 0xff);
                     x_putchar( crc       & 0xff);
                 } else {
                     x_putchar(sum & 0xff);
                 }
                 ++count;
-                ++blk;
                 retry = 0;
-            } else {				// Transfer complete
-                complete = 1;
+            } else {				// Transfer is_end
+                is_end = 1;
             }
             break;
 
         case CAN:
-            return -2;				// Aborted by receiver
+            return -3;				// Aborted by receiver
 
         case EOF:					// timed out
             if (count > 0) {
@@ -226,10 +292,8 @@ static int s_xmodem(uint8_t *src, size_t size)
 
         default:
             break;
-
         }
-
-    } while (!complete);
+    } while (!is_end);
 
     retry = 0;
     do {

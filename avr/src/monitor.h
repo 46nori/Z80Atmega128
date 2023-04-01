@@ -9,8 +9,6 @@
 #ifndef MONITOR_H_
 #define MONITOR_H_
 
-
-
-
+extern void monitor(void);
 
 #endif /* MONITOR_H_ */

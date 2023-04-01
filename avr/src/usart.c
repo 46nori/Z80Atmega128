@@ -71,6 +71,20 @@ uint8_t USART1_Receive(void)
 //
 // USART0 serial I/O
 //
+int x_puts(const char *s) {
+	int st;
+	while (*s) {
+		st = x_putchar(*s);
+		if (st < 0) {
+			return st;
+		}
+		++s;
+	}
+	st = x_putchar('\r');
+	st = x_putchar('\n');
+	return st;
+}
+
 int x_putchar(int c) {
 	if (c != EOF) {
 		USART0_Transmit(c);

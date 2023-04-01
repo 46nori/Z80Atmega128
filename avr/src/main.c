@@ -30,6 +30,7 @@
  */
 #include <asf.h>
 #include "usart.h"
+#include "monitor.h"
 
 int main (void)
 {
@@ -40,6 +41,7 @@ int main (void)
 	USART1_Init(9600);
 	volatile long c = F_CPU;
 
+	monitor();
 	/* Insert application code here, after the board has been initialized. */
 	// Test
 	uint8_t i = 0;
