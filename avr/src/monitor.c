@@ -11,10 +11,86 @@
 
 static int r_xmodem(uint8_t *dst, size_t *size);
 static int s_xmodem(uint8_t *src, size_t blocks);
+struct token_result *tokenizer(char *str, const char *delim, struct token_result *t);
 
+//
+// Tokenizer
+//
+#define MAX_TOKENS 4
+static struct token_result {
+	int n;						// number of tokens
+	char *token[MAX_TOKENS];	// pointer to token
+};
+
+struct token_result *tokenizer(char *str, const char *delim, struct token_result *t) {
+	char *token;
+	t->n = 0;
+	token = strtok(str, delim);
+    while (token != NULL && t->n < MAX_TOKENS) {
+		t->token[t->n++] = token;
+		token = strtok(NULL, delim);
+	}
+	return t;
+}
+
+void c_help(struct token_result *t, int params) {
+	x_puts("Cmd <mandatory> [optional]");
+	x_puts("h                    : Show command help");
+	x_puts("d [address] [length] : Dump memory");
+	x_puts("w <address> <data>   : Write memory byte");
+	x_puts("r [address]          : Read memory byte");
+}
+
+void c_dump(struct token_result *t, int params) {
+	static uint8_t *a = 0;
+	
+}
+
+void c_set(struct token_result *t, int params) {
+}
+
+void c_get(struct token_result *t, int params) {
+}
+
+//
+// Command
+//
+static struct {
+	const char *name;		// command name
+	int params;				// number of parameters
+	void (*func)(struct token_result*, int);
+} cmd_list[] = {
+	{"d", 3, c_dump},
+	{"w",  2, c_set},
+	{"r",  1, c_get},
+	{"h", 0, c_help},
+	{"",     0, NULL}
+};
+
+void exec_command(struct token_result *t) {
+	for (int i = 0; cmd_list[i].func != NULL; i++) {
+		if (strcmp(cmd_list[i].name, t->token[0]) == 0) {
+			cmd_list[i].func(t, cmd_list[i].params);
+			break;
+		}
+	}
+}
 
 void monitor(void)
 {
+#if 1
+	struct token_result token_list;
+	char cmd_buffer[256];
+
+	x_puts("\nAVR monitor");
+	while(1) {
+		x_putchar('>');
+		x_gets(cmd_buffer);
+		tokenizer(cmd_buffer, " ", &token_list);
+		exec_command(&token_list);
+	}
+#endif
+
 #if 0
 	// measure accuracy of timeout parameter 
 	int c;
@@ -52,7 +128,7 @@ void monitor(void)
 	while(1);
 #endif
 
-#if 1
+#if 0
 	// r_xmodem() test
 	size_t size;
 	static uint8_t test[1024];

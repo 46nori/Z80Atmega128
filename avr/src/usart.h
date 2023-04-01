@@ -24,6 +24,7 @@ extern int USART0_Receive_tout(uint32_t us);
 #define EOF -1
 
 extern int x_puts(const char *s);
+extern char *x_gets(char *buffer);
 extern int x_putchar(int c);
 extern int x_getchar(void);
 extern int x_getchar_tout(int32_t us);

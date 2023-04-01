@@ -68,9 +68,9 @@ uint8_t USART1_Receive(void)
 	return UDR1;
 }
 
-//
+//////////////////////////////////
 // USART0 serial I/O
-//
+//////////////////////////////////
 int x_puts(const char *s) {
 	int st;
 	while (*s) {
@@ -83,6 +83,28 @@ int x_puts(const char *s) {
 	st = x_putchar('\r');
 	st = x_putchar('\n');
 	return st;
+}
+
+char *x_gets(char *buffer) {
+	int c;
+	char *p = buffer;
+	while(1) {
+		c = x_getchar();
+		if (c == '\r' || c == '`n') {
+			*p = '\0';
+			x_putchar('\r');
+			x_putchar('\n');
+			break;
+		} else if (c == EOF) {
+			*p = '\0';
+			buffer = NULL;
+			break;
+		} else {
+			*p++ = c;
+			x_putchar(c);
+		}
+	}
+	return buffer;
 }
 
 int x_putchar(int c) {
