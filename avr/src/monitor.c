@@ -249,12 +249,13 @@ static void exec_command(token_list *t) {
 void monitor(void)
 {
 	token_list tokens;
-	char cmd_line[256];
+	char cmd_line[32];
 
 	x_puts("\nATmega128 Tiny Monitor");
 	while(1) {
 		x_putchar('>');
-		x_gets(cmd_line);
+		x_gets_s(cmd_line, sizeof(cmd_line)-1);
+		//x_puts(cmd_line);
 		tokenizer(cmd_line, " ", &tokens);
 		exec_command(&tokens);
 	}

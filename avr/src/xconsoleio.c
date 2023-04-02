@@ -39,7 +39,12 @@ int x_puts(const char *s) {
 	return st;
 }
 
-char *x_gets(char *buffer) {
+char *x_gets_s(char *buffer, size_t size) {
+	if (size == 0) {
+		buffer[0] = '\0';
+		return NULL;
+	}
+	
 	int c, is_done = 0;
 	char *p = buffer;
 	while(!is_done) {
@@ -66,9 +71,11 @@ char *x_gets(char *buffer) {
 			is_done = 1;
 			break;
 		default:
-			if (0x20 <= c && c < 0x7e) {
-				*p++ = c;
-				x_putchar(c);
+			if (p - buffer < size) {
+				if (0x20 <= c && c < 0x7e) {
+					*p++ = c;
+					x_putchar(c);
+				}
 			}
 			break;
 		}
