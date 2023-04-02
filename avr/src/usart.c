@@ -5,6 +5,8 @@
  *  Author: 46nori
  */ 
 #include "usart.h"
+#include <stdio.h>
+#include <stdarg.h>
 
 void USART0_Init(uint32_t baud)
 {
@@ -71,6 +73,22 @@ uint8_t USART1_Receive(void)
 //////////////////////////////////
 // USART0 serial I/O
 //////////////////////////////////
+int x_printf(const char *format, ...) {
+	char buffer[128];
+	int size;
+	va_list argptr;
+	va_start(argptr, format);
+	size = vsnprintf(buffer, sizeof(buffer), format, argptr);
+	va_end(argptr);
+	for (int i = 0; i < size; i++) {
+		if (buffer[i] == '\n') {
+			x_putchar('\r');	
+		}
+		x_putchar(buffer[i]);
+	}
+	return size;
+}
+
 int x_puts(const char *s) {
 	int st;
 	while (*s) {
@@ -90,7 +108,7 @@ char *x_gets(char *buffer) {
 	char *p = buffer;
 	while(1) {
 		c = x_getchar();
-		if (c == '\r' || c == '`n') {
+		if (c == '\r' || c == '\n') {
 			*p = '\0';
 			x_putchar('\r');
 			x_putchar('\n');
@@ -99,9 +117,16 @@ char *x_gets(char *buffer) {
 			*p = '\0';
 			buffer = NULL;
 			break;
-		} else {
+		} else if (0x20 <= c && c < 0x7e) {
 			*p++ = c;
 			x_putchar(c);
+		} else if (c == 0x08) { // BS
+			x_putchar(' ');
+			x_putchar(c);
+			if (p != buffer) {
+				--p;
+			}
+			*p = '\0';
 		}
 	}
 	return buffer;

@@ -54,7 +54,7 @@ int main (void)
 
 }
 
-
+#if 0
 void EnableSRAM()
 {
 	SET_BIT(MCUCR, SRE);
@@ -81,5 +81,4 @@ void *MapSRAM(enum map_size size)
 	SET_BYTE(XMCRB, size);
 	return (void *)((uint16_t)0x100 << size);
 }
-
-
+#endif

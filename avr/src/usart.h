@@ -20,9 +20,11 @@ extern uint8_t USART0_Receive(void);
 extern uint8_t USART1_Receive(void);
 extern int USART0_Receive_tout(uint32_t us);
 
+#ifndef EOF
+#define EOF (-1)
+#endif
 
-#define EOF -1
-
+extern int x_printf(const char *format, ...);
 extern int x_puts(const char *s);
 extern char *x_gets(char *buffer);
 extern int x_putchar(int c);

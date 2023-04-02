@@ -262,6 +262,12 @@
     <Folder Include="src\config\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\xmodem.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\xmodem.h">
+      <SubType>compile</SubType>
+    </Compile>
     <None Include="src\asf.h">
       <SubType>compile</SubType>
     </None>

@@ -5,24 +5,24 @@
  *  Author: 46nori
  */ 
 #include <asf.h>
+#include <stdio.h>
 #include <string.h>
 #include "monitor.h"
 #include "usart.h"
-
-static int r_xmodem(uint8_t *dst, size_t *size);
-static int s_xmodem(uint8_t *src, size_t blocks);
-struct token_result *tokenizer(char *str, const char *delim, struct token_result *t);
-
+#include "xmodem.h"
 //
 // Tokenizer
 //
-#define MAX_TOKENS 4
-static struct token_result {
+#define MAX_TOKENS 3
+#define T_CMD      0
+#define T_PARAM1   1
+#define T_PARAM2   2
+typedef struct token_list {
 	int n;						// number of tokens
 	char *token[MAX_TOKENS];	// pointer to token
-};
+} token_list;
 
-struct token_result *tokenizer(char *str, const char *delim, struct token_result *t) {
+static token_list *tokenizer(char *str, const char *delim, token_list *t) {
 	char *token;
 	t->n = 0;
 	token = strtok(str, delim);
@@ -33,107 +33,141 @@ struct token_result *tokenizer(char *str, const char *delim, struct token_result
 	return t;
 }
 
-void c_help(struct token_result *t, int params) {
-	x_puts("Cmd <mandatory> [optional]");
-	x_puts("h                    : Show command help");
-	x_puts("d [address] [length] : Dump memory");
-	x_puts("w <address> <data>   : Write memory byte");
-	x_puts("r [address]          : Read memory byte");
-}
+//
+// Get token value as an unsigned int
+//
+static int get_uint(token_list *t, unsigned int idx, unsigned int *val) {
+	if (idx >= t->n) {
+		return -1;
+	}
 
-void c_dump(struct token_result *t, int params) {
-	static uint8_t *a = 0;
-	
-}
-
-void c_set(struct token_result *t, int params) {
-}
-
-void c_get(struct token_result *t, int params) {
+	unsigned int tmp;
+	const char *str = t->token[idx];
+	if (*str == '$') {
+		// Hex
+		if (sscanf(str + 1, "%x", &tmp) == 1) {
+		    *val = tmp;
+		    return 0;
+		}
+	} else if (sscanf(str, "%u", &tmp) == 1) {
+		// Decimal
+		*val = tmp;
+        return 0;
+    }
+    return -2;
 }
 
 //
-// Command
+// Command function list
 //
-static struct {
-	const char *name;		// command name
-	int params;				// number of parameters
-	void (*func)(struct token_result*, int);
-} cmd_list[] = {
-	{"d", 3, c_dump},
-	{"w",  2, c_set},
-	{"r",  1, c_get},
-	{"h", 0, c_help},
-	{"",     0, NULL}
-};
-
-void exec_command(struct token_result *t) {
-	for (int i = 0; cmd_list[i].func != NULL; i++) {
-		if (strcmp(cmd_list[i].name, t->token[0]) == 0) {
-			cmd_list[i].func(t, cmd_list[i].params);
-			break;
-		}
-	}
+static void c_help(token_list *t) {
+	x_puts("   <> : mandatory");
+	x_puts("   [] : optional");
+	x_puts("   $  : Prefix of hexadecimal");
+	x_puts("h               : Help");
+	x_puts("d  [adr] [len]  : Dump memory");
+	x_puts("w  <adr> <dat>  : Write byte");
+	x_puts("r  [adr]        : Read byte");
+	x_puts("ld <adr>        : Load by XMODEM");
+	x_puts("sv <adr> <len>  : Save by XMODEM");
 }
 
-void monitor(void)
-{
-#if 1
-	struct token_result token_list;
-	char cmd_buffer[256];
+//
+// Hex dump
+//
+static void c_dump(token_list *t) {
+	static uint8_t *adr = 0;
+    unsigned int tmp, len = 16;
 
-	x_puts("\nAVR monitor");
-	while(1) {
-		x_putchar('>');
-		x_gets(cmd_buffer);
-		tokenizer(cmd_buffer, " ", &token_list);
-		exec_command(&token_list);
+	switch (t->n) {
+	case 3:
+	    if (get_uint(t, T_PARAM2, &len) != 0) {
+		    return;     // parameter error
+	    }
+	case 2:
+		if (get_uint(t, T_PARAM1, &tmp) != 0) {
+		    return;     // parameter error
+	    }
+		adr = (uint8_t *)tmp;
 	}
-#endif
 
-#if 0
-	// measure accuracy of timeout parameter 
-	int c;
-	while (1) {
-		c = x_getchar_tout(400000);
-		if (c == EOF) {
-			x_putchar('/');
-			continue;		
+	int mod, line = len / 16;
+	do {
+		if (line > 0) {
+			mod = 16;
+		} else if ((mod = len % 16) == 0) {
+			break;
 		}
-		x_putchar(c);
-	}
-#endif
-	
-#if 0
-	// s_xmodem() test
-	static uint8_t test[1024];
-	for (int i = 0; i < 1024; i++) {
-		test[i] = i;
-	}
-	int st = s_xmodem(test, 1024/128);
-	switch (st) {
-		case -1:
-			x_puts("Transfer error");
-			break;
-		case -2:
-			x_puts("Timed out.");
-			break;
-		case -3:
-			x_puts("Aborted by receiver.");
-			break;
-		default:
-			x_puts("Success.");
-			break;
-	}
-	while(1);
-#endif
+		
+		x_printf("$%04x ", adr);
+		for (int i = 0; i < mod; i++) {
+			x_printf("%02x ", ((uint8_t *)adr)[i]);
+		}
+		for (int i = 0; i < 16 - mod; i++) {
+			x_printf("   ");
+		}
+		x_putchar(' ');
 
-#if 0
-	// r_xmodem() test
+		char c;
+		for (int i = 0; i < mod; i++) {
+			c = *(uint8_t *)adr++;
+			if (c < 0x20 || c > 0x7e) {
+				c = '.';
+			}
+			x_putchar(c);
+		}
+		x_puts("");
+	} while (line--);
+}
+
+//
+// Write a byte
+//
+static void c_write_byte(token_list *t) {
+    if (t->n < 3) {
+        return;     // missing parameters
+    }
+
+    unsigned int adr, dat;
+    if (get_uint(t, T_PARAM1, &adr) != 0) {
+        return;     // parameter error
+    }
+    if (get_uint(t, T_PARAM2, &dat) != 0) {
+        return;     // parameter error
+    }
+    if (dat > 0xff) {
+        return;
+    }
+    *(uint8_t *)adr = dat;
+}
+
+//
+// Read a byte
+//
+static void c_read_byte(token_list *t) {
+    static uint8_t *adr = 0;
+    if (t->n > 1) {
+        unsigned int tmp;
+        if (get_uint(t, T_PARAM1, &tmp) != 0) {
+            adr = (uint8_t *)tmp;
+        }
+    }
+    x_printf("%x\n", *adr++);
+}
+
+//
+// Load binary by XMODEM
+//
+static void c_load(token_list *t) {
+    if (t->n < 2) {
+        return;     // missing parameters
+    }
+    unsigned int dest;
+    if (get_uint(t, T_PARAM1, &dest) != 0) {
+        return;     // parameter error
+    }
 	size_t size;
-	static uint8_t test[1024];
-	int st = r_xmodem(test, &size);
-	switch (st) {
+	switch (r_xmodem((uint8_t *)dest, &size)) {
 		case -1:
 		x_puts("Transfer error");
 		break;
@@ -147,239 +181,81 @@ void monitor(void)
 		x_puts("Success.");
 		break;
 	}
-	if (size == 1024) {
-		x_puts("size is 1024.");
-	}
-	while(1);
-#endif
-	
 }
 
-//    XMODEM data transfer protocol (128byte Check-sum)
 //
-//    Packet format: <SOH> <blk> <~blk> <128byte data> <sum>
+// Save binary by XMODEM
 //
-//    <SOH>  : 0x01
-//    <blk>  : Block count, which starts from 0x01
-//             and wraps 0xff to 0x00 (not to 0x01).
-//    <~blk> : 1 complemented of <blk>.
-//    <sum>  : the sum of data bytes only to use check-sum.
-//
-#define SOH     0x01
-#define EOT     0x04
-#define ACK     0x06
-#define NAK     0x15
-#define CAN     0x18
-#define CCC     0x43
-
-#define TOUT    (uint32_t)400000		// 1 sec
-#define TOUT0   (uint32_t)4000000		// 10 sec
-#define PKT_SIZE  128
-#define MAX_RETRY 20
-
-/**
- *    @brief copy receive data 
- *
- *    @param [in] dst  : destination address
- *           [in] src  : source buffer address
- *           [in] size : copy bytes
- *    @retval  0  Success
- *    @retval -4  copy error
- */
-static int copy(uint8_t *dst, uint8_t *src, size_t size) {
-	memcpy(dst, src, size);
-	return 0;
-}
-
-/**
- *    @brief XMODEM(128-SUM) receive
- *
- *    @param [in]  dst : destination memory address
- *           [out] size : received data bytes
- *    @retval  0  Success
- *    @retval -1  Transfer failed
- *    @retval -2  Timed out
- *    @retval -4  copy error
- */
-static int r_xmodem(uint8_t *dst, size_t *size)
-{
-    int seq, sum, c, c2;
-    uint8_t buf[128];
-
-    size_t count = 0;
-    int retry = 0;
-    *size = 0;
-    while (1) {
-        switch (c = x_getchar_tout(TOUT0)) {
-        case SOH:
-            seq = 0xff & (count + 1);
-            c   = x_getchar_tout(TOUT);	// Get <blk>
-            c2  = x_getchar_tout(TOUT);	// Get <~blk>
-            if ((c == seq) && (c2 == (0xff & ~seq))) {
-				// Header was correct
-                sum = 0;
-                for (int i = 0; i < PKT_SIZE; i++) {
-                    if ((c = x_getchar_tout(TOUT)) == EOF) {
-                        x_putchar(NAK);	// Retry due to time out
-                        goto skip_this_block;
-                    }
-                    buf[i] = c;
-                    sum += c ;
-                }
-				// Check <sum>
-                if ((sum & 0xff) == x_getchar_tout(TOUT0)) {
-                    if ((c = copy(dst, buf, 128)) != 0) {
-                        x_putchar(CAN);
-                        return c;
-                    }
-                    x_putchar(ACK);	// <sum> was correct
-		            *size = count * PKT_SIZE;
-                    retry = 0;
-                    count++;
-                    dst += PKT_SIZE;
-                } else {
-					// <sum> was incorrect
-                    if (++retry > MAX_RETRY) {
-                        x_putchar(CAN);	// Give up
-                        return -1;
-                    }
-                    x_putchar(NAK);	// Retry due to check sum error
-                }
-            } else {
-				// Header was incorrect
-                retry++;
-                for (int i = 0; i < PKT_SIZE+1; i++) {
-					// Skip this block
-                    if ((c = x_getchar_tout(TOUT0)) == EOF) {
-                        if (++retry > MAX_RETRY) {
-                            x_putchar(CAN);
-                            return -1;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                x_putchar(NAK);
-            }
-            skip_this_block:;
-            break;
-
-        case EOT:
-            x_putchar(ACK);
-            *size = count * PKT_SIZE;
-            return 0;
-            break;
-
-        case CAN:
-            return -1;
-            break;
-
-        case EOF:
-            if (++retry > MAX_RETRY) {
-                x_putchar(CAN);
-                if (count > 0) {
-                    return -1;		// Transfer failed
-                } else {
-                    return -2;		// Timed out
-				}
-            }
-            x_putchar(NAK);
-            break;
-        }
+static void c_save(token_list *t) {
+    if (t->n < 3) {
+        return;     // missing parameters
     }
+    unsigned int src, size;
+    if (get_uint(t, T_PARAM1, &src) != 0) {
+        return;     // parameter error
+    }
+    if (get_uint(t, T_PARAM2, &size) != 0) {
+        return;     // parameter error
+    }
+
+    size_t blks = size / 128;
+    if (size % 128) {
+        ++blks;
+    }
+	switch (s_xmodem((uint8_t *)src, blks)) {
+		case -1:
+			x_puts("Transfer error");
+			break;
+		case -2:
+			x_puts("Timed out.");
+			break;
+		case -3:
+			x_puts("Aborted by receiver.");
+			break;
+		default:
+			x_puts("Success.");
+			break;
+	}
 }
 
-/**
- *    @brief XMODEM(128-CRC/SUM) send
- *
- *    @param [in] src    : source address
- *           [in] blocks : transfer blocks
- *    @retval  0  Success
- *    @retval -1  Transfer failed
- *    @retval -3  Aborted by receiver
- */
-static int s_xmodem(uint8_t *src, size_t blocks)
+//
+// Command parser
+//
+static const struct {
+	const char *name;
+	void (*func)(token_list *);
+} cmd_list[] = {
+	{"d",  c_dump},
+	{"r",  c_read_byte},
+	{"w",  c_write_byte},
+	{"ld", c_load},
+	{"sv", c_save},
+	{"h",  c_help},
+	{"",   NULL}
+};
+
+static void exec_command(token_list *t) {
+	for (int i = 0; cmd_list[i].func != NULL; i++) {
+		if (!strcmp(cmd_list[i].name, t->token[T_CMD])) {
+			cmd_list[i].func(t);
+			break;
+		}
+	}
+}
+
+//
+// Monitor main
+//
+void monitor(void)
 {
-    int seq, sum, crc, c, d;
+	token_list tokens;
+	char cmd_line[256];
 
-    size_t count = 0;
-    int retry = 0;
-    int is_crc = 0;
-    int is_end = 0;
-    do {
-        switch (c = x_getchar_tout(TOUT0)) {
-        case CCC:					// CRC mode
-            is_crc = 1;
-            goto SEND;
-
-        case NAK:
-            if (count > 0) {		// Retry to send a packet
-                --count;
-                src -= PKT_SIZE;
-            } else {
-                is_crc = 0;		// Check-sum mode
-            }
-
-        SEND:
-        case ACK:
-            if (count < blocks) {	//  Send a packet
-                seq = 0xff & (count + 1);
-                x_putchar(SOH);
-                x_putchar(seq);
-                x_putchar(~seq);
-                crc = sum = 0;
-                for (int i = 0; i < PKT_SIZE; i++) {
-                    d = *src++;
-                    x_putchar(d);
-                    if (is_crc) {
-                        crc = crc ^ (uint16_t)d << 8;
-                        for (int j = 0; j < 8; ++j) {
-                            if (crc & 0x8000)
-                                crc = crc << 1 ^ 0x1021;
-                            else
-                                crc = crc << 1;
-                        }
-                    } else {
-                        sum += d;
-                    }
-                }
-                if (is_crc) {
-                    x_putchar((crc >> 8) & 0xff);
-                    x_putchar( crc       & 0xff);
-                } else {
-                    x_putchar(sum & 0xff);
-                }
-                ++count;
-                retry = 0;
-            } else {				// Transfer is_end
-                is_end = 1;
-            }
-            break;
-
-        case CAN:
-            return -3;				// Aborted by receiver
-
-        case EOF:					// timed out
-            if (count > 0) {
-                if (++retry > MAX_RETRY)
-                    return -1;		// Give up
-            }
-            break;
-
-        default:
-            break;
-        }
-    } while (!is_end);
-
-    retry = 0;
-    do {
-        x_putchar(EOT);				// Send EOT and wait for ACK
-        c = x_getchar_tout(TOUT0);
-        if (c == EOF) {
-            if (++retry > MAX_RETRY)
-                return -1;			// Give up
-        }
-    } while (c != ACK);
-
-    return 0;
+	x_puts("\nATmega128 Tiny Monitor");
+	while(1) {
+		x_putchar('>');
+		x_gets(cmd_line);
+		tokenizer(cmd_line, " ", &tokens);
+		exec_command(&tokens);
+	}
 }
