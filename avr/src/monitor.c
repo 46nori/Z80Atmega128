@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "monitor.h"
-#include "usart.h"
+#include "xconsoleio.h"
 #include "xmodem.h"
 //
 // Tokenizer

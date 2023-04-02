@@ -262,6 +262,12 @@
     <Folder Include="src\config\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\xconsoleio.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\xconsoleio.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\xmodem.c">
       <SubType>compile</SubType>
     </Compile>

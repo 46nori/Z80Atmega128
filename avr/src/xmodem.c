@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "xmodem.h"
-#include "usart.h"
+#include "xconsoleio.h"
 
 //    XMODEM data transfer protocol (128byte Check-sum)
 //
