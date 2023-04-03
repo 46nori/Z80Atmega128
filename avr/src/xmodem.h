@@ -8,9 +8,9 @@
 #ifndef XMODEM_H_
 #define XMODEM_H_
 
-#include <asf.h>
+#include <stdio.h>
 
-extern int r_xmodem(uint8_t *dst, size_t *size);
-extern int s_xmodem(uint8_t *src, size_t blocks);
+extern int r_xmodem(unsigned char *dst, size_t *size);
+extern int s_xmodem(unsigned char *src, size_t blocks);
 
 #endif /* XMODEM_H_ */

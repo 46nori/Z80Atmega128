@@ -9,6 +9,14 @@
 #include "xmodem.h"
 #include "xconsoleio.h"
 
+//
+// Constant of time out value.
+// Should be configured according to the platform.
+//
+#define TOUT	(uint32_t)400000	// 1 sec (us unit)
+#define TOUT0	(uint32_t)3340000	// 10 sec
+
+//
 //    XMODEM data transfer protocol (128byte Check-sum)
 //
 //    Packet format: <SOH> <blk> <~blk> <128byte data> <sum>
@@ -19,20 +27,18 @@
 //    <~blk> : 1 complemented of <blk>.
 //    <sum>  : the sum of data bytes only to use check-sum.
 //
-#define SOH     0x01
-#define EOT     0x04
-#define ACK     0x06
-#define NAK     0x15
-#define CAN     0x18
-#define CCC     0x43
-
-#define TOUT    (uint32_t)400000		// 1 sec
-#define TOUT0   (uint32_t)4000000		// 10 sec
-#define PKT_SIZE  128
-#define MAX_RETRY 20
+#define PKT_SIZE	128
+#define MAX_RETRY	9
+#define SOH			0x01
+#define EOT			0x04
+#define ACK			0x06
+#define NAK			0x15
+#define CAN			0x18
+#define CCC			0x43
 
 /**
- *    @brief copy receive data 
+ *    @brief copy receive data.
+ *           User can override this function.
  *
  *    @param [in] dst  : destination address
  *           [in] src  : source buffer address
@@ -40,13 +46,13 @@
  *    @retval  0  Success
  *    @retval -4  copy error
  */
-static int copy(uint8_t *dst, uint8_t *src, size_t size) {
+static int copy(unsigned char *dst, unsigned char *src, size_t size) {
 	memcpy(dst, src, size);
 	return 0;
 }
 
 /**
- *    @brief XMODEM(128-SUM) receive
+ *    @brief XMODEM(128-SUM) receiver
  *
  *    @param [in]  dst : destination memory address
  *           [out] size : received data bytes
@@ -55,10 +61,10 @@ static int copy(uint8_t *dst, uint8_t *src, size_t size) {
  *    @retval -2  Timed out
  *    @retval -4  copy error
  */
-int r_xmodem(uint8_t *dst, size_t *size)
+int r_xmodem(unsigned char *dst, size_t *size)
 {
     int seq, sum, c, c2;
-    uint8_t buf[128];
+    unsigned char buf[128];
 
     size_t count = 0;
     int retry = 0;
@@ -144,7 +150,7 @@ int r_xmodem(uint8_t *dst, size_t *size)
 }
 
 /**
- *    @brief XMODEM(128-CRC/SUM) send
+ *    @brief XMODEM(128-CRC/SUM) sender
  *
  *    @param [in] src    : source address
  *           [in] blocks : transfer blocks
@@ -152,7 +158,7 @@ int r_xmodem(uint8_t *dst, size_t *size)
  *    @retval -1  Transfer failed
  *    @retval -3  Aborted by receiver
  */
-int s_xmodem(uint8_t *src, size_t blocks)
+int s_xmodem(unsigned char *src, size_t blocks)
 {
     int seq, sum, crc, c, d;
 
@@ -186,7 +192,7 @@ int s_xmodem(uint8_t *src, size_t blocks)
                     d = *src++;
                     x_putchar(d);
                     if (is_crc) {
-                        crc = crc ^ (uint16_t)d << 8;
+                        crc = crc ^ (unsigned int)d << 8;
                         for (int j = 0; j < 8; ++j) {
                             if (crc & 0x8000)
                                 crc = crc << 1 ^ 0x1021;
