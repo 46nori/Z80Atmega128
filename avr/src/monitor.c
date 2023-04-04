@@ -10,6 +10,8 @@
 #include "monitor.h"
 #include "xconsoleio.h"
 #include "xmodem.h"
+#include <avr/io.h>
+#include <avr/pgmspace.h>
 
 #define DLIMITER	" "
 #define MAX_TOKENS	3
@@ -80,9 +82,10 @@ static int get_uint(token_list *t, unsigned int idx, unsigned int *val) {
 // User command handler
 //
 static void c_help(token_list *t);
-static void c_dump(token_list *t);
-static void c_write_byte(token_list *t);
+static void c_dump_ram(token_list *t);
+static void c_dump_flashrom(token_list *t);
 static void c_read_byte(token_list *t);
+static void c_write_byte(token_list *t);
 static void c_load(token_list *t);
 static void c_save(token_list *t);
 
@@ -90,7 +93,8 @@ static const struct {
 	const char *name;
 	void (*func)(token_list *);
 } cmd_table[] = {
-	{"d",  c_dump},
+	{"d",  c_dump_ram},
+	{"df", c_dump_flashrom},
 	{"r",  c_read_byte},
 	{"w",  c_write_byte},
 	{"ld", c_load},
@@ -116,81 +120,79 @@ static void c_help(token_list *t) {
 	x_puts("   <> : mandatory");
 	x_puts("   [] : optional");
 	x_puts("   $  : Prefix of hexadecimal");
-	x_puts("h               : Help");
-	x_puts("d  [adr] [len]  : Dump memory");
-	x_puts("w  <adr> <dat>  : Write byte");
-	x_puts("r  [adr]        : Read byte");
-	x_puts("ld <adr>        : Load by XMODEM");
-	x_puts("sv <adr> <len>  : Save by XMODEM");
+	x_puts("h               : help");
+	x_puts("d  [adr] [len]  : dump RAM");
+	x_puts("df [adr] [len]  : dump FlashROM");
+	x_puts("r  [adr]        : read  a RAM byte");
+	x_puts("w  <adr> <dat>  : write a RAM byte");
+	x_puts("ld <adr>        : load by XMODEM");
+	x_puts("sv <adr> <len>  : save by XMODEM");
 }
 
 //
 // Hex dump
 //
-static void c_dump(token_list *t) {
-	static uint8_t *adr = 0;
-    unsigned int tmp, len = 16;
-
+#define D_COLUMN 16
+static void dump(token_list *t, uint8_t **adr, int isROM) {
+	unsigned int tmp, len = D_COLUMN;
 	switch (t->n) {
-	case 3:
-	    if (get_uint(t, T_PARAM2, &len) != 0) {
-		    return;     // parameter error
-	    }
-	case 2:
+		case 3:
+		if (get_uint(t, T_PARAM2, &len) != 0) {
+			return;     // parameter error
+		}
+		case 2:
 		if (get_uint(t, T_PARAM1, &tmp) != 0) {
-		    return;     // parameter error
-	    }
-		adr = (uint8_t *)tmp;
+			return;     // parameter error
+		}
+		*adr = (uint8_t *)tmp;
 	}
 
-	int mod, line = len / 16;
+	uint8_t col[D_COLUMN];
+	int mod, line = len / D_COLUMN;
 	do {
 		if (line > 0) {
-			mod = 16;
-		} else if ((mod = len % 16) == 0) {
+			mod = D_COLUMN;
+		} else if ((mod = len % D_COLUMN) == 0) {
 			break;
 		}
-		
-		x_printf("$%04x ", adr);
-		for (int i = 0; i < mod; i++) {
-			x_printf("%02x ", ((uint8_t *)adr)[i]);
+
+		x_printf("$%04x ", *adr);
+
+		if(isROM) {
+			memcpy_P(col, *adr, D_COLUMN);
+		} else {
+			memcpy(col, *adr, D_COLUMN);
 		}
-		for (int i = mod; i < 16; i++) {
+
+		for (int i = 0; i < mod; i++) {
+			x_printf("%02x ", col[i]);
+		}
+		for (int i = mod; i < D_COLUMN; i++) {
 			x_printf("   ");
 		}
 		x_putchar(' ');
 
 		char c;
 		for (int i = 0; i < mod; i++) {
-			c = *(uint8_t *)adr++;
+			c = col[i];
 			if (c < 0x20 || c > 0x7e) {
 				c = '.';
 			}
 			x_putchar(c);
 		}
+		*adr += D_COLUMN;
 		x_puts("");
 	} while (line--);
 }
 
-//
-// Write a byte
-//
-static void c_write_byte(token_list *t) {
-    if (t->n < 3) {
-        return;     // missing parameters
-    }
+static void c_dump_ram(token_list *t) {
+	static uint8_t *adr = 0;
+	dump(t, &adr, 0);
+}
 
-    unsigned int adr, dat;
-    if (get_uint(t, T_PARAM1, &adr) != 0) {
-        return;     // parameter error
-    }
-    if (get_uint(t, T_PARAM2, &dat) != 0) {
-        return;     // parameter error
-    }
-    if (dat > 0xff) {
-        return;
-    }
-    *(uint8_t *)adr = dat;
+static void c_dump_flashrom(token_list *t) {
+	static uint8_t *adr = 0;
+	dump(t, &adr, 1);
 }
 
 //
@@ -205,6 +207,27 @@ static void c_read_byte(token_list *t) {
         }
     }
     x_printf("%x\n", *adr++);
+}
+
+//
+// Write a byte
+//
+static void c_write_byte(token_list *t) {
+	if (t->n < 3) {
+		return;     // missing parameters
+	}
+
+	unsigned int adr, dat;
+	if (get_uint(t, T_PARAM1, &adr) != 0) {
+		return;     // parameter error
+	}
+	if (get_uint(t, T_PARAM2, &dat) != 0) {
+		return;     // parameter error
+	}
+	if (dat > 0xff) {
+		return;
+	}
+	*(uint8_t *)adr = dat;
 }
 
 //
