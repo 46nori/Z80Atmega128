@@ -88,6 +88,7 @@ static void c_read_byte(token_list *t);
 static void c_write_byte(token_list *t);
 static void c_load(token_list *t);
 static void c_save(token_list *t);
+static void c_heap(token_list *t);
 
 static const struct {
 	const char *name;
@@ -99,6 +100,7 @@ static const struct {
 	{"w",  c_write_byte},
 	{"ld", c_load},
 	{"sv", c_save},
+	{"heap", c_heap},
 	{"h",  c_help},
 	{"",   NULL}
 };
@@ -127,6 +129,7 @@ static void c_help(token_list *t) {
 	x_puts("w  <adr> <dat>  : write a RAM byte");
 	x_puts("ld <adr>        : load by XMODEM");
 	x_puts("sv <adr> <len>  : save by XMODEM");
+	x_puts("heap            : remaining heap size");
 }
 
 //
@@ -295,4 +298,14 @@ static void c_save(token_list *t) {
 			x_printf("\nSent %d packets.\n", blks);
 			break;
 	}
+}
+
+//
+// Calc remaining size of heap memory
+//
+static void c_heap(token_list *t) {
+	extern int __heap_start, *__brkval;
+	int v;
+	x_printf("%d bytes left.\n",
+	(int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval));
 }
