@@ -274,6 +274,12 @@
     <Compile Include="src\xmodem.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\z80io.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\z80io.h">
+      <SubType>compile</SubType>
+    </Compile>
     <None Include="src\asf.h">
       <SubType>compile</SubType>
     </None>

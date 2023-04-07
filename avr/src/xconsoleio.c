@@ -28,6 +28,12 @@ int x_printf(const char *format, ...) {
 int x_puts(const char *s) {
 	int st;
 	while (*s) {
+		if (*s == '\n') {
+			st = x_putchar('\r');
+			if (st < 0) {
+				return st;
+			}		
+		}
 		st = x_putchar(*s);
 		if (st < 0) {
 			return st;
@@ -35,6 +41,9 @@ int x_puts(const char *s) {
 		++s;
 	}
 	st = x_putchar('\r');
+	if (st < 0) {
+		return st;
+	}
 	st = x_putchar('\n');
 	return st;
 }

@@ -7,11 +7,12 @@
 #include <asf.h>
 #include <stdio.h>
 #include <string.h>
+#include <avr/io.h>
+#include <avr/pgmspace.h>
 #include "monitor.h"
 #include "xconsoleio.h"
 #include "xmodem.h"
-#include <avr/io.h>
-#include <avr/pgmspace.h>
+#include "z80io.h"
 
 #define DLIMITER	" "
 #define MAX_TOKENS	3
@@ -29,8 +30,7 @@ static void exec_command(token_list *t);
 /**
  * Monitor main
  */
-void monitor(void)
-{
+void monitor(void) {
 	token_list tokens;
 	char cmd_line[32];
 
@@ -82,27 +82,31 @@ static int get_uint(token_list *t, unsigned int idx, unsigned int *val) {
 // User command handler
 //
 static void c_help(token_list *t);
-static void c_dump_ram(token_list *t);
 static void c_dump_flashrom(token_list *t);
+static void c_dump_internal_ram(token_list *t);
+static void c_dump_external_ram(token_list *t);
 static void c_read_byte(token_list *t);
 static void c_write_byte(token_list *t);
 static void c_load(token_list *t);
 static void c_save(token_list *t);
 static void c_heap(token_list *t);
+static void c_z80_reset(token_list *t);
 
 static const struct {
 	const char *name;
 	void (*func)(token_list *);
 } cmd_table[] = {
-	{"d",  c_dump_ram},
-	{"df", c_dump_flashrom},
-	{"r",  c_read_byte},
-	{"w",  c_write_byte},
-	{"ld", c_load},
-	{"sv", c_save},
-	{"heap", c_heap},
-	{"h",  c_help},
-	{"",   NULL}
+	{"d",     c_dump_external_ram},
+	{"di",    c_dump_internal_ram},
+	{"df",    c_dump_flashrom},
+	{"r",     c_read_byte},
+	{"w",     c_write_byte},
+	{"ld",    c_load},
+	{"sv",    c_save},
+	{"heap",  c_heap},
+	{"h",     c_help},
+	{"reset", c_z80_reset},
+	{"",      NULL}
 };
 
 /* Lookup command */
@@ -119,24 +123,44 @@ static void exec_command(token_list *t) {
 // Help
 //
 static void c_help(token_list *t) {
-	x_puts("   <> : mandatory");
-	x_puts("   [] : optional");
-	x_puts("   $  : Prefix of hexadecimal");
-	x_puts("h               : help");
-	x_puts("d  [adr] [len]  : dump RAM");
-	x_puts("df [adr] [len]  : dump FlashROM");
-	x_puts("r  [adr]        : read  a RAM byte");
-	x_puts("w  <adr> <dat>  : write a RAM byte");
-	x_puts("ld <adr>        : load by XMODEM");
-	x_puts("sv <adr> <len>  : save by XMODEM");
-	x_puts("heap            : remaining heap size");
+static const char help_str[] PROGMEM =	\
+	"   <> : mandatory\n"\
+	"   [] : optional\n"\
+	"   $  : Prefix of hexadecimal\n"\
+	"h               : help\n"\
+	"d  [adr] [len]  : dump external RAM\n"\
+	"di [adr] [len]  : dump internal RAM\n"\
+	"df [adr] [len]  : dump FlashROM\n"\
+	"r  [adr]        : read  a RAM byte\n"\
+	"w  <adr> <dat>  : write a RAM byte\n"\
+	"ld <adr>        : load by XMODEM\n"\
+	"sv <adr> <len>  : save by XMODEM\n"\
+	"heap            : remaining heap size\n"\
+	"reset           : restart Z80\n"\
+	"";
+
+#if 1	
+	char tmp[sizeof(help_str) + 1];
+	strncpy_P(tmp, help_str, sizeof(help_str));
+	x_puts(tmp);
+#else
+	x_puts(help_str);
+#endif
 }
 
 //
 // Hex dump
 //
+enum memory_type {
+	IntFROM,	// Internal Flash ROM
+	IntSRAM,	// Internal SRAM
+	ExtSRAM		// External SRAM
+};
+static const unsigned char *memcpy_extram(const unsigned char *dst,
+const unsigned char *src, size_t len);
+
 #define D_COLUMN 16
-static void dump(token_list *t, uint8_t **adr, int isROM) {
+static void dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 	unsigned int tmp, len = D_COLUMN;
 	switch (t->n) {
 		case 3:
@@ -161,11 +185,19 @@ static void dump(token_list *t, uint8_t **adr, int isROM) {
 
 		x_printf("$%04x ", *adr);
 
-		if(isROM) {
+		switch (mtype) {
+		case IntFROM:
 			memcpy_P(col, *adr, D_COLUMN);
-		} else {
+			break;
+		case IntSRAM:
 			memcpy(col, *adr, D_COLUMN);
-		}
+			break;
+		case ExtSRAM:
+			memcpy_extram(col, *adr, D_COLUMN);
+			break;
+		default:
+			break;
+		} 
 
 		for (int i = 0; i < mod; i++) {
 			x_printf("%02x ", col[i]);
@@ -188,14 +220,68 @@ static void dump(token_list *t, uint8_t **adr, int isROM) {
 	} while (line--);
 }
 
-static void c_dump_ram(token_list *t) {
-	static uint8_t *adr = 0;
-	dump(t, &adr, 0);
+//
+// Memory map
+//
+//             |<---len--->|           |<---len--->|
+// |--(1)------+-(2)-|-(3)-+--(4)------+-(5)-|
+// 0                0x1100                 0x10000
+// |<-----shadow---->|<--------real--------->|
+// -(6)--|
+//
+#define INTERNAL_RAM_SIZE	0x1100
+#define EXTERNAL_RAM_SIZE	0x10000
+static const unsigned char *memcpy_extram(const unsigned char *dst,
+                                          const unsigned char *src, size_t len) {
+	size_t rest;
+	unsigned int offset;
+	if (src < (unsigned char *)INTERNAL_RAM_SIZE) {
+		ExtMemory_attach();
+		offset = (unsigned int)ExtMemory_map(MAP_8K);
+		if (src <= (unsigned char *)INTERNAL_RAM_SIZE - len) {
+			// src is in (1) : shadow
+			memcpy((void *)dst, (void *)(offset + src), len);
+			ExtMemory_map(UNMAP);
+			ExtMemory_detach();
+		} else {
+			// src is in (2) : shadow
+			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)src;
+			memcpy((void *)dst, (void *)(offset + src), rest);
+			ExtMemory_map(UNMAP);
+			ExtMemory_detach();
+			// src is in (3) : real
+			memcpy((void *)(dst+rest), (void *)(src + rest), len - rest);
+		}
+	} else if (src <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
+		// src is in (4) : real
+		memcpy((void *)dst, (void *)src, len);
+	} else {
+		// src is in (5) : real
+		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)src;
+		memcpy((void *)dst, src, rest);
+		// src is in (6) : shadow
+		ExtMemory_attach();
+		offset = (unsigned int)ExtMemory_map(MAP_8K);
+		memcpy((void *)(dst + rest), (void *)offset, len - rest);
+		ExtMemory_map(UNMAP);
+		ExtMemory_detach();
+	}
+	return dst;
 }
 
 static void c_dump_flashrom(token_list *t) {
 	static uint8_t *adr = 0;
-	dump(t, &adr, 1);
+	dump(t, &adr, IntFROM);
+}
+
+static void c_dump_internal_ram(token_list *t) {
+	static uint8_t *adr = 0;
+	dump(t, &adr, IntSRAM);
+}
+
+static void c_dump_external_ram(token_list *t) {
+	static uint8_t *adr = 0;
+	dump(t, &adr, ExtSRAM);
 }
 
 //
@@ -308,4 +394,9 @@ static void c_heap(token_list *t) {
 	int v;
 	x_printf("%d bytes left.\n",
 	(int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval));
+}
+
+static void c_z80_reset(token_list *t) {
+	//(void)t;
+	Z80_RESET();
 }
