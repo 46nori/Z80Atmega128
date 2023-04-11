@@ -85,11 +85,13 @@ static void c_help(token_list *t);
 static void c_dump_flashrom(token_list *t);
 static void c_dump_internal_ram(token_list *t);
 static void c_dump_external_ram(token_list *t);
-static void c_read_byte(token_list *t);
-static void c_write_byte(token_list *t);
+static void c_read_internal_ram(token_list *t);
+static void c_read_external_ram(token_list *t);
+static void c_write_internal_ram(token_list *t);
+static void c_write_external_ram(token_list *t);
 static void c_load(token_list *t);
 static void c_save(token_list *t);
-static void c_heap(token_list *t);
+static void c_mem(token_list *t);
 static void c_z80_reset(token_list *t);
 
 static const struct {
@@ -99,11 +101,13 @@ static const struct {
 	{"d",     c_dump_external_ram},
 	{"di",    c_dump_internal_ram},
 	{"df",    c_dump_flashrom},
-	{"r",     c_read_byte},
-	{"w",     c_write_byte},
+	{"r",     c_read_external_ram},
+	{"ri",    c_read_internal_ram},
+	{"w",     c_write_external_ram},
+	{"wi",    c_write_internal_ram},
 	{"ld",    c_load},
 	{"sv",    c_save},
-	{"heap",  c_heap},
+	{"mem",   c_mem},
 	{"h",     c_help},
 	{"reset", c_z80_reset},
 	{"",      NULL}
@@ -128,14 +132,16 @@ static const char help_str[] PROGMEM =	\
 	"   [] : optional\n"\
 	"   $  : Prefix of hexadecimal\n"\
 	"h               : help\n"\
-	"d  [adr] [len]  : dump external RAM\n"\
-	"di [adr] [len]  : dump internal RAM\n"\
+	"r  [adr]        : read  an External RAM byte\n"\
+	"ri [adr]        : read  an Internal RAM byte\n"\
+	"w  <adr> <dat>  : write an External RAM byte\n"\
+	"wi <adr> <dat>  : write an Internal RAM byte\n"\
+	"d  [adr] [len]  : dump External RAM\n"\
+	"di [adr] [len]  : dump Internal RAM\n"\
 	"df [adr] [len]  : dump FlashROM\n"\
-	"r  [adr]        : read  a RAM byte\n"\
-	"w  <adr> <dat>  : write a RAM byte\n"\
 	"ld <adr>        : load by XMODEM\n"\
 	"sv <adr> <len>  : save by XMODEM\n"\
-	"heap            : remaining heap size\n"\
+	"mem             : remaining Internal RAM size\n"\
 	"reset           : restart Z80\n"\
 	"";
 
@@ -235,20 +241,18 @@ static const unsigned char *memcpy_extram(const unsigned char *dst,
                                           const unsigned char *src, size_t len) {
 	size_t rest;
 	unsigned int offset;
+	ExtMemory_attach();
 	if (src < (unsigned char *)INTERNAL_RAM_SIZE) {
-		ExtMemory_attach();
 		offset = (unsigned int)ExtMemory_map(MAP_8K);
 		if (src <= (unsigned char *)INTERNAL_RAM_SIZE - len) {
 			// src is in (1) : shadow
 			memcpy((void *)dst, (void *)(offset + src), len);
 			ExtMemory_map(UNMAP);
-			ExtMemory_detach();
 		} else {
 			// src is in (2) : shadow
 			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)src;
 			memcpy((void *)dst, (void *)(offset + src), rest);
 			ExtMemory_map(UNMAP);
-			ExtMemory_detach();
 			// src is in (3) : real
 			memcpy((void *)(dst+rest), (void *)(src + rest), len - rest);
 		}
@@ -260,18 +264,12 @@ static const unsigned char *memcpy_extram(const unsigned char *dst,
 		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)src;
 		memcpy((void *)dst, src, rest);
 		// src is in (6) : shadow
-		ExtMemory_attach();
 		offset = (unsigned int)ExtMemory_map(MAP_8K);
 		memcpy((void *)(dst + rest), (void *)offset, len - rest);
 		ExtMemory_map(UNMAP);
-		ExtMemory_detach();
 	}
+	ExtMemory_detach();
 	return dst;
-}
-
-static void c_dump_flashrom(token_list *t) {
-	static uint8_t *adr = 0;
-	dump(t, &adr, IntFROM);
 }
 
 static void c_dump_internal_ram(token_list *t) {
@@ -284,24 +282,51 @@ static void c_dump_external_ram(token_list *t) {
 	dump(t, &adr, ExtSRAM);
 }
 
+static void c_dump_flashrom(token_list *t) {
+	static uint8_t *adr = 0;
+	dump(t, &adr, IntFROM);
+}
+
 //
 // Read a byte
 //
-static void c_read_byte(token_list *t) {
+static void c_read_internal_ram(token_list *t) {
+	static uint8_t *adr = 0;
+	if (t->n > 1) {
+		unsigned int tmp;
+		if (get_uint(t, T_PARAM1, &tmp) != 0) {
+			adr = (uint8_t *)tmp;
+		}
+	}
+	x_printf("%x\n", *adr++);
+}
+
+static void c_read_external_ram(token_list *t) {
     static uint8_t *adr = 0;
     if (t->n > 1) {
-        unsigned int tmp;
-        if (get_uint(t, T_PARAM1, &tmp) != 0) {
-            adr = (uint8_t *)tmp;
-        }
+	    unsigned int tmp;
+	    if (get_uint(t, T_PARAM1, &tmp) != 0) {
+		    adr = (uint8_t *)tmp;
+	    }
     }
-    x_printf("%x\n", *adr++);
+
+	uint8_t d;
+	ExtMemory_attach();
+	if (adr < (uint8_t *)EXTERNAL_RAM_SIZE) {
+		d = *(adr + (unsigned int)ExtMemory_map(MAP_8K));
+		ExtMemory_map(UNMAP);
+	} else {
+		d = *adr;
+	}
+	ExtMemory_detach();
+    x_printf("%x\n", d);
+	++adr;
 }
 
 //
 // Write a byte
 //
-static void c_write_byte(token_list *t) {
+static void c_write_internal_ram(token_list *t) {
 	if (t->n < 3) {
 		return;     // missing parameters
 	}
@@ -317,6 +342,32 @@ static void c_write_byte(token_list *t) {
 		return;
 	}
 	*(uint8_t *)adr = dat;
+}
+
+static void c_write_external_ram(token_list *t) {
+	if (t->n < 3) {
+		return;     // missing parameters
+	}
+
+	unsigned int adr, dat;
+	if (get_uint(t, T_PARAM1, &adr) != 0) {
+		return;     // parameter error
+	}
+	if (get_uint(t, T_PARAM2, &dat) != 0) {
+		return;     // parameter error
+	}
+	if (dat > 0xff) {
+		return;
+	}
+
+	ExtMemory_attach();
+	if (adr < EXTERNAL_RAM_SIZE) {
+		*(uint8_t *)(adr + (unsigned int)ExtMemory_map(MAP_8K)) = dat;
+		ExtMemory_map(UNMAP);
+	} else {
+		*(uint8_t *)adr = dat;
+	}
+	ExtMemory_detach();
 }
 
 //
@@ -387,9 +438,9 @@ static void c_save(token_list *t) {
 }
 
 //
-// Calc remaining size of heap memory
+// Calc remaining size of internal RAM
 //
-static void c_heap(token_list *t) {
+static void c_mem(token_list *t) {
 	extern int __heap_start, *__brkval;
 	int v;
 	x_printf("%d bytes left.\n",

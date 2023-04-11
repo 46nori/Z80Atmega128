@@ -19,6 +19,7 @@ enum shadow_size {
 	UNMAP   = 0b00000000
 };
 
+extern void ExtMemory_init(void);
 extern void ExtMemory_attach(void);
 extern void ExtMemory_detach(void);
 extern void *ExtMemory_map(enum shadow_size size);
@@ -26,5 +27,6 @@ extern void *ExtMemory_map(enum shadow_size size);
 extern void Z80_BUSREQ(int st);
 extern void Z80_RESET(void);
 extern void Z80_INT_REQ(void);
+void Z80_CLRWAIT(void);
 
 #endif /* Z80IO_H_ */

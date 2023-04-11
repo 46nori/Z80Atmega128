@@ -6,6 +6,24 @@
  */ 
 #include <asf.h>
 #include "z80io.h"
+#include "xconsoleio.h"
+
+//
+// Init external memory settings
+//
+void ExtMemory_init(void) {
+	// WAIT setting for external SRAM
+	#if 1
+	// SRAM access time < 100ns
+	SET_BIT(MCUCR, SRW10);		// 2wait(SRW10=High)
+	SET_BYTE(XMCRA, 0x00);      // 2wait(SRW11=Low)
+	#else
+	// SRAM access time >= 100ns
+	SET_BIT(MCUCR, 0);			// 2wait(SRW10=Low)
+	SET_BYTE(XMCRA, 0x02);      // 2wait(SRW11=High)
+	#endif
+	SET_BYTE(XMCRB, 0x00);		// Disable external memory bus-keeper
+}
 
 //
 // Attach external memory and make Z80 suspend
@@ -52,8 +70,10 @@ void Z80_BUSREQ(int st) {
 		// Enable /BUSREQ
 		CLR_BIT(PORTD, PORTD6);
 		// Wait for /BUSACK
-		while (!(GET_BYTE(PORTD) & _BV(PORTD7)));
-		} else {
+		while (!(PIND & _BV(PORTD7))) {
+			x_putchar('#');
+		}
+	} else {
 		// Disable /BUSREQ
 		SET_BIT(PORTD, PORTD6);
 	}
@@ -61,11 +81,17 @@ void Z80_BUSREQ(int st) {
 void Z80_RESET(void) {
 	ExtMemory_detach();
 	// Send reset pulse
-	CLR_BIT(PORTG, PORTG4);
-	delay_ms(1);
-	SET_BIT(PORTG, PORTG4);
+	CLR_BIT(PORTB, PORTB5);
+	delay_ms(10);
+	SET_BIT(PORTB, PORTB5);
 }
 
 void Z80_INT_REQ(void) {
 	
+}
+
+void Z80_CLRWAIT(void) {
+	CLR_BIT(PORTD, PORTD5);
+	delay_us(1);
+	SET_BIT(PORTD, PORTD5);
 }
