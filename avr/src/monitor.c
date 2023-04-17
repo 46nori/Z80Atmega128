@@ -115,10 +115,12 @@ static const struct {
 
 /* Lookup command */
 static void exec_command(token_list *t) {
-	for (int i = 0; cmd_table[i].func != NULL; i++) {
-		if (!strcmp(cmd_table[i].name, t->token[T_CMD])) {
-			cmd_table[i].func(t);
-			break;
+	if (t->n > 0) {
+		for (int i = 0; cmd_table[i].func != NULL; i++) {
+			if (!strcmp(cmd_table[i].name, t->token[T_CMD])) {
+				cmd_table[i].func(t);
+				break;
+			}
 		}
 	}
 }
