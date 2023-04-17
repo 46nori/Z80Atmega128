@@ -38,7 +38,6 @@ void monitor(void) {
 	while(1) {
 		x_putchar('>');
 		x_gets_s(cmd_line, sizeof(cmd_line)-1);
-		//x_puts(cmd_line);
 		tokenizer(cmd_line, DLIMITER, &tokens);
 		exec_command(&tokens);
 	}
@@ -297,10 +296,12 @@ static void c_read_internal_ram(token_list *t) {
 	if (t->n > 1) {
 		unsigned int tmp;
 		if (get_uint(t, T_PARAM1, &tmp) != 0) {
-			adr = (uint8_t *)tmp;
+			return;
 		}
+		adr = (uint8_t *)tmp;
 	}
-	x_printf("%x\n", *adr++);
+	x_printf("%04x: %02x\n", adr, *adr);
+	++adr;
 }
 
 static void c_read_external_ram(token_list *t) {
@@ -308,20 +309,22 @@ static void c_read_external_ram(token_list *t) {
     if (t->n > 1) {
 	    unsigned int tmp;
 	    if (get_uint(t, T_PARAM1, &tmp) != 0) {
-		    adr = (uint8_t *)tmp;
-	    }
+			return;
+		}
+		adr = (uint8_t *)tmp;
     }
 
-	uint8_t d;
+	uint8_t *a = adr, d;
 	ExtMemory_attach();
-	if (adr < (uint8_t *)EXTERNAL_RAM_SIZE) {
-		d = *(adr + (unsigned int)ExtMemory_map(MAP_8K));
+	if (a < (uint8_t *)INTERNAL_RAM_SIZE) {
+		a += (unsigned int)ExtMemory_map(MAP_8K);
+		d = *a;
 		ExtMemory_map(UNMAP);
 	} else {
-		d = *adr;
+		d = *a;		
 	}
 	ExtMemory_detach();
-    x_printf("%x\n", d);
+    x_printf("$%04x (%04x): %02x\n", adr, a, d);
 	++adr;
 }
 
@@ -363,7 +366,7 @@ static void c_write_external_ram(token_list *t) {
 	}
 
 	ExtMemory_attach();
-	if (adr < EXTERNAL_RAM_SIZE) {
+	if (adr < INTERNAL_RAM_SIZE) {
 		*(uint8_t *)(adr + (unsigned int)ExtMemory_map(MAP_8K)) = dat;
 		ExtMemory_map(UNMAP);
 	} else {
