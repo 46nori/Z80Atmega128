@@ -39,16 +39,18 @@ void board_init(void)
 	// Port E
 	SET_BYTE(DDRE,  0x00);			// Set as input	
 	// Port F
+	SET_BYTE(PORTF, 0xff);			// Set Hi-Z
 	SET_BYTE(DDRF,  0x00);			// Set as input
 	// Port G
 	SET_BYTE(PORTG, 0b00000011);	// /WR,/RD=High, ALE=Low
 	SET_BYTE(DDRG,  0b00011111);	// Set as output / XMEM(PG0,1,2)
 
-	Z80_CLRWAIT();
-	Z80_RESET();
-//	Z80_BUSREQ(1);
-	// Suspend Z80
-//	CLR_BIT(PORTD, PORTD6);			// /BREQ = L
+	// Disable interrupt
+	cli();
 
+	// Suspend Z80
+	Z80_BUSREQ(1);
+	Z80_CLRWAIT();
 	ExtMemory_init();
+	Z80_HALT();
 }

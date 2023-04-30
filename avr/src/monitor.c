@@ -25,8 +25,12 @@ typedef struct token_list {
 } token_list;
 
 static token_list *tokenizer(char *str, const char *delim, token_list *t);
-static void exec_command(token_list *t);
+static int exec_command(token_list *t);
 
+#define NO_ERROR		(0)
+#define ERR_COMMAND		(-1)
+#define ERR_PARAM_VAL	(-2)
+#define ERR_PARAM_MISS	(-3)
 /**
  * Monitor main
  */
@@ -39,7 +43,22 @@ void monitor(void) {
 		x_putchar('>');
 		x_gets_s(cmd_line, sizeof(cmd_line)-1);
 		tokenizer(cmd_line, DLIMITER, &tokens);
-		exec_command(&tokens);
+		switch (exec_command(&tokens)) {
+		case NO_ERROR:
+			break;
+		case ERR_COMMAND:
+			x_puts("not found.");
+			break;		
+		case ERR_PARAM_VAL:
+			x_puts("param error.");
+			break;
+		case ERR_PARAM_MISS:
+			x_puts("missing param.");
+			break;
+		default:
+			x_puts("error!");
+			break;
+		}
 	}
 }
 
@@ -58,7 +77,7 @@ static token_list *tokenizer(char *str, const char *delim, token_list *t) {
 /* Get token value as an unsigned int */
 static int get_uint(token_list *t, unsigned int idx, unsigned int *val) {
 	if (idx >= t->n) {
-		return -1;
+		return ERR_PARAM_MISS;
 	}
 
 	unsigned int tmp;
@@ -67,35 +86,36 @@ static int get_uint(token_list *t, unsigned int idx, unsigned int *val) {
 		// Hex
 		if (sscanf(str + 1, "%x", &tmp) == 1) {
 		    *val = tmp;
-		    return 0;
+		    return NO_ERROR;
 		}
 	} else if (sscanf(str, "%u", &tmp) == 1) {
 		// Decimal
 		*val = tmp;
-        return 0;
+        return NO_ERROR;
     }
-    return -2;
+    return ERR_PARAM_VAL;
 }
 
 //
 // User command handler
 //
-static void c_help(token_list *t);
-static void c_dump_flashrom(token_list *t);
-static void c_dump_internal_ram(token_list *t);
-static void c_dump_external_ram(token_list *t);
-static void c_read_internal_ram(token_list *t);
-static void c_read_external_ram(token_list *t);
-static void c_write_internal_ram(token_list *t);
-static void c_write_external_ram(token_list *t);
-static void c_load(token_list *t);
-static void c_save(token_list *t);
-static void c_mem(token_list *t);
-static void c_z80_reset(token_list *t);
+static int c_help(token_list *t);
+static int c_dump_flashrom(token_list *t);
+static int c_dump_internal_ram(token_list *t);
+static int c_dump_external_ram(token_list *t);
+static int c_read_internal_ram(token_list *t);
+static int c_read_external_ram(token_list *t);
+static int c_write_internal_ram(token_list *t);
+static int c_write_external_ram(token_list *t);
+static int c_load(token_list *t);
+static int c_save(token_list *t);
+static int c_mem(token_list *t);
+static int c_z80_reset(token_list *t);
+static int c_test(token_list *t);
 
 static const struct {
 	const char *name;
-	void (*func)(token_list *);
+	int (*func)(token_list *);
 } cmd_table[] = {
 	{"d",     c_dump_external_ram},
 	{"di",    c_dump_internal_ram},
@@ -109,25 +129,27 @@ static const struct {
 	{"mem",   c_mem},
 	{"h",     c_help},
 	{"reset", c_z80_reset},
+	{"test",  c_test},
 	{"",      NULL}
 };
 
 /* Lookup command */
-static void exec_command(token_list *t) {
-	if (t->n > 0) {
-		for (int i = 0; cmd_table[i].func != NULL; i++) {
-			if (!strcmp(cmd_table[i].name, t->token[T_CMD])) {
-				cmd_table[i].func(t);
-				break;
-			}
+static int exec_command(token_list *t) {
+	if (t->n == 0) {
+		return NO_ERROR;	// do nothing
+	}
+	for (int i = 0; cmd_table[i].func != NULL; i++) {
+		if (!strcmp(cmd_table[i].name, t->token[T_CMD])) {
+			return cmd_table[i].func(t);
 		}
 	}
+	return ERR_COMMAND;		// command not found
 }
 
 //
 // Help
 //
-static void c_help(token_list *t) {
+static int c_help(token_list *t) {
 static const char help_str[] PROGMEM =	\
 	"   <> : mandatory\n"\
 	"   [] : optional\n"\
@@ -153,6 +175,7 @@ static const char help_str[] PROGMEM =	\
 #else
 	x_puts(help_str);
 #endif
+	return NO_ERROR;
 }
 
 //
@@ -167,16 +190,16 @@ static const unsigned char *memcpy_extram(const unsigned char *dst,
 const unsigned char *src, size_t len);
 
 #define D_COLUMN 16
-static void dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
+static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 	unsigned int tmp, len = D_COLUMN;
 	switch (t->n) {
 		case 3:
-		if (get_uint(t, T_PARAM2, &len) != 0) {
-			return;     // parameter error
+		if (get_uint(t, T_PARAM2, &len) != NO_ERROR) {
+			return ERR_PARAM_VAL;     // parameter error
 		}
 		case 2:
-		if (get_uint(t, T_PARAM1, &tmp) != 0) {
-			return;     // parameter error
+		if (get_uint(t, T_PARAM1, &tmp) != NO_ERROR) {
+			return ERR_PARAM_VAL;     // parameter error
 		}
 		*adr = (uint8_t *)tmp;
 	}
@@ -225,6 +248,7 @@ static void dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 		*adr += D_COLUMN;
 		x_puts("");
 	} while (line--);
+	return NO_ERROR;
 }
 
 //
@@ -273,48 +297,49 @@ static const unsigned char *memcpy_extram(const unsigned char *dst,
 	return dst;
 }
 
-static void c_dump_internal_ram(token_list *t) {
+static int c_dump_internal_ram(token_list *t) {
 	static uint8_t *adr = 0;
-	dump(t, &adr, IntSRAM);
+	return dump(t, &adr, IntSRAM);
 }
 
-static void c_dump_external_ram(token_list *t) {
+static int c_dump_external_ram(token_list *t) {
 	static uint8_t *adr = 0;
-	dump(t, &adr, ExtSRAM);
+	return dump(t, &adr, ExtSRAM);
 }
 
-static void c_dump_flashrom(token_list *t) {
+static int c_dump_flashrom(token_list *t) {
 	static uint8_t *adr = 0;
-	dump(t, &adr, IntFROM);
+	return dump(t, &adr, IntFROM);
 }
 
 //
 // Read a byte
 //
-static void c_read_internal_ram(token_list *t) {
+static int c_read_internal_ram(token_list *t) {
 	static uint8_t *adr = 0;
 	if (t->n > 1) {
 		unsigned int tmp;
-		if (get_uint(t, T_PARAM1, &tmp) != 0) {
-			return;
+		if (get_uint(t, T_PARAM1, &tmp) != NO_ERROR) {
+			return ERR_PARAM_VAL;
 		}
 		adr = (uint8_t *)tmp;
 	}
 	x_printf("%04x: %02x\n", adr, *adr);
 	++adr;
+	return NO_ERROR;
 }
 
-static void c_read_external_ram(token_list *t) {
+static int c_read_external_ram(token_list *t) {
     static uint8_t *adr = 0;
     if (t->n > 1) {
 	    unsigned int tmp;
-	    if (get_uint(t, T_PARAM1, &tmp) != 0) {
-			return;
+	    if (get_uint(t, T_PARAM1, &tmp) != NO_ERROR) {
+			return ERR_PARAM_VAL;
 		}
 		adr = (uint8_t *)tmp;
     }
 
-	uint8_t *a = adr, d;
+	volatile uint8_t *a = adr, d;
 	ExtMemory_attach();
 	if (a < (uint8_t *)INTERNAL_RAM_SIZE) {
 		a += (unsigned int)ExtMemory_map(MAP_8K);
@@ -326,65 +351,68 @@ static void c_read_external_ram(token_list *t) {
 	ExtMemory_detach();
     x_printf("$%04x (%04x): %02x\n", adr, a, d);
 	++adr;
+	return NO_ERROR;
 }
 
 //
 // Write a byte
 //
-static void c_write_internal_ram(token_list *t) {
+static int c_write_internal_ram(token_list *t) {
 	if (t->n < 3) {
-		return;     // missing parameters
+		return ERR_PARAM_MISS;     // missing parameters
 	}
 
 	unsigned int adr, dat;
-	if (get_uint(t, T_PARAM1, &adr) != 0) {
-		return;     // parameter error
+	if (get_uint(t, T_PARAM1, &adr) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
 	}
-	if (get_uint(t, T_PARAM2, &dat) != 0) {
-		return;     // parameter error
+	if (get_uint(t, T_PARAM2, &dat) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
 	}
 	if (dat > 0xff) {
-		return;
+		return ERR_PARAM_VAL;
 	}
-	*(uint8_t *)adr = dat;
+	*(volatile uint8_t *)adr = dat;
+	return NO_ERROR;
 }
 
-static void c_write_external_ram(token_list *t) {
+static int c_write_external_ram(token_list *t) {
 	if (t->n < 3) {
-		return;     // missing parameters
+		return ERR_PARAM_MISS;     // missing parameters
 	}
 
 	unsigned int adr, dat;
-	if (get_uint(t, T_PARAM1, &adr) != 0) {
-		return;     // parameter error
+	if (get_uint(t, T_PARAM1, &adr) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
 	}
-	if (get_uint(t, T_PARAM2, &dat) != 0) {
-		return;     // parameter error
+	if (get_uint(t, T_PARAM2, &dat) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
 	}
 	if (dat > 0xff) {
-		return;
+		return ERR_PARAM_VAL;
 	}
 
 	ExtMemory_attach();
 	if (adr < INTERNAL_RAM_SIZE) {
-		*(uint8_t *)(adr + (unsigned int)ExtMemory_map(MAP_8K)) = dat;
+		*(volatile uint8_t *)(adr + (unsigned int)ExtMemory_map(MAP_8K)) = dat;
 		ExtMemory_map(UNMAP);
 	} else {
-		*(uint8_t *)adr = dat;
+		*(volatile uint8_t *)adr = dat;
 	}
 	ExtMemory_detach();
+	return NO_ERROR;
 }
 
 //
 // Load binary by XMODEM
 //
-static void c_load(token_list *t) {
+static int c_load(token_list *t) {
     if (t->n < 2) {
-        return;     // missing parameters
+        return ERR_PARAM_MISS;	// missing parameters
     }
     unsigned int dest;
-    if (get_uint(t, T_PARAM1, &dest) != 0) {
-        return;     // parameter error
+    if (get_uint(t, T_PARAM1, &dest) != NO_ERROR) {
+        return ERR_PARAM_VAL;	// parameter error
     }
 
 	size_t size;
@@ -405,21 +433,22 @@ static void c_load(token_list *t) {
 		x_printf("\nReceived %d bytes.\n", size);
 		break;
 	}
+	return NO_ERROR;
 }
 
 //
 // Save binary by XMODEM
 //
-static void c_save(token_list *t) {
+static int c_save(token_list *t) {
     if (t->n < 3) {
-        return;     // missing parameters
+        return ERR_PARAM_MISS;	// missing parameters
     }
     unsigned int src, size;
-    if (get_uint(t, T_PARAM1, &src) != 0) {
-        return;     // parameter error
+    if (get_uint(t, T_PARAM1, &src) != NO_ERROR) {
+        return ERR_PARAM_VAL;	// parameter error
     }
-    if (get_uint(t, T_PARAM2, &size) != 0) {
-        return;     // parameter error
+    if (get_uint(t, T_PARAM2, &size) != NO_ERROR) {
+        return ERR_PARAM_VAL;	// parameter error
     }
 
     size_t blks = size / 128;
@@ -440,19 +469,47 @@ static void c_save(token_list *t) {
 			x_printf("\nSent %d packets.\n", blks);
 			break;
 	}
+	return NO_ERROR;
 }
 
 //
 // Calc remaining size of internal RAM
 //
-static void c_mem(token_list *t) {
+static int c_mem(token_list *t) {
 	extern int __heap_start, *__brkval;
 	int v;
 	x_printf("%d bytes left.\n",
 	(int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval));
+	return NO_ERROR;
 }
 
-static void c_z80_reset(token_list *t) {
+static int c_z80_reset(token_list *t) {
 	//(void)t;
 	Z80_RESET();
+	return NO_ERROR;
+}
+
+//
+// Test external memory
+//
+static int c_test(token_list *t) {
+	ExtMemory_attach();
+	uint8_t *adr = ExtMemory_map(MAP_8K);
+	int i;
+	// Write phase
+	unsigned int w_sum = 0;
+	for (i = 0; i < 0x100; adr[i] = i,    w_sum += i,    i++);
+	for (     ; i < 0x200; adr[i] = 0x55, w_sum += 0x55, i++);
+	for (     ; i < 0x300; adr[i] = 0xaa, w_sum += 0xaa, i++);
+	for (     ; i < 0x400; adr[i] = 0x00, w_sum += 0x00, i++);
+	for (     ; i < 0x500; adr[i] = 0xff, w_sum += 0xff, i++);
+	// Read phase
+	unsigned int r_sum = 0;
+	for (     ; i > 0; r_sum += adr[--i]);
+	ExtMemory_map(UNMAP);
+	ExtMemory_detach();
+
+	x_printf("write sum=%x\n", w_sum);
+	x_printf("read  sum=%x\n", r_sum);
+	return NO_ERROR;
 }
