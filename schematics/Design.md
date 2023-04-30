@@ -271,6 +271,9 @@ $t_{AA}$と $t_{OE}$を満たすSRAMを選択し、それに応じたXMEMイン�
 | HM62256A-12 |   120ns  |   60ns   |   2  |
 | HM62256A-15 |   150ns  |   70ns   |   2  |
 
+以下はアドレス0x12をREADした時の結果。  
+  ![AVR-SRAM-READ-Cycle](Fig/AVR-SRAM-READ.png)
+
 ### WRITE
 WRITEはタイミングに余裕があり、どの型番の組み合わせでも問題ない。SRAMの型番はREADのタイミング制約に合わせて決めればよい。
 
@@ -296,6 +299,8 @@ WRITEはタイミングに余裕があり、どの型番の組み合わせでも
 | HM62256A-12 |    50ns  |    0ns   |   70ns   |
 | HM62256A-15 |    60ns  |    0ns   |   90ns   |
 
+以下はアドレス0x12に0x34をWRITEした時の結果。  
+  ![AVR-SRAM-WRITE-Cycle](Fig/AVR-SRAM-WRITE.png)
 
 ## AVRの設定
 ### Fuse Bits
