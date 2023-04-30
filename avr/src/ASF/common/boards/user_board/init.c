@@ -51,6 +51,6 @@ void board_init(void)
 	// Suspend Z80
 	Z80_BUSREQ(1);
 	Z80_CLRWAIT();
-	ExtMemory_init();
+	ExtMem_init();
 	Z80_HALT();
 }

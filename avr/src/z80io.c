@@ -11,7 +11,7 @@
 //
 // Initialize external memory settings
 //
-void ExtMemory_init(void) {
+void ExtMem_init(void) {
 	// WAIT setting for external SRAM
 #if 0
 	// SRAM access time < 100ns
@@ -35,15 +35,15 @@ void ExtMemory_init(void) {
 // Caution: Do NOT call at the interrupt handler
 //          for Z80 (/IN0, /INT1, /INT4)
 //
-void ExtMemory_attach(void) {
+void ExtMem_attach(void) {
 	Z80_BUSREQ(1);				// Acquire memory bus
 	SET_BIT(MCUCR, SRE);		// Enable XMEM
 }
 
 //
-// Detach external memory and make Z80 being active
+// Detach external memory and let Z80 be active
 //
-void ExtMemory_detach(void) {
+void ExtMem_detach(void) {
 	CLR_BIT(MCUCR, SRE);		// Disable XMEM
 	Z80_BUSREQ(0);				// Release memory bus
 }
@@ -51,20 +51,18 @@ void ExtMemory_detach(void) {
 //
 // Set shadow area to access hiding area of external memory
 //
-void *ExtMemory_map(enum shadow_size size) {
-	uint16_t adr;
-	if (size == MAP_8K) {
-		SET_BYTE(XMCRB, 0x03);	// Enable shadow
-//		XMCRB = 0x83;
-		adr = 0x2000;
-	} else {
-		SET_BYTE(XMCRB, 0x00);	// Disable shadow
-//		XMCRB = 0x10;
-		adr = 0;
-	}
-	return (void *)adr;
+void *ExtMem_map(void) {
+	SET_BYTE(XMCRB, 0x03);	// Enable shadow
+	return (void *)0x2000;
 }
 
+void ExtMem_unmap(void) {
+	SET_BYTE(XMCRB, 0x00);	// Disable shadow
+}
+
+//
+// Z80 control
+//
 void Z80_BUSREQ(int st) {
 	if (st) {
 		// Enable /BUSREQ
@@ -80,7 +78,7 @@ void Z80_BUSREQ(int st) {
 }
 
 void Z80_RESET(void) {
-	ExtMemory_detach();
+	ExtMem_detach();
 	// Send reset pulse
 	CLR_BIT(PORTB, PORTB5);
 	delay_ms(10);
@@ -98,8 +96,9 @@ void Z80_CLRWAIT(void) {
 }
 
 void Z80_HALT(void) {
-	ExtMemory_attach();
-	*(volatile uint8_t *)ExtMemory_map(MAP_8K) = 0x76;	// HALT instruction
+	ExtMem_attach();
+	*(volatile uint8_t *)ExtMem_map() = 0x76;	// HALT instruction
+	ExtMem_unmap();
 	Z80_RESET();
-	ExtMemory_detach();
+	ExtMem_detach();
 }

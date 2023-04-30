@@ -107,8 +107,8 @@ static int c_read_internal_ram(token_list *t);
 static int c_read_external_ram(token_list *t);
 static int c_write_internal_ram(token_list *t);
 static int c_write_external_ram(token_list *t);
-static int c_load(token_list *t);
-static int c_save(token_list *t);
+static int c_load_xmodem(token_list *t);
+static int c_save_xmodem(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
 static int c_test(token_list *t);
@@ -124,12 +124,12 @@ static const struct {
 	{"ri",    c_read_internal_ram},
 	{"w",     c_write_external_ram},
 	{"wi",    c_write_internal_ram},
-	{"ld",    c_load},
-	{"sv",    c_save},
+	{"lx",    c_load_xmodem},
+	{"sx",    c_save_xmodem},
 	{"mem",   c_mem},
-	{"h",     c_help},
 	{"reset", c_z80_reset},
 	{"test",  c_test},
+	{"h",     c_help},
 	{"",      NULL}
 };
 
@@ -162,8 +162,8 @@ static const char help_str[] PROGMEM =	\
 	"d  [adr] [len]  : dump External RAM\n"\
 	"di [adr] [len]  : dump Internal RAM\n"\
 	"df [adr] [len]  : dump FlashROM\n"\
-	"ld <adr>        : load by XMODEM\n"\
-	"sv <adr> <len>  : save by XMODEM\n"\
+	"lx <adr>        : load by XMODEM\n"\
+	"sx <adr> <len>  : save by XMODEM\n"\
 	"mem             : remaining Internal RAM size\n"\
 	"reset           : restart Z80\n"\
 	"";
@@ -182,9 +182,9 @@ static const char help_str[] PROGMEM =	\
 // Hex dump
 //
 enum memory_type {
-	IntFROM,	// Internal Flash ROM
-	IntSRAM,	// Internal SRAM
-	ExtSRAM		// External SRAM
+	IntROM,		// Internal Flash ROM
+	IntRAM,		// Internal RAM
+	ExtRAM		// External RAM
 };
 static const unsigned char *memcpy_extram(const unsigned char *dst,
 const unsigned char *src, size_t len);
@@ -216,13 +216,13 @@ static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 		x_printf("$%04x ", *adr);
 
 		switch (mtype) {
-		case IntFROM:
+		case IntROM:
 			memcpy_P(col, *adr, D_COLUMN);
 			break;
-		case IntSRAM:
+		case IntRAM:
 			memcpy(col, *adr, D_COLUMN);
 			break;
-		case ExtSRAM:
+		case ExtRAM:
 			memcpy_extram(col, *adr, D_COLUMN);
 			break;
 		default:
@@ -266,18 +266,18 @@ static const unsigned char *memcpy_extram(const unsigned char *dst,
                                           const unsigned char *src, size_t len) {
 	size_t rest;
 	unsigned int offset;
-	ExtMemory_attach();
+	ExtMem_attach();
 	if (src < (unsigned char *)INTERNAL_RAM_SIZE) {
-		offset = (unsigned int)ExtMemory_map(MAP_8K);
+		offset = (unsigned int)ExtMem_map();
 		if (src <= (unsigned char *)INTERNAL_RAM_SIZE - len) {
 			// src is in (1) : shadow
 			memcpy((void *)dst, (void *)(offset + src), len);
-			ExtMemory_map(UNMAP);
+			ExtMem_unmap();
 		} else {
 			// src is in (2) : shadow
 			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)src;
 			memcpy((void *)dst, (void *)(offset + src), rest);
-			ExtMemory_map(UNMAP);
+			ExtMem_unmap();
 			// src is in (3) : real
 			memcpy((void *)(dst+rest), (void *)(src + rest), len - rest);
 		}
@@ -289,27 +289,27 @@ static const unsigned char *memcpy_extram(const unsigned char *dst,
 		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)src;
 		memcpy((void *)dst, src, rest);
 		// src is in (6) : shadow
-		offset = (unsigned int)ExtMemory_map(MAP_8K);
+		offset = (unsigned int)ExtMem_map();
 		memcpy((void *)(dst + rest), (void *)offset, len - rest);
-		ExtMemory_map(UNMAP);
+		ExtMem_unmap();
 	}
-	ExtMemory_detach();
+	ExtMem_detach();
 	return dst;
 }
 
 static int c_dump_internal_ram(token_list *t) {
 	static uint8_t *adr = 0;
-	return dump(t, &adr, IntSRAM);
+	return dump(t, &adr, IntRAM);
 }
 
 static int c_dump_external_ram(token_list *t) {
 	static uint8_t *adr = 0;
-	return dump(t, &adr, ExtSRAM);
+	return dump(t, &adr, ExtRAM);
 }
 
 static int c_dump_flashrom(token_list *t) {
 	static uint8_t *adr = 0;
-	return dump(t, &adr, IntFROM);
+	return dump(t, &adr, IntROM);
 }
 
 //
@@ -340,15 +340,15 @@ static int c_read_external_ram(token_list *t) {
     }
 
 	volatile uint8_t *a = adr, d;
-	ExtMemory_attach();
+	ExtMem_attach();
 	if (a < (uint8_t *)INTERNAL_RAM_SIZE) {
-		a += (unsigned int)ExtMemory_map(MAP_8K);
+		a += (unsigned int)ExtMem_map();
 		d = *a;
-		ExtMemory_map(UNMAP);
+		ExtMem_unmap();
 	} else {
 		d = *a;		
 	}
-	ExtMemory_detach();
+	ExtMem_detach();
     x_printf("$%04x (%04x): %02x\n", adr, a, d);
 	++adr;
 	return NO_ERROR;
@@ -392,21 +392,21 @@ static int c_write_external_ram(token_list *t) {
 		return ERR_PARAM_VAL;
 	}
 
-	ExtMemory_attach();
+	ExtMem_attach();
 	if (adr < INTERNAL_RAM_SIZE) {
-		*(volatile uint8_t *)(adr + (unsigned int)ExtMemory_map(MAP_8K)) = dat;
-		ExtMemory_map(UNMAP);
+		*(volatile uint8_t *)(adr + (unsigned int)ExtMem_map()) = dat;
+		ExtMem_unmap();
 	} else {
 		*(volatile uint8_t *)adr = dat;
 	}
-	ExtMemory_detach();
+	ExtMem_detach();
 	return NO_ERROR;
 }
 
 //
 // Load binary by XMODEM
 //
-static int c_load(token_list *t) {
+static int c_load_xmodem(token_list *t) {
     if (t->n < 2) {
         return ERR_PARAM_MISS;	// missing parameters
     }
@@ -439,7 +439,7 @@ static int c_load(token_list *t) {
 //
 // Save binary by XMODEM
 //
-static int c_save(token_list *t) {
+static int c_save_xmodem(token_list *t) {
     if (t->n < 3) {
         return ERR_PARAM_MISS;	// missing parameters
     }
@@ -493,8 +493,8 @@ static int c_z80_reset(token_list *t) {
 // Test external memory
 //
 static int c_test(token_list *t) {
-	ExtMemory_attach();
-	uint8_t *adr = ExtMemory_map(MAP_8K);
+	ExtMem_attach();
+	uint8_t *adr = ExtMem_map();
 	int i;
 	// Write phase
 	unsigned int w_sum = 0;
@@ -506,8 +506,8 @@ static int c_test(token_list *t) {
 	// Read phase
 	unsigned int r_sum = 0;
 	for (     ; i > 0; r_sum += adr[--i]);
-	ExtMemory_map(UNMAP);
-	ExtMemory_detach();
+	ExtMem_unmap();
+	ExtMem_detach();
 
 	x_printf("write sum=%x\n", w_sum);
 	x_printf("read  sum=%x\n", r_sum);
