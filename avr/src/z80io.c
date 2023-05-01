@@ -85,8 +85,10 @@ void Z80_RESET(void) {
 	SET_BIT(PORTB, PORTB5);
 }
 
-void Z80_INT_REQ(void) {
-	
+void Z80_NMI(void) {
+	CLR_BIT(PORTD, PORTB6);
+	delay_us(1);
+	SET_BIT(PORTD, PORTB6);	
 }
 
 void Z80_CLRWAIT(void) {

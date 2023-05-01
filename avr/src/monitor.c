@@ -111,6 +111,7 @@ static int c_load_xmodem(token_list *t);
 static int c_save_xmodem(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
+static int c_z80_nmi(token_list *t);
 static int c_test(token_list *t);
 
 static const struct {
@@ -128,6 +129,7 @@ static const struct {
 	{"sx",    c_save_xmodem},
 	{"mem",   c_mem},
 	{"reset", c_z80_reset},
+	{"nmi",   c_z80_nmi},
 	{"test",  c_test},
 	{"h",     c_help},
 	{"",      NULL}
@@ -165,7 +167,8 @@ static const char help_str[] PROGMEM =	\
 	"lx <adr>        : load by XMODEM\n"\
 	"sx <adr> <len>  : save by XMODEM\n"\
 	"mem             : remaining Internal RAM size\n"\
-	"reset           : restart Z80\n"\
+	"reset           : reset Z80\n"\
+	"nmi             : NMI\n"\
 	"";
 
 #if 1	
@@ -484,8 +487,12 @@ static int c_mem(token_list *t) {
 }
 
 static int c_z80_reset(token_list *t) {
-	//(void)t;
 	Z80_RESET();
+	return NO_ERROR;
+}
+
+static int c_z80_nmi(token_list *t) {
+	Z80_NMI();
 	return NO_ERROR;
 }
 
