@@ -32,7 +32,7 @@ int x_puts(const char *s) {
 			st = x_putchar('\r');
 			if (st < 0) {
 				return st;
-			}		
+			}
 		}
 		st = x_putchar(*s);
 		if (st < 0) {
