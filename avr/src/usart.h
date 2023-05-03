@@ -6,11 +6,11 @@
  */ 
 
 
-#ifndef INCFILE1_H_
-#define INCFILE1_H_
+#ifndef USART_H_
+#define USART_H_
 #include <asf.h>
 
-#define FOSC 16000000
+#define FOSC F_CPU
 
 #ifndef EOF
 #define EOF (-1)
@@ -24,4 +24,4 @@ extern uint8_t USART0_Receive(void);
 extern uint8_t USART1_Receive(void);
 extern int USART0_Receive_tout(uint32_t us);
 
-#endif /* INCFILE1_H_ */
+#endif /* USART_H_ */

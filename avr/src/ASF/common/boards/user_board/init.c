@@ -15,8 +15,12 @@
 
 void board_init(void)
 {
-	sysclk_init();
-	delay_init(sysclk_get_cpu_hz());
+	// Disable interrupt
+	cli();							// Interrupt should have been disabled here
+
+	// Port D
+	SET_BYTE(PORTD, 0b10111111);	// /INT, /CLRWAIT, /BUSREQ = Low
+	SET_BYTE(DDRD,  0b01110000);
 
 	/* This function is meant to contain board-specific initialization code
 	 * for, e.g., the I/O pins. The initialization can rely on application-
@@ -33,9 +37,6 @@ void board_init(void)
 	SET_BYTE(DDRB,  0b01100000);
 	// Port C
 	SET_BYTE(DDRC,  0xff);			// Set as output to set XMEM shadow
-	// Port D
-	SET_BYTE(PORTD, 0b11111111);	// /INT, /CLRWAIT, /BUSREQ = High
-	SET_BYTE(DDRD,  0b01110000);
 	// Port E
 	SET_BYTE(DDRE,  0x00);			// Set as input	
 	// Port F
@@ -44,9 +45,6 @@ void board_init(void)
 	// Port G
 	SET_BYTE(PORTG, 0b00000011);	// /WR,/RD=High, ALE=Low
 	SET_BYTE(DDRG,  0b00011111);	// Set as output / XMEM(PG0,1,2)
-
-	// Disable interrupt
-	cli();
 
 	// Suspend Z80
 	Z80_BUSREQ(1);

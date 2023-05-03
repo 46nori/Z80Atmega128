@@ -18,23 +18,8 @@
 #define USER_BOARD_H
 
 #include <conf_board.h>
-
-// External oscillator settings.
-// Uncomment and set correct values if external oscillator is used.
-
-// External oscillator frequency
-#define BOARD_XOSC_HZ          16000000
-
-// External oscillator type.
-//!< External clock signal
-//#define BOARD_XOSC_TYPE        XOSC_TYPE_EXTERNAL
-//!< 32.768 kHz resonator on TOSC
-//#define BOARD_XOSC_TYPE        XOSC_TYPE_32KHZ
-//!< 0.4 to 16 MHz resonator on XTALS
-#define BOARD_XOSC_TYPE        XOSC_TYPE_XTAL
-
-// External oscillator startup time
-#define BOARD_XOSC_STARTUP_US  500000
+#define F_CPU 16000000UL
+#include <util/delay.h>
 
 // GPIO
 #define SET_BIT(port, bit)   ((port) |=  _BV(bit))

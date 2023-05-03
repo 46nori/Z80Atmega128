@@ -81,19 +81,19 @@ void Z80_RESET(void) {
 	ExtMem_detach();
 	// Send reset pulse
 	CLR_BIT(PORTB, PORTB5);
-	delay_ms(10);
+	_delay_ms(100);
 	SET_BIT(PORTB, PORTB5);
 }
 
 void Z80_NMI(void) {
 	CLR_BIT(PORTD, PORTB6);
-	delay_us(1);
+	_delay_us(1);
 	SET_BIT(PORTD, PORTB6);	
 }
 
 void Z80_CLRWAIT(void) {
 	CLR_BIT(PORTD, PORTD5);
-	delay_us(1);
+	_delay_us(1);
 	SET_BIT(PORTD, PORTD5);
 }
 

@@ -57,7 +57,7 @@ int USART0_Receive_tout(uint32_t us)
 		if (UCSR0A & _BV(RXC0)) {
 			return UDR0;
 		}
-		delay_us(1);
+		_delay_us(1);
 	}	
 	return EOF;
 }
