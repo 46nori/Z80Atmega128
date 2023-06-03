@@ -29,7 +29,6 @@
  * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
 #include <asf.h>
-#include "usart.h"
 #include "xconsoleio.h"
 #include "monitor.h"
 
@@ -38,8 +37,6 @@ int main (void)
 	/* Insert system clock initialization code here (sysclk_init()). */
 
 	board_init();
-	USART0_Init(9600);
-	USART1_Init(9600);
 
 	/* Insert application code here, after the board has been initialized. */
 	// Test

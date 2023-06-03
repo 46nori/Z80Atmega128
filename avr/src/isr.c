@@ -8,24 +8,26 @@
 #include "interrupt.h"
 #include "xconsoleio.h"
 
+#if 1
 //
 // Z80 IN instruction handler
 //
 ISR(INT0_vect) {
-	x_puts("INT 0");
+	SET_BYTE(PORTE, 0x7f);			// LED ON PE7
 }
 
 //
 // Z80 OUT instruction handler
 //
 ISR(INT1_vect) {
-	x_puts("INT 1");
+	SET_BYTE(PORTE, 0xbf);			// LED ON PE6
 }
 
 //
 // Z80 external INT handler
 //
 ISR(INT4_vect) {
-	x_puts("INT 4");
+	SET_BYTE(PORTE, 0xdf);			// LED ON PE5
 }
 
+#endif

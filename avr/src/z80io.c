@@ -81,7 +81,7 @@ void Z80_RESET(void) {
 	ExtMem_detach();
 	// Send reset pulse
 	CLR_BIT(PORTB, PORTB5);
-	_delay_ms(100);
+	_delay_ms(10);
 	SET_BIT(PORTB, PORTB5);
 }
 
@@ -98,9 +98,8 @@ void Z80_CLRWAIT(void) {
 }
 
 void Z80_HALT(void) {
-	ExtMem_attach();
+	SET_BIT(MCUCR, SRE);		// Enable XMEM
 	*(volatile uint8_t *)ExtMem_map() = 0x76;	// HALT instruction
 	ExtMem_unmap();
-	Z80_RESET();
-	ExtMem_detach();
+	CLR_BIT(MCUCR, SRE);		// Disable XMEM
 }
