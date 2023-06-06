@@ -112,6 +112,8 @@ static int c_save_xmodem(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
 static int c_z80_nmi(token_list *t);
+static int c_avr_sei(token_list *t);
+static int c_avr_cli(token_list *t);
 static int c_test(token_list *t);
 
 static const struct {
@@ -130,6 +132,8 @@ static const struct {
 	{"mem",   c_mem},
 	{"reset", c_z80_reset},
 	{"nmi",   c_z80_nmi},
+	{"sei",   c_avr_sei},
+	{"cli",   c_avr_cli},
 	{"test",  c_test},
 	{"h",     c_help},
 	{"",      NULL}
@@ -493,6 +497,16 @@ static int c_z80_reset(token_list *t) {
 
 static int c_z80_nmi(token_list *t) {
 	Z80_NMI();
+	return NO_ERROR;
+}
+
+static int c_avr_sei(token_list *t) {
+	sei();
+	return NO_ERROR;
+}
+
+static int c_avr_cli(token_list *t) {
+	cli();
 	return NO_ERROR;
 }
 

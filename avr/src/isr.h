@@ -9,8 +9,6 @@
 #ifndef ISR_H_
 #define ISR_H_
 
-
-
-
+void ISR_Init(void);
 
 #endif /* ISR_H_ */

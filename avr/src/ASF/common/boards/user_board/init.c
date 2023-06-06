@@ -13,6 +13,7 @@
 #include <conf_board.h>
 #include "z80io.h"
 #include "usart.h"
+#include "isr.h"
 
 void board_init(void)
 {
@@ -51,11 +52,15 @@ void board_init(void)
 
 	// The process up to here  must be completed within 250 ms from reset.
 	//=====================================================================
-	SET_BYTE(PORTE, 0x7f);			// DEBUG: LED ON PE7
+//	SET_BYTE(PORTE, 0x7f);			// DEBUG: LED ON PE7
 
 	Z80_CLRWAIT();					// Reset WAIT circuit
 	Z80_BUSREQ(0);					// /BUSREQ=H
 
 	USART0_Init(9600);				// UART for ATmega128 Monitor
 	USART1_Init(9600);				// UART for Z80 console
+
+	//Timer0_init();
+	ISR_Init();
+	sei();							// Enable interrupt.
 }
