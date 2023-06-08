@@ -52,7 +52,7 @@ void board_init(void)
 
 	// The process up to here  must be completed within 250 ms from reset.
 	//=====================================================================
-//	SET_BYTE(PORTE, 0x7f);			// DEBUG: LED ON PE7
+	SET_BYTE(PORTE, 0xff);			// DEBUG: All LED OFF PE7,6,5
 
 	Z80_CLRWAIT();					// Reset WAIT circuit
 	Z80_BUSREQ(0);					// /BUSREQ=H

@@ -85,18 +85,28 @@ void Z80_RESET(void) {
 	SET_BIT(PORTB, PORTB5);
 }
 
+//
+//  NMI
+//   /NMI required >80ns low period in Z80A
 void Z80_NMI(void) {
 	CLR_BIT(PORTD, PORTB6);
-	_delay_us(1);
+	asm("NOP");					// 62.5ns (=1CLK@16MHz)
+	asm("NOP");					// 62.5ns (=1CLK@16MHz)
 	SET_BIT(PORTD, PORTB6);	
 }
 
+//
+// Clear /WAIT
+//   /SET required >20ns low period in 74HC74
 void Z80_CLRWAIT(void) {
 	CLR_BIT(PORTD, PORTD5);
-	_delay_us(1);
+	asm("NOP");					// 62.5ns (=1CLK@16MHz)
 	SET_BIT(PORTD, PORTD5);
 }
 
+//
+// Set HALT instruction at 0x0000 to stay Z80 halt after reset
+//
 void Z80_HALT(void) {
 	SET_BIT(MCUCR, SRE);		// Enable XMEM
 	*(volatile uint8_t *)ExtMem_map() = 0x76;	// HALT instruction
