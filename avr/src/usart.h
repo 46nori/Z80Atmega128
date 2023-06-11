@@ -5,7 +5,6 @@
  *  Author: 46nori
  */ 
 
-
 #ifndef USART_H_
 #define USART_H_
 #include <asf.h>

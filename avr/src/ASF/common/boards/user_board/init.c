@@ -13,6 +13,7 @@
 #include <conf_board.h>
 #include "z80io.h"
 #include "usart.h"
+#include "timer.h"
 #include "isr.h"
 
 void board_init(void)
@@ -34,7 +35,7 @@ void board_init(void)
 	// Port C
 	SET_BYTE(DDRC,  0xff);			// Set as output to set XMEM shadow
 	// Port D
-	SET_BYTE(PORTD, 0b10111111);	// /BUSREQ=L, /CLRWAIT=H, /XINT=H
+	SET_BYTE(PORTD, 0b10011111);	// /BUSREQ=L, /CLRWAIT=L, /XINT=H
 	SET_BYTE(DDRD,  0b01110000);
 	// Port E
 	SET_BYTE(PORTE, 0xff);			// DEBUG: LED OFF
@@ -47,7 +48,7 @@ void board_init(void)
 	SET_BYTE(DDRG,  0b00011111);	// Set as output / XMEM(PG0,1,2)
 
 	// HALT Z80
-	ExtMem_init();
+	ExtMem_Init();
 	Z80_HALT();						// Set HALT instruction at 0x0000
 
 	// The process up to here  must be completed within 250 ms from reset.
@@ -60,7 +61,7 @@ void board_init(void)
 	USART0_Init(9600);				// UART for ATmega128 Monitor
 	USART1_Init(9600);				// UART for Z80 console
 
-	//Timer0_init();
-	ISR_Init();
-	sei();							// Enable interrupt.
+	Timer0_Init();					// Periodic interrupt (TIMER0_COMP)
+	ExtInt_Init();					// External interrupt (INT0,1,4)
+	sei();							// Enable interrupt
 }

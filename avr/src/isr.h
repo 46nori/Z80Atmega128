@@ -8,7 +8,8 @@
 
 #ifndef ISR_H_
 #define ISR_H_
+#include <asf.h>
 
-void ISR_Init(void);
+void ExtInt_Init(void);
 
 #endif /* ISR_H_ */

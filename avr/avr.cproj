@@ -241,6 +241,12 @@
     <Compile Include="src\isr.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\timer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\timer.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\xconsoleio.c">
       <SubType>compile</SubType>
     </Compile>

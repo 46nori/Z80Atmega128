@@ -12,29 +12,25 @@
 volatile uint8_t	port_adr;
 volatile uint8_t	port_dat = 0x12;
 
-void ISR_Init(void) {
+//
+// External Interrupt
+//
+void ExtInt_Init(void) {
 	// External interrupt
 	EICRA = 0b10101010;				// Falling edge sense
 	EICRB = 0b10101010;				// Falling edge sense
 	//EIFR  = _BV(INTF0)|_BV(INTF1)|_BV(INTF4);
 	EIMSK = _BV(INT0)|_BV(INT1)|_BV(INT4);	// Enable INT0,1 and 4
-	
-	// Timer0 interrupt
-	OCR0  = 10 * F_CPU/1024000UL;	// 1024/16MHz x Count (every 10msec)
-	TCCR0 = _BV(WGM01)|				// CTC mode
-			_BV(CS02)|_BV(CS01)|_BV(CS00);	// start with 1/1024 pre-scaler
-	TIFR |= _BV(OCF0);				// Interrupt every compare match
-	TIMSK|= _BV(OCIE0);				// Enable interrupt
 }
 
 //
 // Z80 IN instruction handler
 //
 ISR(INT0_vect) {
-//	port_adr = PORTF;
-//	PORTF = port_dat;
+	port_adr = PORTF;
+	PORTF = port_dat;
 
-	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
+//	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
 	Z80_CLRWAIT();
 }
 
@@ -42,10 +38,10 @@ ISR(INT0_vect) {
 // Z80 OUT instruction handler
 //
 ISR(INT1_vect) {
-//	port_adr = PORTF;
-//	port_dat = PORTA;
+	port_adr = PORTF;
+	port_dat = PORTA;
 
-	CLR_BIT(PORTE, PORTE6);			// DEBUG: YELLOW LED ON PE6
+//	CLR_BIT(PORTE, PORTE6);			// DEBUG: YELLOW LED ON PE6
 	Z80_CLRWAIT();
 }
 
@@ -53,7 +49,7 @@ ISR(INT1_vect) {
 // Z80 external INT handler
 //
 ISR(INT4_vect) {
-	CLR_BIT(PORTE, PORTE7);			// DEBUG: RED LED ON PE7
+//	CLR_BIT(PORTE, PORTE7);			// DEBUG: RED LED ON PE7
 	Z80_CLRWAIT();
 }
 

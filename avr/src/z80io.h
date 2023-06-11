@@ -7,8 +7,9 @@
 
 #ifndef Z80IO_H_
 #define Z80IO_H_
+#include <asf.h>
 
-extern void ExtMem_init(void);
+extern void ExtMem_Init(void);
 extern void ExtMem_attach(void);
 extern void ExtMem_detach(void);
 extern void *ExtMem_map(void);

@@ -4,14 +4,13 @@
  * Created: 2023/04/07 21:44:00
  *  Author: 46nori
  */ 
-#include <asf.h>
 #include "z80io.h"
 #include "xconsoleio.h"
 
 //
 // Initialize external memory settings
 //
-void ExtMem_init(void) {
+void ExtMem_Init(void) {
 	// WAIT setting for external SRAM
 #if 0
 	// SRAM access time < 100ns
