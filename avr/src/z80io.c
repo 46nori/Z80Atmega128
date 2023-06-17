@@ -76,6 +76,9 @@ void Z80_BUSREQ(int st) {
 	}
 }
 
+//
+// Invoke /RESET
+//
 void Z80_RESET(void) {
 	ExtMem_detach();
 	// Send reset pulse
@@ -85,13 +88,24 @@ void Z80_RESET(void) {
 }
 
 //
-//  NMI
+// Invoke /NMI
 //   /NMI required >80ns low period in Z80A
 void Z80_NMI(void) {
-	CLR_BIT(PORTD, PORTB6);
+	CLR_BIT(PORTD, PORTB6);		// t_w(/NML) > 80ns
 	asm("NOP");					// 62.5ns (=1CLK@16MHz)
 	asm("NOP");					// 62.5ns (=1CLK@16MHz)
 	SET_BIT(PORTD, PORTB6);	
+}
+
+//
+// Invoke /INT
+//
+uint8_t z80_intvect;
+void Z80_EXTINT(uint8_t vector) {
+	z80_intvect = vector;
+	CLR_BIT(PORTD, PORTD4);		// t_s(IT) > 80ns
+	_delay_us(1);
+	SET_BIT(PORTD, PORTD4);	
 }
 
 //
@@ -108,7 +122,34 @@ void Z80_CLRWAIT(void) {
 //
 void Z80_HALT(void) {
 	SET_BIT(MCUCR, SRE);		// Enable XMEM
+#if 1
 	*(volatile uint8_t *)ExtMem_map() = 0x76;	// HALT instruction
+#else
+	volatile uint8_t *a = ExtMem_map();
+#if 1
+	a[0] = 0x31;
+	a[1] = 0xff;
+	a[2] = 0xff;
+	a[3] = 0xDB;
+	a[4] = 0x34;
+	a[5] = 0xd3;
+	a[6] = 0x56;
+	a[7] = 0xc3;
+	a[8] = 0x03;
+	a[9] = 0x00;
+#else
+	a[0] = 0x31;
+	a[1] = 0xff;
+	a[2] = 0xff;
+	a[3] = 0x06;
+	a[4] = 0x64;
+	a[5] = 0xdb;
+	a[6] = 0x34;
+	a[7] = 0x10;
+	a[8] = 0xfc;
+	a[9] = 0x76;
+#endif
+#endif
 	ExtMem_unmap();
 	CLR_BIT(MCUCR, SRE);		// Disable XMEM
 }

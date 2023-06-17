@@ -18,7 +18,10 @@ extern void ExtMem_unmap(void);
 extern void Z80_BUSREQ(int st);
 extern void Z80_RESET(void);
 extern void Z80_NMI(void);
+extern void Z80_EXTINT(uint8_t vector);
 extern void Z80_CLRWAIT(void);
 extern void Z80_HALT(void);
+
+extern uint8_t z80_intvect;
 
 #endif /* Z80IO_H_ */

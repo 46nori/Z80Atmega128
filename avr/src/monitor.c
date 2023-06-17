@@ -112,6 +112,7 @@ static int c_save_xmodem(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
 static int c_z80_nmi(token_list *t);
+static int c_z80_int(token_list *t);
 static int c_avr_sei(token_list *t);
 static int c_avr_cli(token_list *t);
 static int c_test(token_list *t);
@@ -132,6 +133,7 @@ static const struct {
 	{"mem",   c_mem},
 	{"reset", c_z80_reset},
 	{"nmi",   c_z80_nmi},
+	{"int",   c_z80_int},
 	{"sei",   c_avr_sei},
 	{"cli",   c_avr_cli},
 	{"test",  c_test},
@@ -497,6 +499,22 @@ static int c_z80_reset(token_list *t) {
 
 static int c_z80_nmi(token_list *t) {
 	Z80_NMI();
+	return NO_ERROR;
+}
+
+static int c_z80_int(token_list *t) {
+	if (t->n < 2) {
+		return ERR_PARAM_MISS;     // missing parameters
+	}
+
+	unsigned int vector;
+	if (get_uint(t, T_PARAM1, &vector) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
+	}
+	if (vector >= 0x80) {
+		return ERR_PARAM_VAL;
+	}
+	Z80_EXTINT(vector);
 	return NO_ERROR;
 }
 
