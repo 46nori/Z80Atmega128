@@ -61,10 +61,14 @@ static int copy(unsigned char *dst, unsigned char *src, size_t size) {
  *    @retval -2  Timed out
  *    @retval -4  copy error
  */
-int r_xmodem(unsigned char *dst, size_t *size)
+int r_xmodem(unsigned char *dst, size_t *size, copyfunc cfunc)
 {
     int seq, sum, c, c2;
     unsigned char buf[128];
+
+	if (cfunc == NULL) {
+		cfunc = copy;
+	}
 
     size_t count = 0;
     int retry = 0;
@@ -88,7 +92,7 @@ int r_xmodem(unsigned char *dst, size_t *size)
                 }
 				// Check <sum>
                 if ((sum & 0xff) == x_getchar_tout(TOUT0)) {
-                    if ((c = copy(dst, buf, 128)) != 0) {
+                    if ((c = (*cfunc)(dst, buf, 128)) != 0) {
                         x_putchar(CAN);
                         return c;
                     }

@@ -13,6 +13,7 @@
 #include "xconsoleio.h"
 #include "xmodem.h"
 #include "z80io.h"
+#include "intelhex.h"
 
 #define DLIMITER	" "
 #define MAX_TOKENS	3
@@ -107,8 +108,9 @@ static int c_read_internal_ram(token_list *t);
 static int c_read_external_ram(token_list *t);
 static int c_write_internal_ram(token_list *t);
 static int c_write_external_ram(token_list *t);
-static int c_load_xmodem(token_list *t);
-static int c_save_xmodem(token_list *t);
+static int c_load_external_ram(token_list *t);
+static int c_load_internal_ram(token_list *t);
+static int c_save_internal_ram(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
 static int c_z80_nmi(token_list *t);
@@ -128,8 +130,9 @@ static const struct {
 	{"ri",    c_read_internal_ram},
 	{"w",     c_write_external_ram},
 	{"wi",    c_write_internal_ram},
-	{"lx",    c_load_xmodem},
-	{"sx",    c_save_xmodem},
+	{"load",  c_load_external_ram},
+	{"lx",    c_load_internal_ram},
+	{"sx",    c_save_internal_ram},
 	{"mem",   c_mem},
 	{"reset", c_z80_reset},
 	{"nmi",   c_z80_nmi},
@@ -163,6 +166,7 @@ static const char help_str[] PROGMEM =	\
 	"   [] : optional\n"\
 	"   $  : Prefix of hexadecimal\n"\
 	"h               : help\n"\
+	"== AVR Commands ==\n"\
 	"r  [adr]        : read  an External RAM byte\n"\
 	"ri [adr]        : read  an Internal RAM byte\n"\
 	"w  <adr> <dat>  : write an External RAM byte\n"\
@@ -170,9 +174,13 @@ static const char help_str[] PROGMEM =	\
 	"d  [adr] [len]  : dump External RAM\n"\
 	"di [adr] [len]  : dump Internal RAM\n"\
 	"df [adr] [len]  : dump FlashROM\n"\
-	"lx <adr>        : load by XMODEM\n"\
-	"sx <adr> <len>  : save by XMODEM\n"\
+	"lx <adr>        : load binary by XMODEM\n"\
+	"sx <adr> <len>  : save binary by XMODEM\n"\
 	"mem             : remaining Internal RAM size\n"\
+	"sei             : enable  interrupt\n"\
+	"cli             : disable interrupt\n"\
+	"== Z80 Commands ==\n"\
+	"load            : load INTEL HEX by XMODEM\n"\
 	"reset           : reset Z80\n"\
 	"nmi             : NMI\n"\
 	"";
@@ -385,6 +393,18 @@ static int c_write_internal_ram(token_list *t) {
 	return NO_ERROR;
 }
 
+static int write_a_byte_to_external_ram(unsigned int adr, unsigned int dat) {
+	ExtMem_attach();
+	if (adr < INTERNAL_RAM_SIZE) {
+		*(volatile uint8_t *)(adr + (unsigned int)ExtMem_map()) = dat;
+		ExtMem_unmap();
+		} else {
+		*(volatile uint8_t *)adr = dat;
+	}
+	ExtMem_detach();
+	return 0;
+}
+
 static int c_write_external_ram(token_list *t) {
 	if (t->n < 3) {
 		return ERR_PARAM_MISS;     // missing parameters
@@ -401,54 +421,83 @@ static int c_write_external_ram(token_list *t) {
 		return ERR_PARAM_VAL;
 	}
 
-	ExtMem_attach();
-	if (adr < INTERNAL_RAM_SIZE) {
-		*(volatile uint8_t *)(adr + (unsigned int)ExtMem_map()) = dat;
-		ExtMem_unmap();
-	} else {
-		*(volatile uint8_t *)adr = dat;
-	}
-	ExtMem_detach();
+	write_a_byte_to_external_ram(adr, dat);
+
 	return NO_ERROR;
 }
 
 //
-// Load binary by XMODEM
+// Load by XMODEM
 //
-static int c_load_xmodem(token_list *t) {
-    if (t->n < 2) {
-        return ERR_PARAM_MISS;	// missing parameters
-    }
-    unsigned int dest;
-    if (get_uint(t, T_PARAM1, &dest) != NO_ERROR) {
-        return ERR_PARAM_VAL;	// parameter error
-    }
-
+static int load_xmodem(unsigned int dest, copyfunc cfunc) {
 	size_t size;
 	x_puts("Start XMODEM within 90s...");
-	switch (r_xmodem((unsigned char *)dest, &size)) {
-		case -1:
+	switch (r_xmodem((unsigned char *)dest, &size, cfunc)) {
+	case -1:
 		x_puts("\nTransfer error.");
 		break;
-		case -2:
+	case -2:
 		x_puts("\nTimed out.");
 		break;
-#if 0
-		case -4:
+	case -4:
 		x_puts("\nCopy error.");
 		break;
-#endif
-		default:
+	default:
 		x_printf("\nReceived %d bytes.\n", size);
 		break;
 	}
 	return NO_ERROR;
 }
 
+// Download Intel HEX format into External SRAM
+static struct ix_ctx ctx;
+
+// convert IHX in a xmodem packet to binary and write to external memory  
+static int xmem_copy(unsigned char *dst, unsigned char *src, size_t size) {
+	while (size-- > 0) {
+		if (push_ix(&ctx, *src++) >= 2) {
+			return -4;	// copy error
+		}
+	}
+	return 0;
+}
+
+static int c_load_external_ram(token_list *t) {
+	init_ix(&ctx, write_a_byte_to_external_ram);
+	if (load_xmodem(0, xmem_copy) == -4) {
+		switch (ctx.status) {
+		case 2:
+			x_puts("IHX check-sum");
+			break;
+		case 3:
+			x_puts("IHX sequence");
+			break;
+		case 4:
+			x_puts("bug!");
+			break;
+		default:
+			break;
+		}
+	}
+	return NO_ERROR;
+}
+
+// Download binary into AVR Internal SRAM
+static int c_load_internal_ram(token_list *t) {
+    if (t->n < 2) {
+	    return ERR_PARAM_MISS;	// missing parameters
+    }
+    unsigned int dest;
+    if (get_uint(t, T_PARAM1, &dest) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+	return load_xmodem(dest, NULL);
+}
+
 //
-// Save binary by XMODEM
+// Save by XMODEM
 //
-static int c_save_xmodem(token_list *t) {
+static int c_save_internal_ram(token_list *t) {
     if (t->n < 3) {
         return ERR_PARAM_MISS;	// missing parameters
     }

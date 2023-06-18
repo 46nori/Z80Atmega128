@@ -235,6 +235,12 @@
     <Folder Include="src\config\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\intelhex.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\intelhex.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\isr.c">
       <SubType>compile</SubType>
     </Compile>

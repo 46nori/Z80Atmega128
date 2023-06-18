@@ -6,7 +6,7 @@
  */ 
 #include "isr.h"
 #include "interrupt.h"
-#include "xconsoleio.h"
+#include "usart.h"
 #include "z80io.h"
 
 //
@@ -48,6 +48,7 @@ ISR(INT1_vect) {
 	DDRA  = 0x00;					// Set PortA input
 	port_adr = PORTF;
 	port_dat = PINA;
+	USART1_Transmit(port_dat);		// DEBUG: TX1
 	Z80_CLRWAIT();
 }
 

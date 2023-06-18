@@ -10,7 +10,8 @@
 
 #include <stdio.h>
 
-extern int r_xmodem(unsigned char *dst, size_t *size);
+typedef int (*copyfunc)(unsigned char *dst, unsigned char *src, size_t size);
+extern int r_xmodem(unsigned char *dst, size_t *size, copyfunc cfunc);
 extern int s_xmodem(unsigned char *src, size_t blocks);
 
 #endif /* XMODEM_H_ */
