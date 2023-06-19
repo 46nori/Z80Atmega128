@@ -1,0 +1,15 @@
+{
+    "name": "docker-Z80ATmega128",
+    "dockerComposeFile": "docker-compose.yml",  
+    "service": "playground",
+    "workspaceFolder": "/z80",
+    "remoteUser": "vscode",
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "EditorConfig.EditorConfig",
+          "clcxce.asxxxx-cross-assembler-and-linker"
+        ]
+      }
+    }
+  }

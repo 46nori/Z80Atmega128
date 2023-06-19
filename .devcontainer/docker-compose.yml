@@ -1,0 +1,14 @@
+version: '3'
+services:
+  playground:                 # same as 'service:' in devcontainer.json
+    container_name: 'Z80ATmega128'
+    hostname: 'Z80ATmega128'
+
+    build: .                  # Dockerfile directory
+    restart: always
+    working_dir: '/z80'
+    tty: true
+    volumes:
+      - type: bind            # mount host dir to guest
+        source: ../z80        # host dir
+        target: /z80          # guest mount point
