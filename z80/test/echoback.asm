@@ -1,20 +1,32 @@
-VECTTBL .equ    0x0100
+VECT_TBL    .equ    0x0100
 
     .area TEST (ABS)
     .org 0x0000
+
     ld sp, 0x0000
-    ld a, 0x1
+    ld a, 0x01
     ld i, a
     im 2
     ei
-    jp START
+    halt
 
-;   NMI handler
+; echo back
+ECHO:
+    in a, (0x00)
+    out (0x01), a
+    ret
+
+; NMI handler
     .org 0x0066
+
+    call ECHO
     retn
 
-;   Interrupt vector table
-    .org 0x0100
+;
+; Interrupt vector table
+;
+    .org VECT_TBL
+
     .dw ISR_00, ISR_01, ISR_02, ISR_03, ISR_04, ISR_05, ISR_06, ISR_07
     .dw ISR_08, ISR_09, ISR_0A, ISR_0B, ISR_0C, ISR_0D, ISR_0E, ISR_0F
     .dw ISR_10, ISR_11, ISR_12, ISR_13, ISR_14, ISR_15, ISR_16, ISR_17
@@ -47,10 +59,12 @@ VECTTBL .equ    0x0100
     .dw ISR_E8, ISR_E9, ISR_EA, ISR_EB, ISR_EC, ISR_ED, ISR_EE, ISR_EF
     .dw ISR_F0, ISR_F1, ISR_F2, ISR_F3, ISR_F4, ISR_F5, ISR_F6, ISR_F7
     .dw ISR_F8, ISR_F9, ISR_FA, ISR_FB, ISR_FC, ISR_FD, ISR_FE, ISR_FF
-
-
-;   Interrupt handler
+;
+; Interrupt handler
+;
 ISR_00:
+    call ECHO
+    reti
 ISR_01:
 ISR_02:
 ISR_03:
@@ -307,8 +321,3 @@ ISR_FD:
 ISR_FE:
 ISR_FF:
     reti
-
-;   Main program
-START:
-    halt
-
