@@ -23,7 +23,8 @@
   - リセット回路
   - クロック回路
   - ISP接続コネクタ
-- ICソケットなどの大物部品も仮配置してみた。固定しておかないと忘れそうなので、落ちない程度にハンダで仮留め。![proto](Fig/20230226.jpeg)
+- ICソケットなどの大物部品も仮配置してみた。固定しておかないと忘れそうなので、落ちない程度にハンダで仮留め。  
+  ![proto](Fig/20230226.jpeg)
 - [実装手順](Progress.md)を書いてみた。
 
 ## 2023/2/27
@@ -766,3 +767,56 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
    (初回はコンテナ構築が行われ、以後はそのコンテナが再利用される。)
 3. 起動に成功すると、/z80以下がホストにマウントされる。
 4. VSCodeでbashを開くと、そこでアセンブルできるようになる。
+
+## 2023/6/20
+- GitHubに間違ったアカウントで何度かコミットしてしまったことに気づいたので、禁じ手ではあるがコミット履歴を強制的に書き換えた。
+  - 再発防止策？
+    - 間違ったアカウントをブロックしてみた。これでコミットが抑止できるのかは試していない。
+- Z80の開発環境まわりのリファクタリング
+  - コンテナのベースイメージを`debian:11-slim`に変更した。
+  - クロスアセンブラの生成方法や、test用のZ80コードのMakefileを修正。
+
+#### コミット履歴の強制変更手順
+1. 最終的に強制pushされるので、 ローカルに変更が残っていない状態にしておく。
+2. 以下をコマンドラインから入力。  
+    ```
+    git filter-branch --env-filter '
+    if [ $GIT_AUTHOR_NAME = "変更したいアカウント名" ]
+    then
+        export GIT_AUTHOR_NAME="46nori"
+        export GIT_AUTHOR_EMAIL="46nori@users.noreply.github.com"
+        export GIT_COMMITTER_NAME="46nori"
+        export GIT_COMMITTER_EMAIL="46nori@users.noreply.github.com"
+    fi'
+    ```
+3. 以下のようなメッセージが出る。  
+    ```
+    WARNING: git-filter-branch has a glut of gotchas generating mangled history
+      rewrites.  Hit Ctrl-C before proceeding to abort, then use an
+      alternative filtering tool such as 'git filter-repo'
+      (https://github.com/newren/git-filter-repo/) instead.  See the
+      filter-branch manual page for more details; to squelch this warning,
+      set FILTER_BRANCH_SQUELCH_WARNING=1.
+    Proceeding with filter-branch...
+
+    Rewrite 8f56cebc1c0230d5fbfc522531d0d64bbfbcd58a (1/73) (0 seconds passed, remaining 0 predicted)
+    Rewrite d482d49add8ea6341497e7d7f006c71f0f99090b (2/73) (0 seconds passed, remaining 0 predicted)
+    ...
+    ...
+    Rewrite 0be7c1b74f456dfd4dca7f6c257fb7cb10d0d623 (59/73) (2 seconds passed, remaining 0 predicted)    
+    Ref 'refs/heads/main' was rewritten
+    ```
+4. コミットログを確認。変更したいアカウント名が消えていればOK。  
+    ```
+    git log --pretty=full
+    ```
+5. リモートに反映させる。GitHub DesktopならRepositoryメニューに`Force Push`が現れるのでこれを選択。(普段は`Push`)
+   ```
+   git push -f
+   ```
+6. ブランチ名を一旦変更して元に戻す。
+   - GitHubでブランチの選択メニューを出し、View all branchesをクリック。鉛筆ボタンを押すとブランチ名が変更できる。`main` → `main2` → `main`のように変更する。
+
+- 参考記事
+  - [過去のコミットの Author と Committer 情報を書き換える](https://qiita.com/mokuo/items/f48ed7a3628fbb67692f)
+  - [GitHubに意図しないアカウントでコミットしてしまった時の対処法](https://blog.yotiosoft.com/2021/12/07/GitHub%E3%81%AB%E6%84%8F%E5%9B%B3%E3%81%97%E3%81%AA%E3%81%84%E3%82%A2%E3%82%AB%E3%82%A6%E3%83%B3%E3%83%88%E3%81%A7%E3%82%B3%E3%83%9F%E3%83%83%E3%83%88%E3%81%97%E3%81%A6%E3%81%97%E3%81%BE%E3%81%A3%E3%81%9F%E6%99%82%E3%81%AE%E5%AF%BE%E5%87%A6%E6%B3%95.html)

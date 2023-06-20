@@ -1,4 +1,4 @@
-FROM debian
+FROM debian:11-slim
 
 ARG USERNAME=vscode
 ARG USER_UID=1000

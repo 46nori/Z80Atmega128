@@ -1,4 +1,5 @@
-toolchain/
 *.lst
 *.rel
 *.sym
+*.ihx
+*.zip
