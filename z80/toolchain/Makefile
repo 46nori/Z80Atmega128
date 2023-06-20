@@ -1,9 +1,13 @@
-TOOLDIR	:= .
-ASXZIP	:= asxs5p40.zip
+# ASxxxx Cross Assemblers
 ASXURL	:= https://shop-pdp.net/_ftp/asxxxx/asxs5p40.zip
+ASXZIP	:= asxs5p40.zip
+ASXTXT	:= asxs5p40.txt
 ASXDIR	:= ./asxv5pxx
 AS		:= asz80
 LD		:= aslink
+
+# Destination directory
+TOOLDIR	:= .
 
 RM		:= rm
 CP		:= cp
@@ -23,9 +27,9 @@ $(TOOLDIR)/$(LD):	$(ASXDIR)
 
 $(ASXDIR):
 	wget -O $(ASXZIP) $(ASXURL)
-	unzip $(ASXZIP)
+	unzip -L -a $(ASXZIP)
 	$(RM) $(ASXZIP)
 
 clean:
-	$(RM) $(TOOLDIR)/$(AS) $(TOOLDIR)/$(LD)
-	$(RM) -fr $(ASXDIR)
+	$(RM) -f $(TOOLDIR)/$(AS) $(TOOLDIR)/$(LD)
+	$(RM) -fr $(ASXZIP) $(ASXTXT) $(ASXDIR)
