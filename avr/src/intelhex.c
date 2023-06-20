@@ -60,6 +60,7 @@ int push_ix(struct ix_ctx *p, char c) {
 			p->state = NUMBER;
 			init_rbuf(&p->rbuf);
 		} else {
+			p->state = DONE;
 			ret = 3;		// sequence error
 		}
 		break;
@@ -104,7 +105,8 @@ int push_ix(struct ix_ctx *p, char c) {
 		if (push_rbuf(&p->rbuf, c) == 2) {
 			sscanf(p->rbuf.buf, "%x", &tmp);
 			if (tmp != (p->sum & 0xff)) {
-				ret = 2;		// check sum error				
+				p->state = DONE;
+				ret = 2;		// check sum error
 			} else {
 				init_ix(p, *p->func);
 			}
