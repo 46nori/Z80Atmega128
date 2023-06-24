@@ -7,8 +7,7 @@
     "customizations": {
       "vscode": {
         "extensions": [
-          "EditorConfig.EditorConfig",
-          "clcxce.asxxxx-cross-assembler-and-linker"
+          "EditorConfig.EditorConfig"
         ]
       }
     }

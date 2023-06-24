@@ -1,5 +1,6 @@
-aslink
-asz80
 *.zip
+*.bz2
+*.tgz
 asxs5p40.txt
 asxv5pxx/
+sdcc*/

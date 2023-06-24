@@ -1,6 +1,6 @@
-TOOLDIR	:= ../toolchain
-AS		:= $(TOOLDIR)/asz80
-LD		:= $(TOOLDIR)/aslink
+AS		:= asz80
+LD		:= aslink
+CC		:= sdcc
 
 RM		:= rm
 CP		:= cp
@@ -14,6 +14,3 @@ echoback.ihx:
 
 %.rel:%.asm
 	$(AS) -o $(ASFLAGS) $<
-
-toolchain:
-	$(MAKE) -C $(TOOLDIR)

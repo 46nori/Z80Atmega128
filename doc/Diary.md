@@ -834,3 +834,13 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
   - AVRのコマンドプロンプトが出ない。
   - /BUSACK=Highで点灯する点灯するLEDが消えたまま。
   - AVRISP mkIIの電源OFFのままでISPコネクタを接続してると発症するようだ。ISPコネクタを抜くと直る。ISPの/RSTラインの問題か？プルアップしているのでLowにはならないはずなんだけどなぁ。。
+
+## 2023/6/24
+- Z80側の開発環境を検討した。
+  - [ASxxxx](https://shop-pdp.net/ashtml/asxxxx.php) : アセンブラ
+  - [sdcc](https://sdcc.sourceforge.net/) : Cコンパイラ
+  - [z88dk](https://z88dk.org/site/) : Cコンパイラ + アセンブラ
+  - 参考情報
+    - [sdccとz88dkの比較](https://mixi.jp/view_diary.pl?id=1957001872&owner_id=358658)
+    - [sdccによるクロスビルド](https://ashitani.jp/g850/docs/05_sdcc.html)
+- 正直まだどれを使うか決めきれていない。が、とりあえず全部Dev Containerで使えるようにした。z88dkのビルドは[ここ](https://github.com/z88dk/z88dk/wiki/Docker-Usage)の情報と[Dockerfile](https://github.com/z88dk/z88dk/blob/master/z88dk.Dockerfile)を参考にした。
