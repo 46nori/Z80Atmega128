@@ -844,3 +844,15 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
     - [sdccとz88dkの比較](https://mixi.jp/view_diary.pl?id=1957001872&owner_id=358658)
     - [sdccによるクロスビルド](https://ashitani.jp/g850/docs/05_sdcc.html)
 - 正直まだどれを使うか決めきれていない。が、とりあえず全部Dev Containerで使えるようにした。z88dkのビルドは[ここ](https://github.com/z88dk/z88dk/wiki/Docker-Usage)の情報と[Dockerfile](https://github.com/z88dk/z88dk/blob/master/z88dk.Dockerfile)を参考にした。
+
+## 2023/6/25
+- z88dk-z80asmは同一ソース内に複数のORGを許してくれない。ORGを分けたい時にはファイルを分けてアセンブル、リンクする必要がある。割り込み関連の確認時はベクタテーブルやエントリポイントを分けたいので、当面はasz80を使用した方が楽そうだ。
+- 簡易モニタでihxファイルをロードすると、XMODEMで2ブロック以上転送できない問題を修正。INTEL HEXパーサーのチェックサム計算のバグだった。コマンド名をxloadに変更。
+- XMODEMでバイナリを外部SRAMにダウンロードするbloadコマンドを追加した。
+- UART1を使ったAVR → Z80 → AVRのコンソールエコーバックが動いた。
+  - AVRはUART RX1の割り込みハンドラで1文字受信。グローバル変数(port_dat)に記憶後、Mode2のベクタ0でZ80に割り込み発行。
+  - Z80はベクタ0の割り込みハンドラでポート0にIN命令発行。
+    - AVRはINT0割り込みハンドラでport_datの値を返す。
+  - Z80はその値をIN命令の結果として受信。
+  - Z80はポート1にOUT命令でそれを出力。
+  - AVRはINT1割り込みでその値をTX1に出力。
