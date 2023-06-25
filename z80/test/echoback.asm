@@ -8,7 +8,8 @@ VECT_TBL    .equ    0x0100
     ld a, 0x01
     ld i, a
     ei
-    halt
+LOOP:
+    jp LOOP
 
 ; echo back
 ECHO:
