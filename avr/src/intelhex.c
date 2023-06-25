@@ -112,12 +112,12 @@ int push_ix(struct ix_ctx *p, char c) {
 			sscanf(p->rbuf.buf, "%x", &tmp);
 			p->sum += tmp;
 			if ((p->sum & 0xff) == 0) {
+				p->sum = 0;
 				p->state = HEAD;
 			} else {
 				p->state = DONE;
 				ret = 2;		// check sum error
 			}
-			p->sum = 0;
 			init_rbuf(&p->rbuf);
 		}
 		break;

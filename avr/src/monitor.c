@@ -32,9 +32,10 @@ static int exec_command(token_list *t);
 #define ERR_COMMAND		(-1)
 #define ERR_PARAM_VAL	(-2)
 #define ERR_PARAM_MISS	(-3)
-/**
+
+/*********************************************************
  * Monitor main
- */
+ *********************************************************/
 void monitor(void) {
 	token_list tokens;
 	char cmd_line[32];
@@ -63,7 +64,7 @@ void monitor(void) {
 	}
 }
 
-/* Tokenizer */
+// Tokenizer
 static token_list *tokenizer(char *str, const char *delim, token_list *t) {
 	char *token;
 	t->n = 0;
@@ -75,7 +76,7 @@ static token_list *tokenizer(char *str, const char *delim, token_list *t) {
 	return t;
 }
 
-/* Get token value as an unsigned int */
+// Get token value as an unsigned int
 static int get_uint(token_list *t, unsigned int idx, unsigned int *val) {
 	if (idx >= t->n) {
 		return ERR_PARAM_MISS;
@@ -108,9 +109,10 @@ static int c_read_internal_ram(token_list *t);
 static int c_read_external_ram(token_list *t);
 static int c_write_internal_ram(token_list *t);
 static int c_write_external_ram(token_list *t);
-static int c_load_external_ram(token_list *t);
-static int c_load_internal_ram(token_list *t);
-static int c_save_internal_ram(token_list *t);
+static int c_load_ihx_external_ram(token_list *t);
+static int c_load_bin_external_ram(token_list *t);
+static int c_load_bin_internal_ram(token_list *t);
+static int c_save_bin_internal_ram(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
 static int c_z80_nmi(token_list *t);
@@ -130,9 +132,10 @@ static const struct {
 	{"ri",    c_read_internal_ram},
 	{"w",     c_write_external_ram},
 	{"wi",    c_write_internal_ram},
-	{"load",  c_load_external_ram},
-	{"lx",    c_load_internal_ram},
-	{"sx",    c_save_internal_ram},
+	{"xload", c_load_ihx_external_ram},
+	{"bload", c_load_bin_external_ram},
+	{"lx",    c_load_bin_internal_ram},
+	{"sx",    c_save_bin_internal_ram},
 	{"mem",   c_mem},
 	{"reset", c_z80_reset},
 	{"nmi",   c_z80_nmi},
@@ -144,7 +147,7 @@ static const struct {
 	{"",      NULL}
 };
 
-/* Lookup command */
+// Lookup command
 static int exec_command(token_list *t) {
 	if (t->n == 0) {
 		return NO_ERROR;	// do nothing
@@ -157,9 +160,9 @@ static int exec_command(token_list *t) {
 	return ERR_COMMAND;		// command not found
 }
 
-//
-// Help
-//
+/*********************************************************
+ * Help
+ *********************************************************/
 static int c_help(token_list *t) {
 static const char help_str[] PROGMEM =	\
 	"   <> : mandatory\n"\
@@ -180,9 +183,11 @@ static const char help_str[] PROGMEM =	\
 	"sei             : enable  interrupt\n"\
 	"cli             : disable interrupt\n"\
 	"== Z80 Commands ==\n"\
-	"load            : load INTEL HEX by XMODEM\n"\
-	"reset           : reset Z80\n"\
+	"xload           : load INTEL HEX by XMODEM\n"\
+	"bload [adr]     : load binary by XMODEM\n"\
+	"reset           : reset\n"\
 	"nmi             : NMI\n"\
+	"int <dat>       : interrupt\n"\
 	"";
 
 #if 1	
@@ -196,6 +201,96 @@ static const char help_str[] PROGMEM =	\
 }
 
 //
+// Memory map
+//
+//             |<---len--->|           |<---len--->|
+// |--(1)------+-(2)-|-(3)-+--(4)------+-(5)-|
+// 0                0x1100                 0x10000
+// |<-----shadow---->|<--------real--------->|
+// -(6)--|
+//
+#define INTERNAL_RAM_SIZE	0x1100
+#define EXTERNAL_RAM_SIZE	0x10000
+
+// Block read from external SRAM
+//   dst : external SRAM
+//   src : internal SRAM
+//   len : transfer length
+static const unsigned char *read_extram(const unsigned char *dst,
+                                        const unsigned char *src, size_t len) {
+	size_t rest;
+	unsigned int offset;
+	ExtMem_attach();
+	if (src < (unsigned char *)INTERNAL_RAM_SIZE) {
+		offset = (unsigned int)ExtMem_map();
+		if (src <= (unsigned char *)INTERNAL_RAM_SIZE - len) {
+			// src is in (1) : shadow
+			memcpy((void *)dst, (void *)(offset + src), len);
+			ExtMem_unmap();
+			} else {
+			// src is in (2) : shadow
+			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)src;
+			memcpy((void *)dst, (void *)(offset + src), rest);
+			ExtMem_unmap();
+			// src is in (3) : real
+			memcpy((void *)(dst+rest), (void *)(src + rest), len - rest);
+		}
+		} else if (src <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
+		// src is in (4) : real
+		memcpy((void *)dst, (void *)src, len);
+		} else {
+		// src is in (5) : real
+		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)src;
+		memcpy((void *)dst, src, rest);
+		// src is in (6) : shadow
+		offset = (unsigned int)ExtMem_map();
+		memcpy((void *)(dst + rest), (void *)offset, len - rest);
+		ExtMem_unmap();
+	}
+	ExtMem_detach();
+	return dst;
+}
+
+// Block write to external SRAM
+//   dst : internal SRAM
+//   src : external SRAM
+//   len : transfer length
+static const unsigned char *write_extram(const unsigned char *dst,
+const unsigned char *src, size_t len) {
+	size_t rest;
+	unsigned int offset;
+	ExtMem_attach();
+	if (dst < (unsigned char *)INTERNAL_RAM_SIZE) {
+		offset = (unsigned int)ExtMem_map();
+		if (src <= (unsigned char *)INTERNAL_RAM_SIZE - len) {
+			// dst is in (1) : shadow
+			memcpy((void *)(offset + dst), (void *)src, len);
+			ExtMem_unmap();
+			} else {
+			// dst is in (2) : shadow
+			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)dst;
+			memcpy((void *)(offset + dst), (void *)src, rest);
+			ExtMem_unmap();
+			// dst is in (3) : real
+			memcpy((void *)(src+rest), (void *)(dst + rest), len - rest);
+		}
+		} else if (dst <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
+		// dst is in (4) : real
+		memcpy((void *)src, (void *)dst, len);
+		} else {
+		// dst is in (5) : real
+		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)dst;
+		memcpy((void *)src, dst, rest);
+		// dst is in (6) : shadow
+		offset = (unsigned int)ExtMem_map();
+		memcpy((void *)(src + rest), (void *)offset, len - rest);
+		ExtMem_unmap();
+	}
+	ExtMem_detach();
+	return dst;
+}
+
+//
 // Hex dump
 //
 enum memory_type {
@@ -203,8 +298,6 @@ enum memory_type {
 	IntRAM,		// Internal RAM
 	ExtRAM		// External RAM
 };
-static const unsigned char *memcpy_extram(const unsigned char *dst,
-const unsigned char *src, size_t len);
 
 #define D_COLUMN 16
 static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
@@ -240,7 +333,7 @@ static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 			memcpy(col, *adr, D_COLUMN);
 			break;
 		case ExtRAM:
-			memcpy_extram(col, *adr, D_COLUMN);
+			read_extram(col, *adr, D_COLUMN);
 			break;
 		default:
 			break;
@@ -268,70 +361,33 @@ static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 	return NO_ERROR;
 }
 
-//
-// Memory map
-//
-//             |<---len--->|           |<---len--->|
-// |--(1)------+-(2)-|-(3)-+--(4)------+-(5)-|
-// 0                0x1100                 0x10000
-// |<-----shadow---->|<--------real--------->|
-// -(6)--|
-//
-#define INTERNAL_RAM_SIZE	0x1100
-#define EXTERNAL_RAM_SIZE	0x10000
-static const unsigned char *memcpy_extram(const unsigned char *dst,
-                                          const unsigned char *src, size_t len) {
-	size_t rest;
-	unsigned int offset;
-	ExtMem_attach();
-	if (src < (unsigned char *)INTERNAL_RAM_SIZE) {
-		offset = (unsigned int)ExtMem_map();
-		if (src <= (unsigned char *)INTERNAL_RAM_SIZE - len) {
-			// src is in (1) : shadow
-			memcpy((void *)dst, (void *)(offset + src), len);
-			ExtMem_unmap();
-		} else {
-			// src is in (2) : shadow
-			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)src;
-			memcpy((void *)dst, (void *)(offset + src), rest);
-			ExtMem_unmap();
-			// src is in (3) : real
-			memcpy((void *)(dst+rest), (void *)(src + rest), len - rest);
-		}
-	} else if (src <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
-		// src is in (4) : real
-		memcpy((void *)dst, (void *)src, len);
-	} else {
-		// src is in (5) : real
-		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)src;
-		memcpy((void *)dst, src, rest);
-		// src is in (6) : shadow
-		offset = (unsigned int)ExtMem_map();
-		memcpy((void *)(dst + rest), (void *)offset, len - rest);
-		ExtMem_unmap();
-	}
-	ExtMem_detach();
-	return dst;
-}
-
+/*********************************************************
+ * Dump internal SRAM
+ *********************************************************/
 static int c_dump_internal_ram(token_list *t) {
 	static uint8_t *adr = 0;
 	return dump(t, &adr, IntRAM);
 }
 
+/*********************************************************
+ * Dump external SRAM
+ *********************************************************/
 static int c_dump_external_ram(token_list *t) {
 	static uint8_t *adr = 0;
 	return dump(t, &adr, ExtRAM);
 }
 
+/*********************************************************
+ * Dump flash ROM
+ *********************************************************/
 static int c_dump_flashrom(token_list *t) {
 	static uint8_t *adr = 0;
 	return dump(t, &adr, IntROM);
 }
 
-//
-// Read a byte
-//
+/*********************************************************
+ * Read a byte from internal SRAM
+ *********************************************************/
 static int c_read_internal_ram(token_list *t) {
 	static uint8_t *adr = 0;
 	if (t->n > 1) {
@@ -346,6 +402,9 @@ static int c_read_internal_ram(token_list *t) {
 	return NO_ERROR;
 }
 
+/*********************************************************
+ * Read a byte from external SRAM
+ *********************************************************/
 static int c_read_external_ram(token_list *t) {
     static uint8_t *adr = 0;
     if (t->n > 1) {
@@ -371,9 +430,9 @@ static int c_read_external_ram(token_list *t) {
 	return NO_ERROR;
 }
 
-//
-// Write a byte
-//
+/*********************************************************
+ * Write a byte into internal SRAM
+ *********************************************************/
 static int c_write_internal_ram(token_list *t) {
 	if (t->n < 3) {
 		return ERR_PARAM_MISS;     // missing parameters
@@ -393,6 +452,9 @@ static int c_write_internal_ram(token_list *t) {
 	return NO_ERROR;
 }
 
+/*********************************************************
+ * Write a byte into external SRAM
+ *********************************************************/
 static int write_a_byte_to_external_ram(unsigned int adr, unsigned int dat) {
 	ExtMem_attach();
 	if (adr < INTERNAL_RAM_SIZE) {
@@ -449,11 +511,12 @@ static int load_xmodem(unsigned int dest, copyfunc cfunc) {
 	return NO_ERROR;
 }
 
-// Download Intel HEX format into External SRAM
+/*********************************************************
+ * Download INTEL HEX format into External SRAM
+ *********************************************************/
 static struct ix_ctx ctx;
-
-// convert IHX in a xmodem packet to binary and write to external memory  
-static int xmem_copy(unsigned char *dst, unsigned char *src, size_t size) {
+// convert IHX in a XMODEM packet to binary and write to external memory  
+static int copy_ihx_xmem(unsigned char *dst, unsigned char *src, size_t size) {
 	while (size-- > 0) {
 		if (push_ix(&ctx, *src++) >= 2) {
 			return -4;	// copy error
@@ -462,28 +525,50 @@ static int xmem_copy(unsigned char *dst, unsigned char *src, size_t size) {
 	return 0;
 }
 
-static int c_load_external_ram(token_list *t) {
+static int c_load_ihx_external_ram(token_list *t) {
 	init_ix(&ctx, write_a_byte_to_external_ram);
-	if (load_xmodem(0, xmem_copy) == -4) {
-		switch (ctx.status) {
-		case 2:
-			x_puts("IHX check-sum");
-			break;
-		case 3:
-			x_puts("IHX sequence");
-			break;
-		case 4:
-			x_puts("bug!");
-			break;
-		default:
-			break;
-		}
+	load_xmodem(0, copy_ihx_xmem);
+	switch (ctx.status) {
+	case 2:
+		x_puts("IHX check sum error.");
+		break;
+	case 3:
+		x_puts("IHX sequence error.");
+		break;
+	case 4:
+		x_puts("bug!");
+		break;
+	default:
+		break;
 	}
 	return NO_ERROR;
 }
 
-// Download binary into AVR Internal SRAM
-static int c_load_internal_ram(token_list *t) {
+/*********************************************************
+ * Download binary into external SRAM
+ *********************************************************/
+// copy XMODEM packet to external memory
+static int copy_bin_xmem(unsigned char *dst, unsigned char *src, size_t size) {
+	write_extram(dst, src, size);
+	return 0;
+}
+
+static int c_load_bin_external_ram(token_list *t) {
+    if (t->n < 2) {
+	    return ERR_PARAM_MISS;	// missing parameters
+    }
+    unsigned int dest;
+    if (get_uint(t, T_PARAM1, &dest) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+	load_xmodem(dest, copy_bin_xmem);
+	return NO_ERROR;
+}
+
+/*********************************************************
+ * Download binary into internal SRAM
+ *********************************************************/
+static int c_load_bin_internal_ram(token_list *t) {
     if (t->n < 2) {
 	    return ERR_PARAM_MISS;	// missing parameters
     }
@@ -494,10 +579,10 @@ static int c_load_internal_ram(token_list *t) {
 	return load_xmodem(dest, NULL);
 }
 
-//
-// Save by XMODEM
-//
-static int c_save_internal_ram(token_list *t) {
+/*********************************************************
+ * Save by XMODEM
+ *********************************************************/
+static int c_save_bin_internal_ram(token_list *t) {
     if (t->n < 3) {
         return ERR_PARAM_MISS;	// missing parameters
     }
@@ -530,9 +615,9 @@ static int c_save_internal_ram(token_list *t) {
 	return NO_ERROR;
 }
 
-//
-// Calc remaining size of internal RAM
-//
+/*********************************************************
+ * Calculate remaining size of internal RAM
+ *********************************************************/
 static int c_mem(token_list *t) {
 	extern int __heap_start, *__brkval;
 	int v;
@@ -541,45 +626,57 @@ static int c_mem(token_list *t) {
 	return NO_ERROR;
 }
 
+/*********************************************************
+ * Invoke reset of Z80
+ *********************************************************/
 static int c_z80_reset(token_list *t) {
 	Z80_RESET();
 	return NO_ERROR;
 }
 
+/*********************************************************
+ * Invoke NMI of Z80
+ *********************************************************/
 static int c_z80_nmi(token_list *t) {
 	Z80_NMI();
 	return NO_ERROR;
 }
 
+/*********************************************************
+ * Invoke INT of Z80
+ *********************************************************/
 static int c_z80_int(token_list *t) {
 	if (t->n < 2) {
 		return ERR_PARAM_MISS;     // missing parameters
 	}
 
-	unsigned int vector;
-	if (get_uint(t, T_PARAM1, &vector) != NO_ERROR) {
+	unsigned int dat;
+	if (get_uint(t, T_PARAM1, &dat) != NO_ERROR) {
 		return ERR_PARAM_VAL;     // parameter error
 	}
-	if (vector >= 0x80) {
-		return ERR_PARAM_VAL;
-	}
-	Z80_EXTINT(vector);
+	Z80_EXTINT(dat);
 	return NO_ERROR;
 }
 
+/*********************************************************
+ * Enable AVR interrupt
+ *********************************************************/
 static int c_avr_sei(token_list *t) {
 	sei();
 	return NO_ERROR;
 }
 
+/*********************************************************
+ * Disable AVR interrupt
+ *********************************************************/
 static int c_avr_cli(token_list *t) {
 	cli();
 	return NO_ERROR;
 }
 
-//
-// Test external memory
-//
+/*********************************************************
+ * Test external memory
+ *********************************************************/
 static int c_test(token_list *t) {
 	ExtMem_attach();
 	uint8_t *adr = ExtMem_map();

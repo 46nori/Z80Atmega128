@@ -122,34 +122,7 @@ void Z80_CLRWAIT(void) {
 //
 void Z80_HALT(void) {
 	SET_BIT(MCUCR, SRE);		// Enable XMEM
-#if 1
 	*(volatile uint8_t *)ExtMem_map() = 0x76;	// HALT instruction
-#else
-	volatile uint8_t *a = ExtMem_map();
-#if 1
-	a[0] = 0x31;
-	a[1] = 0xff;
-	a[2] = 0xff;
-	a[3] = 0xDB;
-	a[4] = 0x34;
-	a[5] = 0xd3;
-	a[6] = 0x56;
-	a[7] = 0xc3;
-	a[8] = 0x03;
-	a[9] = 0x00;
-#else
-	a[0] = 0x31;
-	a[1] = 0xff;
-	a[2] = 0xff;
-	a[3] = 0x06;
-	a[4] = 0x64;
-	a[5] = 0xdb;
-	a[6] = 0x34;
-	a[7] = 0x10;
-	a[8] = 0xfc;
-	a[9] = 0x76;
-#endif
-#endif
 	ExtMem_unmap();
 	CLR_BIT(MCUCR, SRE);		// Disable XMEM
 }

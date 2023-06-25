@@ -13,4 +13,4 @@ echoback.ihx:
 	$(LD) -i $<
 
 %.rel:%.asm
-	$(AS) -o $(ASFLAGS) $<
+	$(AS) -l -o $(ASFLAGS) $<

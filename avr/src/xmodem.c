@@ -54,8 +54,9 @@ static int copy(unsigned char *dst, unsigned char *src, size_t size) {
 /**
  *    @brief XMODEM(128-SUM) receiver
  *
- *    @param [in]  dst : destination memory address
- *           [out] size : received data bytes
+ *    @param [in]  dst   : destination memory address
+ *           [out] size  : received data bytes
+ *           [in]  cfunc : copy function to write a XMODEM block to dst
  *    @retval  0  Success
  *    @retval -1  Transfer failed
  *    @retval -2  Timed out
@@ -93,8 +94,8 @@ int r_xmodem(unsigned char *dst, size_t *size, copyfunc cfunc)
 				// Check <sum>
                 if ((sum & 0xff) == x_getchar_tout(TOUT0)) {
                     if ((c = (*cfunc)(dst, buf, 128)) != 0) {
-                        x_putchar(CAN);
-                        return c;
+                        x_putchar(CAN);	// Give up due to copy error
+                        return -1;
                     }
                     x_putchar(ACK);	// <sum> was correct
 		            *size = count * PKT_SIZE;
