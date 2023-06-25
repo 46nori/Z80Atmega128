@@ -28,6 +28,9 @@ void USART1_Init(uint32_t baud)
 	UCSR1C = _BV(UCSZ11)|_BV(UCSZ10);
 	// Enable RX1 and TX1
 	UCSR1B = _BV(RXEN1)|_BV(TXEN1);
+	
+	// Enable RX interrupt
+	UCSR1B |= _BV(RXCIE1); 
 }
 
 void USART0_Transmit(uint8_t data)

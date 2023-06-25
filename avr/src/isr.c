@@ -29,7 +29,7 @@ volatile uint8_t	port_dat;
 ISR(INT0_vect) {
 //	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
 	port_adr = PINF;				// Check I/O address
-	PORTA = 0x55;					// DUMMY return result according to designated port
+	PORTA = port_dat;				// DUMMY return result according to designated port
 	DDRA  = 0xff;					// Set PortA output
 //	Z80_CLRWAIT();
 	CLR_BIT(PORTD, PORTD5);			// Inactivate Z80 /WAIT
@@ -74,4 +74,13 @@ ISR(TIMER0_COMP_vect) {
 		i = 0;
 	}
 	++i;
+}
+
+//
+// USART1 RX handler
+//
+ISR(USART1_RX_vect)
+{
+	port_dat = USART1_Receive();
+	Z80_EXTINT(0);
 }
