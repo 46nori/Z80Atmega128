@@ -59,6 +59,8 @@ int push_ix(struct ix_ctx *p, char c) {
 		if (c == ':') {
 			p->state = NUMBER;
 			init_rbuf(&p->rbuf);
+		} else if (c == '\r' || c == '\n') {
+			// ignore CR/LF
 		} else {
 			p->state = DONE;
 			ret = 3;		// sequence error
@@ -67,6 +69,7 @@ int push_ix(struct ix_ctx *p, char c) {
 	case NUMBER:
 		if (push_rbuf(&p->rbuf, c) == 2) {
 			sscanf(p->rbuf.buf, "%x", &p->length);
+			p->sum = p->length;
 			p->state = ADDRESS;
 			init_rbuf(&p->rbuf);
 		}
@@ -74,6 +77,8 @@ int push_ix(struct ix_ctx *p, char c) {
 	case ADDRESS:
 		if (push_rbuf(&p->rbuf, c) == 4) {
 			sscanf(p->rbuf.buf, "%x", &p->address);
+			p->sum += (p->address >> 8);
+			p->sum += (p->address & 0xff);
 			p->state = RECORD;
 			init_rbuf(&p->rbuf);
 		}
@@ -81,6 +86,7 @@ int push_ix(struct ix_ctx *p, char c) {
 	case RECORD:
 		if (push_rbuf(&p->rbuf, c) == 2) {
 			sscanf(p->rbuf.buf, "%x", &tmp);
+			p->sum += tmp;
 			if (tmp == 0) {
 				p->state = DATA;
 			} else {
@@ -104,18 +110,22 @@ int push_ix(struct ix_ctx *p, char c) {
 	case SUM:
 		if (push_rbuf(&p->rbuf, c) == 2) {
 			sscanf(p->rbuf.buf, "%x", &tmp);
-			if (tmp != (p->sum & 0xff)) {
+			p->sum += tmp;
+			if ((p->sum & 0xff) == 0) {
+				p->state = HEAD;
+			} else {
 				p->state = DONE;
 				ret = 2;		// check sum error
-			} else {
-				init_ix(p, *p->func);
 			}
+			p->sum = 0;
+			init_rbuf(&p->rbuf);
 		}
 		break;
 	case END:
 		if (push_rbuf(&p->rbuf, c) == 2) {
-			ret = 0;			// done
 			p->state = DONE;
+			ret = 0;			// done
+			init_rbuf(&p->rbuf);
 		}
 		break;
 	case DONE:
