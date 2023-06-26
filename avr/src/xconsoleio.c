@@ -112,3 +112,33 @@ int x_getchar_tout(int32_t us) {
 	}
 	return c;
 }
+
+void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size) {
+	cb->buffer = buffer;
+	cb->size = size;
+	cb->head = 0;
+	cb->tail = 0;
+	cb->count = 0;
+}
+
+bool x_enqueue(ConsoleBuffer* cb, char data) {
+	if (cb->count == cb->size) {
+		return false;  // Buffer is full. Cannot enqueue.
+	}
+
+	cb->buffer[cb->tail] = data;
+	cb->tail = (cb->tail + 1) % cb->size;
+	cb->count++;
+	return true;
+}
+
+char x_dequeue(ConsoleBuffer* cb) {
+	if (cb->count == 0) {
+		return '\0';  // Buffer is empty. Cannot dequeue.
+	}
+
+	char data = cb->buffer[cb->head];
+	cb->head = (cb->head + 1) % cb->size;
+	cb->count--;
+	return data;
+}

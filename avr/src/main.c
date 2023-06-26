@@ -32,13 +32,26 @@
 #include "xconsoleio.h"
 #include "monitor.h"
 
+#define RX1_BUF_SIZE	32
+#define TX1_BUF_SIZE	32
+static char rx1_buf[RX1_BUF_SIZE];
+static char tx1_buf[TX1_BUF_SIZE];
+ConsoleBuffer cb_rx1;
+ConsoleBuffer cb_tx1;
+
 int main (void)
 {
 	/* Insert system clock initialization code here (sysclk_init()). */
 
 	board_init();
+	
+	// Init buffered I/O
+    initConsoleBuffer(&cb_rx1, rx1_buf, RX1_BUF_SIZE);
+    initConsoleBuffer(&cb_tx1, tx1_buf, TX1_BUF_SIZE);
+	
+	// Enable interrupt
+	sei();
 
 	/* Insert application code here, after the board has been initialized. */
-	// Test
 	monitor();
 }

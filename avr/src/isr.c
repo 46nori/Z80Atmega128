@@ -8,6 +8,7 @@
 #include "interrupt.h"
 #include "usart.h"
 #include "z80io.h"
+#include "xconsoleio.h"
 
 //
 // External Interrupt
@@ -22,6 +23,8 @@ void ExtInt_Init(void) {
 
 volatile uint8_t	port_adr;
 volatile uint8_t	port_dat;
+extern ConsoleBuffer cb_rx1;
+extern ConsoleBuffer cb_tx1;
 
 //
 // Z80 IN instruction(I/O READ) handler
@@ -29,7 +32,7 @@ volatile uint8_t	port_dat;
 ISR(INT0_vect) {
 //	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
 	port_adr = PINF;				// Check I/O address
-	PORTA = port_dat;				// DUMMY return result according to designated port
+	PORTA = x_dequeue(&cb_rx1);		// DUMMY return result according to designated port
 	DDRA  = 0xff;					// Set PortA output
 //	Z80_CLRWAIT();
 	CLR_BIT(PORTD, PORTD5);			// Inactivate Z80 /WAIT
@@ -48,7 +51,7 @@ ISR(INT1_vect) {
 	DDRA  = 0x00;					// Set PortA input
 	port_adr = PORTF;
 	port_dat = PINA;
-	USART1_Transmit(port_dat);		// DEBUG: TX1
+	x_enqueue(&cb_tx1, port_dat);
 	Z80_CLRWAIT();
 }
 
@@ -74,6 +77,11 @@ ISR(TIMER0_COMP_vect) {
 		i = 0;
 	}
 	++i;
+
+	char dat;
+	while ((dat = x_dequeue(&cb_tx1)) != '\0') {
+		USART1_Transmit(dat);
+	}
 }
 
 //
@@ -81,6 +89,7 @@ ISR(TIMER0_COMP_vect) {
 //
 ISR(USART1_RX_vect)
 {
-	port_dat = USART1_Receive();
-	Z80_EXTINT(0);
+	if (x_enqueue(&cb_rx1, USART1_Receive())) {
+		Z80_EXTINT(0);
+	}
 }

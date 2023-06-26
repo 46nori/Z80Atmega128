@@ -63,5 +63,4 @@ void board_init(void)
 
 	Timer0_Init();					// Periodic interrupt (TIMER0_COMP)
 	ExtInt_Init();					// External interrupt (INT0,1,4)
-	sei();							// Enable interrupt
 }

@@ -8,8 +8,17 @@ VECT_TBL    .equ    0x0100
     ld a, 0x01
     ld i, a
     ei
+
+    ld b, 8
+    ld c, 1
+    ld hl, HELLO
+    otir
+
 LOOP:
     jp LOOP
+
+HELLO:
+    .str "Hello!\r\n"
 
 ; echo back
 ECHO:

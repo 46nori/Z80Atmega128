@@ -9,7 +9,20 @@
 #ifndef XCONSOLEIO_H_
 #define XCONSOLEIO_H_
 
+#include <stdbool.h>
 #include "usart.h"
+
+typedef struct {
+	char* buffer;
+	int size;
+	int head;
+	int tail;
+	int count;
+} ConsoleBuffer;
+
+extern void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size);
+extern bool x_enqueue(ConsoleBuffer* cb, char data);
+extern char x_dequeue(ConsoleBuffer* cb);
 
 extern int x_printf(const char *format, ...);
 extern int x_puts(const char *s);
