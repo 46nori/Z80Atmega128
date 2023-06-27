@@ -862,3 +862,66 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
 
 ## 2023/6/27
 - UART1のBuffered I/Oをサポートした。RX1側は受信と同時にZ80に割り込みをかけるので、緩衝材程度の役割。数バイトのバッファがあればよい。TX1側はZ80から受信したデータをINT1の割り込みハンドラでバッファリングするだけ。なるべく早く処理を終わらせる。バッファされたデータは、TIMER0の周期割り込みハンドラで空き時間にTX1に出力される。
+- SD Cardまわりを調査していたら、Microchipが[Petit Fat FS](http://elm-chan.org/fsw/ff/00index_p.html)を使用したサンプルを提供しているのを発見。([これ](https://avr.jp/user/AN/PDF/AVR42776.pdf)とか[これ](https://ww1.microchip.com/downloads/en/Appnotes/Petit-Fat-File-System-00002799A.pdf)とか。)
+  - デフォルト設定は、FAT16、Read/Write/Seek対応、ディレクトリ非対応。これでROM 3106bytes, RAM 43bytes。十分小さい。
+  - ライセンスは[ここ](http://elm-chan.org/fsw/ff/pf/appnote.html)に記載がある。確認したが特に問題ない。Microchipもサンプルとして引用しているので安心。
+- SD Cardはよく知らないし、面倒臭そうなので後回しの予定だったけど、勢いでやってみたら意外と簡単に移植できてしまった。まだいろいろ繋ぎ込みが必要だけど、**これでCP/MのBIOS作成に必要な大物部品は揃ったな。**
+
+#### Petit FAT File Systemの移植
+- ソースの取得
+  - [Atmel Start](https://start.atmel.com/)でBROWSE EXAMPLEボタン押し、Search boxに`AVR42776 Petit FatFs Example`を入力して検索。1件だけヒットするはず。
+  - DOWNLOAD SELECTED EXAMPLEボタンでダウンロードする。`.atzip`形式なので選択するとMicrochip Studioが開く。
+  - `petitfs`以下をまるっとコピーして、自分のプロジェクトのツリーに追加する。
+  - ちなみにPetit Fat FSのバージョンはR0.03がベースになっているようだ。最新版は2019年にR0.03aがリリースされている。
+- 方針と構成
+  - Petit Fat FSは既存のファイルの読み書きが前提。事前に決め打ちのファイルをカード上に作成しておく運用とする。
+  - FAT32を採用する。理由はSDHCカードの入手性。FAT16だと2GB以下のカードが必要で、調達困難。
+  - 使用可能なファイル名は大文字のみとする。小文字とロケール非対応にすることでメモリを128byteケチる。
+  - `petitfs/pffconf.h`の設定
+    ```
+    _USE_READ = 1
+    _USE_DIR = 0
+    _USE_LSEEK = 1
+    _USE_WRITE = 1
+    _FS_FAT12 = 0
+    _FS_FAT16 = 0
+    _FS_FAT32 = 1
+    _USE_LCC = 0
+    ```
+ - 移植
+    - `petitfs/diskio_avr.c`が移植層。
+    - 以下のATtiny817の実装をATmega128用に書き換えた。試しにChatGPTに頼んだら、割と筋の良いコードを吐いた。手直しは必要だったが、データーシートを読み込む箇所が絞れて助かった。
+      ```
+      /*-------------------------------------------------------------------------*/
+      /* Platform dependent macros and functions MODIFY FOR YOUR DEVICE           */
+      /*-------------------------------------------------------------------------*/
+
+      #include <avr/io.h> /* Device specific include files */
+
+      #define SPIPORT PORTC
+      #define SPI_SCK (1 << 0)  /* PC0 */
+      #define SPI_MISO (1 << 1) /* PC1 SD card DO */
+      #define SPI_MOSI (1 << 2) /* PC2 SD card DI */
+      #define SPI_CS (1 << 3)   /* PC3 */
+
+      /* Port controls  (Platform dependent) */
+      #define SELECT() SPIPORT.OUTCLR = SPI_CS   /* CS = L */
+      #define DESELECT() SPIPORT.OUTSET = SPI_CS /* CS = H */
+      #define SELECTING ((SPIPORT.DIR & SPI_CS) && !(SPIPORT.OUT & SPI_CS))
+
+      static void init_spi(void)
+      {
+        ...
+      }
+
+      static BYTE spi(BYTE d)
+      {
+        ...
+      }
+      ```
+    - delay()まわりで`F_CPU`が見つからないというWarningが出たが、適宜`#define`を挿入して回避している。ASF絡みでなぜうまく設定できないのか不明のままの状態が続いている。整理せねば。
+- 動作確認
+  - 元コードのmain()関数を手直ししてテストした。
+  - カード上に`EXAMPLE.TXT`(ファイル名大文字)を作成。中身は適当な文字を書き込んで大きめのサイズにしておく。
+  - カードのmount、`EXAMPLE.TXT`のopen、`Hello SD！\r\n`のwrite、readして正しくwriteできたか比較し、すべて問題がないことを確認した。
+  - Macで`EXAMPLE.TXT`を開いてみると、先頭に`Hello SD！\r\n`が書き込まれていた！
