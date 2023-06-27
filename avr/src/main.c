@@ -31,6 +31,7 @@
 #include <asf.h>
 #include "xconsoleio.h"
 #include "monitor.h"
+#include "sdcard.h"
 
 #define RX1_BUF_SIZE	32
 #define TX1_BUF_SIZE	32

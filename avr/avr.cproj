@@ -233,6 +233,7 @@
     <Folder Include="src\ASF\mega\utils\assembler\" />
     <Folder Include="src\ASF\mega\utils\preprocessor\" />
     <Folder Include="src\config\" />
+    <Folder Include="src\petitfs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\intelhex.c">
@@ -245,6 +246,30 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\isr.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\petitfs\diskio.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\petitfs\diskio_avr.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\petitfs\integer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\petitfs\pff.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\petitfs\pff.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\petitfs\pffconf.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\sdcard.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\sdcard.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\timer.c">

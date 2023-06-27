@@ -70,14 +70,15 @@ ISR(INT4_vect) {
 ISR(TIMER0_COMP_vect) {
 	static uint16_t i = 0;
 	if (i < 100) {
-		PORTE &= ~_BV(PORTE7);			// DEBUG: RED LED ON PE5
+		PORTE &= ~_BV(PORTE7);			// DEBUG: RED LED ON PE7
 	} else if (i < 200) {
-		PORTE |=  _BV(PORTE7);			// DEBUG: RED LED OFF PE5
+		PORTE |=  _BV(PORTE7);			// DEBUG: RED LED OFF PE7
 	} else {
 		i = 0;
 	}
 	++i;
 
+	// Flush TX1 console buffer
 	char dat;
 	while ((dat = x_dequeue(&cb_tx1)) != '\0') {
 		USART1_Transmit(dat);

@@ -23,6 +23,7 @@ void board_init(void)
 	 * specific board configuration, found in conf_board.h.
 	 */
 	//=====================================================================
+	
 	// GPIO setting
 	SET_BIT(SFIOR, PUD);			// Disable Pull up
 

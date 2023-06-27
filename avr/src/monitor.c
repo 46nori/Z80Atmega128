@@ -14,6 +14,7 @@
 #include "xmodem.h"
 #include "z80io.h"
 #include "intelhex.h"
+#include "sdcard.h"
 
 #define DLIMITER	" "
 #define MAX_TOKENS	3
@@ -678,6 +679,7 @@ static int c_avr_cli(token_list *t) {
  * Test external memory
  *********************************************************/
 static int c_test(token_list *t) {
+	// External memory test
 	ExtMem_attach();
 	uint8_t *adr = ExtMem_map();
 	int i;
@@ -696,5 +698,13 @@ static int c_test(token_list *t) {
 
 	x_printf("write sum=%x\n", w_sum);
 	x_printf("read  sum=%x\n", r_sum);
+
+	// SD Card Test	
+	if (sdcard_test() == 0) {
+		x_puts("SD Card OK.");
+		} else {
+		x_puts("SD Card NG.");
+	}
+	
 	return NO_ERROR;
 }
