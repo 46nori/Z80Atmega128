@@ -118,6 +118,7 @@ static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
 static int c_z80_nmi(token_list *t);
 static int c_z80_int(token_list *t);
+static int c_z80_status(token_list *t);
 static int c_avr_sei(token_list *t);
 static int c_avr_cli(token_list *t);
 static int c_test(token_list *t);
@@ -141,6 +142,7 @@ static const struct {
 	{"reset", c_z80_reset},
 	{"nmi",   c_z80_nmi},
 	{"int",   c_z80_int},
+	{"sts",   c_z80_status},
 	{"sei",   c_avr_sei},
 	{"cli",   c_avr_cli},
 	{"test",  c_test},
@@ -189,6 +191,7 @@ static const char help_str[] PROGMEM =	\
 	"reset           : reset\n"\
 	"nmi             : NMI\n"\
 	"int <dat>       : interrupt\n"\
+	"sts             : show Z80 status\n"\
 	"";
 
 #if 1	
@@ -656,6 +659,15 @@ static int c_z80_int(token_list *t) {
 		return ERR_PARAM_VAL;     // parameter error
 	}
 	Z80_EXTINT(dat);
+	return NO_ERROR;
+}
+
+/*********************************************************
+ * Show Z80 status
+ *********************************************************/
+static int c_z80_status(token_list *t) {
+	x_printf("/BUSRQ:%d\n", Is_Z80_BUSRQ());
+	x_printf("/HALT :%d\n", Is_Z80_HALT());
 	return NO_ERROR;
 }
 

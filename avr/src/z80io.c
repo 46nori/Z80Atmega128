@@ -62,6 +62,9 @@ void ExtMem_unmap(void) {
 //
 // Z80 control
 //
+//
+// Invoke /BUSRQ (PD6)
+//
 void Z80_BUSREQ(int st) {
 	if (st) {
 		// Enable /BUSREQ
@@ -77,7 +80,7 @@ void Z80_BUSREQ(int st) {
 }
 
 //
-// Invoke /RESET
+// Invoke /RESET (PB5) to reset Z80
 //
 void Z80_RESET(void) {
 	ExtMem_detach();
@@ -88,28 +91,38 @@ void Z80_RESET(void) {
 }
 
 //
-// Invoke /NMI
+// Invoke /NMI (PB6) for Z80 NMI
 //   /NMI required >80ns low period in Z80A
 void Z80_NMI(void) {
-	CLR_BIT(PORTD, PORTB6);		// t_w(/NML) > 80ns
+	CLR_BIT(PORTB, PORTB6);		// t_w(/NML) > 80ns
 	asm("NOP");					// 62.5ns (=1CLK@16MHz)
 	asm("NOP");					// 62.5ns (=1CLK@16MHz)
-	SET_BIT(PORTD, PORTB6);	
+	SET_BIT(PORTB, PORTB6);	
 }
 
 //
-// Invoke /INT
+// Invoke /XINT (PD4) for Z80 INT
 //
-uint8_t z80_intvect;
+volatile uint8_t z80_int_vector;
+void Z80_EXTINT_low(uint8_t vector)
+{
+	z80_int_vector = vector;
+	CLR_BIT(PORTD, PORTD4);		// /INT = Low
+}
+
+void Z80_EXTINT_High(void)
+{
+	SET_BIT(PORTD, PORTD4);		// /INT = High
+}
+
 void Z80_EXTINT(uint8_t vector) {
-	z80_intvect = vector;
-	CLR_BIT(PORTD, PORTD4);		// t_s(IT) > 80ns
-	_delay_us(1);
-	SET_BIT(PORTD, PORTD4);	
+	Z80_EXTINT_low(vector);		// /INT = Low
+	_delay_us(1);				// t_s(IT) > 80ns
+	Z80_EXTINT_High();			// /INT = High
 }
 
 //
-// Clear /WAIT
+// Clear /CLRWAIT (PD5) to deactivate Z80 /WAIT
 //   /SET required >20ns low period in 74HC74
 void Z80_CLRWAIT(void) {
 	CLR_BIT(PORTD, PORTD5);
@@ -125,4 +138,22 @@ void Z80_HALT(void) {
 	*(volatile uint8_t *)ExtMem_map() = 0x76;	// HALT instruction
 	ExtMem_unmap();
 	CLR_BIT(MCUCR, SRE);		// Disable XMEM
+}
+
+//
+// Sense Z80 /BUSRQ
+//   return 0(Low), 1(High)
+//
+int Is_Z80_BUSRQ(void)
+{
+	return PIND & _BV(PORTD7) ? 1 : 0;
+}
+
+//
+// Sense Z80 /HALT
+//   return 0(Low), 1(High)
+//
+int Is_Z80_HALT(void)
+{
+	return PINB & _BV(PORTB7) ? 1 : 0;
 }

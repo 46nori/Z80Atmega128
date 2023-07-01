@@ -121,6 +121,13 @@ void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size) {
 	cb->count = 0;
 }
 
+void x_flush(ConsoleBuffer* cb)
+{
+	cb->head = 0;
+	cb->tail = 0;
+	cb->count = 0;
+}
+
 bool x_enqueue(ConsoleBuffer* cb, char data) {
 	if (cb->count == cb->size) {
 		return false;  // Buffer is full. Cannot enqueue.

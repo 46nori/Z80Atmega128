@@ -21,6 +21,7 @@ typedef struct {
 } ConsoleBuffer;
 
 extern void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size);
+extern void x_flush(ConsoleBuffer* cb);
 extern bool x_enqueue(ConsoleBuffer* cb, char data);
 extern char x_dequeue(ConsoleBuffer* cb);
 
@@ -30,5 +31,6 @@ extern char *x_gets_s(char *buffer, size_t size);
 extern int x_putchar(int c);
 extern int x_getchar(void);
 extern int x_getchar_tout(int32_t us);
+
 
 #endif /* XCONSOLEIO_H_ */

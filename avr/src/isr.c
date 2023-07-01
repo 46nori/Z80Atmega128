@@ -9,6 +9,7 @@
 #include "usart.h"
 #include "z80io.h"
 #include "xconsoleio.h"
+#include "emuldev/emuldev.h"
 
 //
 // External Interrupt
@@ -17,57 +18,83 @@ void ExtInt_Init(void) {
 	// External interrupt
 	EICRA = 0b10101010;				// Falling edge sense
 	EICRB = 0b10101010;				// Falling edge sense
-	EIFR  = _BV(INTF0)|_BV(INTF1)|_BV(INTF4);
+	//EIFR  = _BV(INTF0)|_BV(INTF1)|_BV(INTF4);
 	EIMSK = _BV(INT0)|_BV(INT1)|_BV(INT4);	// Enable INT0,1 and 4
 }
 
-volatile uint8_t	port_adr;
-volatile uint8_t	port_dat;
-extern ConsoleBuffer cb_rx1;
-extern ConsoleBuffer cb_tx1;
-
-//
-// Z80 IN instruction(I/O READ) handler
-//
+///////////////////////////////////////////////////////////////////
+// INT0 : Z80 IN instruction(I/O READ) handler
+///////////////////////////////////////////////////////////////////
 ISR(INT0_vect) {
-//	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
-	port_adr = PINF;				// Check I/O address
-	PORTA = x_dequeue(&cb_rx1);		// DUMMY return result according to designated port
-	DDRA  = 0xff;					// Set PortA output
-//	Z80_CLRWAIT();
+	// Emulate device and return port data to Z80
+	PORTA = (*InHandler[PINF % PORT_MAX])();
+	DDRA  = 0xff;					// Set Port A output
+
+	// Clear /WAIT (instead of Z80_CLRWAIT())
 	CLR_BIT(PORTD, PORTD5);			// Inactivate Z80 /WAIT
 	asm("NOP");						// Ensure data latch before PortA High-Z
 	PORTA = 0xff;					// Set PortA input and High-Z
 	DDRA  = 0x00;
 	SET_BIT(PORTD, PORTD5);
+
+	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
 }
 
-//
-// Z80 OUT instruction(I/O WRITE) handler
-//
+///////////////////////////////////////////////////////////////////
+// INT1 : Z80 OUT instruction(I/O WRITE) handler
+///////////////////////////////////////////////////////////////////
 ISR(INT1_vect) {
-//	CLR_BIT(PORTE, PORTE6);			// DEBUG: YELLOW LED ON PE6
+	// Set Port A input
 	PORTA = 0xff;
-	DDRA  = 0x00;					// Set PortA input
-	port_adr = PORTF;
-	port_dat = PINA;
-	x_enqueue(&cb_tx1, port_dat);
+	DDRA  = 0x00;
+	// Emulate device with Z80 port data
+	(*OutHandler[PINF % PORT_MAX])(PINA);
+	// Clear /WAIT
 	Z80_CLRWAIT();
+
+//	CLR_BIT(PORTE, PORTE6);			// DEBUG: YELLOW LED ON PE6
 }
 
-//
-// Z80 external INT handler
-//
+///////////////////////////////////////////////////////////////////
+// INT4 : Z80 external INT handler
+///////////////////////////////////////////////////////////////////
 ISR(INT4_vect) {
-//	CLR_BIT(PORTE, PORTE7);			// DEBUG: RED LED ON PE7
-	PORTF = z80_intvect;
-	Z80_CLRWAIT();
+	// Z80 /INT = High
+	Z80_EXTINT_High();
+	// Z80 int vector
+	PORTA = z80_int_vector;
+	DDRA  = 0xff;
+
+	// Clear /WAIT (instead of Z80_CLRWAIT())
+	CLR_BIT(PORTD, PORTD5);			// Inactivate Z80 /WAIT
+	asm("NOP");						// Ensure data latch before PortA High-Z
+	PORTA = 0xff;					// Set PortA input and High-Z
+	DDRA  = 0x00;
+	SET_BIT(PORTD, PORTD5);
+
+	CLR_BIT(PORTE, PORTE7);			// DEBUG: RED LED ON PE7
 }
 
-//
+///////////////////////////////////////////////////////////////////
+// USART1 RX handler
+///////////////////////////////////////////////////////////////////
+ISR(USART1_RX_vect)
+{
+	EnqueueRX1_NotifyZ80();
+}
+
+///////////////////////////////////////////////////////////////////
 // Timer0 handler
-//
+///////////////////////////////////////////////////////////////////
+static void DebugTwinkleLED(void);
 ISR(TIMER0_COMP_vect) {
+	Transmit_TX1_Buf();
+//	DebugTwinkleLED();	
+}
+
+// Debug
+static void DebugTwinkleLED(void)
+{
 	static uint16_t i = 0;
 	if (i < 100) {
 		PORTE &= ~_BV(PORTE7);			// DEBUG: RED LED ON PE7
@@ -77,20 +104,4 @@ ISR(TIMER0_COMP_vect) {
 		i = 0;
 	}
 	++i;
-
-	// Flush TX1 console buffer
-	char dat;
-	while ((dat = x_dequeue(&cb_tx1)) != '\0') {
-		USART1_Transmit(dat);
-	}
-}
-
-//
-// USART1 RX handler
-//
-ISR(USART1_RX_vect)
-{
-	if (x_enqueue(&cb_rx1, USART1_Receive())) {
-		Z80_EXTINT(0);
-	}
 }

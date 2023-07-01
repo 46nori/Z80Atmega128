@@ -3,45 +3,40 @@ VECT_TBL    .equ    0x0100
     .area TEST (ABS)
     .org 0x0000
 
-    im 2
+    di
     ld sp, 0x0000
-    ld a, 0x01
+    ld hl, TABLE
+    ld a, h
     ld i, a
+    im 2
     ei
 
-    ld b, 8
-    ld c, 1
-    ld hl, HELLO
-    otir
+    ; RX1 int 7F
+    ld a, 0x55
+    out (0x01), a
+
+;    call HELLO
 
 LOOP:
     jp LOOP
 
-HELLO:
-    .str "Hello!\r\n"
-
 ; echo back
 ECHO:
-    in a, (0x00)
-    out (0x01), a
+    exx
+ECHO_LOOP:
+    in a, (0x02)        ; read a character
+    out (0x02), a       ; write a character
+    in a, (0x03)        ; check remaining data
+    or a
+    jr nz, ECHO_LOOP
+    exx
     ret
-
-; RST38 handler
-    .org 0x0038
-    call ECHO
-    reti
-
-; NMI handler
-    .org 0x0066
-
-    call ECHO
-    retn
 
 ;
 ; Interrupt vector table
 ;
     .org VECT_TBL
-
+TABLE:
     .dw ISR_00, ISR_01, ISR_02, ISR_03, ISR_04, ISR_05, ISR_06, ISR_07
     .dw ISR_08, ISR_09, ISR_0A, ISR_0B, ISR_0C, ISR_0D, ISR_0E, ISR_0F
     .dw ISR_10, ISR_11, ISR_12, ISR_13, ISR_14, ISR_15, ISR_16, ISR_17
@@ -62,8 +57,6 @@ ECHO:
 ; Interrupt handler
 ;
 ISR_00:
-    call ECHO
-    reti
 ISR_01:
 ISR_02:
 ISR_03:
@@ -191,4 +184,24 @@ ISR_7C:
 ISR_7D:
 ISR_7E:
 ISR_7F:
+    call ECHO
     reti
+
+; RST38 handler
+    .org 0x0038
+    call ECHO
+    reti
+
+; NMI handler
+    .org 0x0066
+    call ECHO
+    retn
+
+HELLO:
+    ld b, 8
+    ld c, 2
+    ld hl, HELLO_STR
+    otir
+    ret
+HELLO_STR:
+    .str "Hello!\r\n"

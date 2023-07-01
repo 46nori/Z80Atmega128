@@ -233,9 +233,28 @@
     <Folder Include="src\ASF\mega\utils\assembler\" />
     <Folder Include="src\ASF\mega\utils\preprocessor\" />
     <Folder Include="src\config\" />
+    <Folder Include="src\emuldev" />
     <Folder Include="src\petitfs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\emuldev\emuldev.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\emuldev\emuldev.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\emuldev\em_consoleio.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\emuldev\em_consoleio.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\emuldev\em_diskio.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\emuldev\em_diskio.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\intelhex.c">
       <SubType>compile</SubType>
     </Compile>

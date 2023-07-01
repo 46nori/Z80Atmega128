@@ -15,7 +15,8 @@ void USART0_Init(uint32_t baud)
 	// Set frame settings : async, 8bit, non-parity, 1 stop bit
 	UCSR0C = _BV(UCSZ01)|_BV(UCSZ00);
 	// Enable RX1 and TX1
-	UCSR0B = _BV(RXEN0)|_BV(TXEN0);
+	UCSR0B = 0;				// discard unread data in fifo
+	UCSR0B = _BV(RXEN0) | _BV(TXEN0);
 }
 
 void USART1_Init(uint32_t baud)
@@ -26,11 +27,9 @@ void USART1_Init(uint32_t baud)
 	UBRR1L = (uint8_t)(br & 0xff);		// Low byte
 	// Set frame settings : async, 8bit, non-parity, 1 stop bit
 	UCSR1C = _BV(UCSZ11)|_BV(UCSZ10);
-	// Enable RX1 and TX1
-	UCSR1B = _BV(RXEN1)|_BV(TXEN1);
-	
-	// Enable RX interrupt
-	UCSR1B |= _BV(RXCIE1); 
+	// Enable RX1(and interrupt) and TX1
+	UCSR1B = 0;				// discard unread data in fifo
+	UCSR1B = _BV(RXEN1) | _BV(TXEN1) | _BV(RXCIE1);;
 }
 
 void USART0_Transmit(uint8_t data)
