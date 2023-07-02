@@ -71,7 +71,7 @@ void Z80_BUSREQ(int st) {
 		CLR_BIT(PORTD, PORTD6);
 		// Wait for /BUSACK
 		while (!(PIND & ~_BV(PORTD7))) {
-			x_putchar('#');
+			x_putchar('#');		// debug
 		}
 	} else {
 		// Disable /BUSREQ
@@ -103,6 +103,12 @@ void Z80_NMI(void) {
 //
 // Invoke /XINT (PD4) for Z80 INT
 //
+// vector should be set as following:
+//   Mode2 : interrupt number * 2
+//           e.g., 16 should be set in case of INT8
+//   Mode0 : Z80 instruction
+//
+
 volatile uint8_t z80_int_vector;
 void Z80_EXTINT_low(uint8_t vector)
 {

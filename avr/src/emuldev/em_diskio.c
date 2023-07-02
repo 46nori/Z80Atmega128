@@ -11,8 +11,8 @@
 #include "xconsoleio.h"
 #include "z80io.h"
 
-static volatile uint8_t z80_intvect_write;
-static volatile uint8_t z80_intvect_read;
+static volatile uint8_t z80_int_num_write;
+static volatile uint8_t z80_int_num_read;
 FATFS file_system;
 static const char* get_filename(int disk_no);
 
@@ -126,7 +126,7 @@ uint8_t IN_04_DSK_GetDiskNumber()
 FRESULT write_result;
 void OUT_0C_DSK_Write(uint8_t data)
 {
-	z80_intvect_write = data;
+	z80_int_num_write = data;
 
 	// CAUTION: don't consume long time	
 	DWORD pos = (DWORD)write_pos_high << 16 | write_pos_mid << 8 | write_pos_low;
@@ -155,7 +155,7 @@ uint8_t IN_0C_DSK_WriteStatus()
 FRESULT read_result;
 void OUT_14_DSK_Read(uint8_t data)
 {
-	z80_intvect_read = data;
+	z80_int_num_read = data;
 
 	// CAUTION: don't consume long time	
 	DWORD pos = (DWORD)read_pos_high << 16 | read_pos_mid << 8 | read_pos_low;

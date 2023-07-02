@@ -37,7 +37,7 @@ ISR(INT0_vect) {
 	DDRA  = 0x00;
 	SET_BIT(PORTD, PORTD5);
 
-	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
+//	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ ISR(INT1_vect) {
 	DDRA  = 0x00;
 	// Emulate device with Z80 port data
 	(*OutHandler[PINF % PORT_MAX])(PINA);
-	// Clear /WAIT
+	// Clear /WAIT (instead of Z80_CLRWAIT())
 	Z80_CLRWAIT();
 
 //	CLR_BIT(PORTE, PORTE6);			// DEBUG: YELLOW LED ON PE6
@@ -72,7 +72,7 @@ ISR(INT4_vect) {
 	DDRA  = 0x00;
 	SET_BIT(PORTD, PORTD5);
 
-	CLR_BIT(PORTE, PORTE7);			// DEBUG: RED LED ON PE7
+//	CLR_BIT(PORTE, PORTE7);			// DEBUG: RED LED ON PE7
 }
 
 ///////////////////////////////////////////////////////////////////
