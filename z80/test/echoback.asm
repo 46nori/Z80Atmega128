@@ -12,29 +12,38 @@ VECT_TBL    .equ    0x0100
     ld hl, VECTNO
     ei
 
-    ; RX1 int 7F
+    ; RX1 int 0x10
     ld a, 0x10
     out (0x01), a
+
+    ; reset interrupt count for debug
+    xor a
+    ld (INTCOUNT), a
 
 ;    call HELLO
 
 LOOP:
     jp LOOP
 
+;
 ; echo back
+;
 ECHO:
+    ; copy interrupt vector for debug
     ld (hl), a
-;   exx
+
 ECHO_LOOP:
     in a, (0x02)        ; read a character
     out (0x02), a       ; write a character
     in a, (0x03)        ; check remaining data
     or a
     jr nz, ECHO_LOOP
-;    exx
-    ld a, (INTCOUNT)
+    ; Update interrupt count for debug
+
+    ld a, (INTCOUNT)    ; increment interrupt count
     inc a
     ld (INTCOUNT), a
+
     ei                  ; !!!! IMPORTANT !!!!
     ret
 

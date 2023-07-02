@@ -10,5 +10,6 @@
 #include <asf.h>
 
 void Timer0_Init(void);
+void Timer2_Init(void);
 
 #endif /* TIMER_H_ */

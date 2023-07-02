@@ -63,5 +63,6 @@ void board_init(void)
 	USART1_Init(9600);				// UART for Z80 console
 
 	Timer0_Init();					// Periodic interrupt (TIMER0_COMP)
+	Timer2_Init();					// Periodic interrupt (TIMER2_COMP)
 	ExtInt_Init();					// External interrupt (INT0,1,4)
 }

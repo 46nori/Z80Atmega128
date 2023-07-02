@@ -18,8 +18,8 @@ void ExtInt_Init(void) {
 	// External interrupt
 	EICRA = 0b10101010;				// Falling edge sense
 	EICRB = 0b10101010;				// Falling edge sense
-	//EIFR  = _BV(INTF0)|_BV(INTF1)|_BV(INTF4);
-	EIMSK = _BV(INT0)|_BV(INT1)|_BV(INT4);	// Enable INT0,1 and 4
+	// Enable INT0,1 and 4
+	EIMSK = _BV(INT0)|_BV(INT1)|_BV(INT4);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -89,7 +89,13 @@ ISR(USART1_RX_vect)
 static void DebugTwinkleLED(void);
 ISR(TIMER0_COMP_vect) {
 	Transmit_TX1_Buf();
-//	DebugTwinkleLED();	
+}
+
+///////////////////////////////////////////////////////////////////
+// Timer2 handler
+///////////////////////////////////////////////////////////////////
+ISR(TIMER2_COMP_vect) {
+	DebugTwinkleLED();
 }
 
 // Debug

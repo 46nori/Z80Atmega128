@@ -188,7 +188,7 @@ static const char help_str[] PROGMEM =	\
 	"== Z80 Commands ==\n"\
 	"xload           : load INTEL HEX by XMODEM\n"\
 	"bload [adr]     : load binary by XMODEM\n"\
-	"reset           : reset\n"\
+	"reset [0]       : reset, and HALT if 0\n"\
 	"nmi             : NMI\n"\
 	"int <dat>       : interrupt\n"\
 	"sts             : show Z80 status\n"\
@@ -634,6 +634,16 @@ static int c_mem(token_list *t) {
  * Invoke reset of Z80
  *********************************************************/
 static int c_z80_reset(token_list *t) {
+    if (t->n > 1) {
+		// HALT after reset if 0 is presented as parameter
+	    unsigned int tmp;
+	    if (get_uint(t, T_PARAM1, &tmp) != NO_ERROR) {
+		    return ERR_PARAM_VAL;
+	    }
+	    if (tmp == 0) {
+			Z80_HALT();
+		}
+    }
 	Z80_RESET();
 	return NO_ERROR;
 }

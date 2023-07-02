@@ -45,8 +45,6 @@ void EnqueueRX1_NotifyZ80()
 #if 1
 				// CAUTION: vector is NOT interrupt number(0-127)
 				Z80_EXTINT_low(z80_int_num_rx1 << 1);
-				//_delay_us(1);
-				//Z80_EXTINT_High();
 #else
 				Z80_NMI();		// debug
 #endif
@@ -81,7 +79,6 @@ void Transmit_TX1_Buf(void)
 void OUT_01_CON_SetInterrupt(uint8_t data)
 {
 	z80_int_num_rx1 = data;
-//	x_printf("OUT1:%x\n", data);
 }
 uint8_t IN_01_CON_GetInterrupt()
 {
@@ -95,13 +92,11 @@ void OUT_02_CON_Output(uint8_t data)
 {
 	// set character TX1 console buffer
 	x_enqueue(&cb_tx1, data);
-//	x_printf("OUT2:%x %d\n", data, cb_tx1.count);
 }
 uint8_t IN_02_CON_Input()
 {
 	// Get a character from RX1 console input buffer
 	char data = x_dequeue(&cb_rx1);
-//	x_printf("IN2:%x %d\n", data, cb_rx1.count);
 	return data;
 }
 
