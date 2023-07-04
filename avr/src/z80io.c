@@ -70,8 +70,8 @@ void Z80_BUSREQ(int st) {
 		// Enable /BUSREQ
 		CLR_BIT(PORTD, PORTD6);
 		// Wait for /BUSACK
-		while (!(PIND & ~_BV(PORTD7))) {
-			x_putchar('#');		// debug
+		while (PIND & _BV(PORTD7)) {
+			//x_putchar('#');		// debug
 		}
 	} else {
 		// Disable /BUSREQ
