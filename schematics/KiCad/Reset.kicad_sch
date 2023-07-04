@@ -1462,7 +1462,7 @@
   (symbol (lib_id "power:GND") (at 45.72 114.3 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 06625fbe-63ab-42b7-adf3-5695508ece0b)
-    (property "Reference" "#PWR069" (at 45.72 120.65 0)
+    (property "Reference" "#PWR067" (at 45.72 120.65 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 45.72 119.38 0)
@@ -1478,7 +1478,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "#PWR069") (unit 1)
+          (reference "#PWR067") (unit 1)
         )
       )
     )
@@ -1506,7 +1506,7 @@
           (reference "#PWR044") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "#PWR070") (unit 1)
+          (reference "#PWR068") (unit 1)
         )
       )
     )
@@ -1602,7 +1602,7 @@
   (symbol (lib_id "power:GND") (at 45.72 71.12 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 2ce1fe2d-73e3-41f3-a303-7ae3fc43f99a)
-    (property "Reference" "#PWR067" (at 45.72 77.47 0)
+    (property "Reference" "#PWR065" (at 45.72 77.47 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 45.72 76.2 0)
@@ -1618,7 +1618,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "#PWR067") (unit 1)
+          (reference "#PWR065") (unit 1)
         )
       )
     )
@@ -1659,7 +1659,7 @@
           (reference "U13") (unit 3)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "U13") (unit 3)
+          (reference "U9") (unit 3)
         )
       )
     )
@@ -1687,7 +1687,7 @@
           (reference "#PWR01") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "#PWR068") (unit 1)
+          (reference "#PWR066") (unit 1)
         )
       )
     )
@@ -1935,7 +1935,7 @@
   (symbol (lib_id "74xx:74LS08") (at 156.21 104.14 0) (unit 4)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 836803ac-7728-4035-b0e5-f131c95b2e2c)
-    (property "Reference" "U10" (at 156.21 95.25 0)
+    (property "Reference" "U11" (at 156.21 95.25 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74HC08" (at 156.21 97.79 0)
@@ -1964,7 +1964,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "U10") (unit 4)
+          (reference "U11") (unit 4)
         )
       )
     )
@@ -1973,7 +1973,7 @@
   (symbol (lib_id "power:VCC") (at 104.14 43.18 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 9ed8f2e6-1394-42fa-bbcf-d9f3c26122db)
-    (property "Reference" "#PWR066" (at 104.14 46.99 0)
+    (property "Reference" "#PWR064" (at 104.14 46.99 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "VCC" (at 104.14 38.1 0)
@@ -1989,7 +1989,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "#PWR066") (unit 1)
+          (reference "#PWR064") (unit 1)
         )
       )
     )
@@ -2017,7 +2017,7 @@
           (reference "#PWR048") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "#PWR071") (unit 1)
+          (reference "#PWR069") (unit 1)
         )
       )
     )
@@ -2103,7 +2103,7 @@
           (reference "#PWR049") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "#PWR072") (unit 1)
+          (reference "#PWR070") (unit 1)
         )
       )
     )
