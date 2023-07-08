@@ -14,3 +14,6 @@ echoback.ihx:
 
 %.rel:%.asm
 	$(AS) -l -o $(ASFLAGS) $<
+
+clean:
+	rm -f echoback.ihx echoback.rel echoback.lst echoback.hlr
