@@ -1,0 +1,7 @@
+*.lst
+*.rel
+*.sym
+*.ihx
+*.hlr
+*.zip
+tmp/
