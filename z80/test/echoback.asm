@@ -3,6 +3,11 @@ VECT_TBL    .equ    0x0100
     .area TEST (ABS)
     .org 0x0000
 
+PORT_CONIN      .equ    0x00
+PORT_CONIN_STS  .equ    0x01
+PORT_CONIN_INT  .equ    0x03
+PORT_CONOUT     .equ    0x05
+
     di
     ld sp, 0x0000
     ld hl, TABLE
@@ -14,7 +19,7 @@ VECT_TBL    .equ    0x0100
 
     ; RX1 int 0x10
     ld a, 0x10
-    out (0x01), a
+    out (PORT_CONIN_INT), a
 
     ; reset interrupt count for debug
     xor a
@@ -33,9 +38,9 @@ ECHO:
     ld (hl), a
 
 ECHO_LOOP:
-    in a, (0x02)        ; read a character
-    out (0x02), a       ; write a character
-    in a, (0x03)        ; check remaining data
+    in a, (PORT_CONIN)      ; read a character
+    out (PORT_CONOUT), a    ; write a character
+    in a, (PORT_CONIN_STS)  ; check remaining data
     or a
     jr nz, ECHO_LOOP
     ; Update interrupt count for debug
