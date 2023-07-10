@@ -20,9 +20,9 @@ static ConsoleBuffer cb_tx1;
 static volatile uint8_t z80_int_num_rx1;
 static volatile uint8_t z80_int_num_tx1;
 
-//
+///////////////////////////////////////////////////////////////////
 // Initialize emulated device
-//
+///////////////////////////////////////////////////////////////////
 void init_em_console(void)
 {
 	// Initialize console buffer
@@ -38,18 +38,14 @@ void init_em_console(void)
 // Receive characters and queue them to RX1 buffer
 // (called from the UART1 RX ISR)
 ///////////////////////////////////////////////////////////////////
-void EnqueueRX1_NotifyZ80()
+void Enqueue_RX1_Buf()
 {
 	while (UCSR1A & _BV(RXC1)) {
 		if (x_enqueue(&cb_rx1, UDR1)) {
 			// Notify Z80 if interrupt setting is enable
 			if (z80_int_num_rx1 < 128) {
-#if 1
 				// CAUTION: vector is NOT interrupt number(0-127)
 				Z80_EXTINT_low(z80_int_num_rx1 << 1);
-#else
-				Z80_NMI();		// debug
-#endif
 			}
 		}
 	}
@@ -58,7 +54,7 @@ void EnqueueRX1_NotifyZ80()
 ///////////////////////////////////////////////////////////////////
 // Dequeue a character from TX1 buffer and transmit it
 // (called from the periodic time ISR)
-///////////////////////////////////////////////////////////////////-
+///////////////////////////////////////////////////////////////////
 void Transmit_TX1_Buf(void)
 {
 	bool is_sent = false;
@@ -75,15 +71,15 @@ void Transmit_TX1_Buf(void)
 
 ///////////////////////////////////////////////////////////////////
 // Condole device emulation
-//
+///////////////////////////////////////////////////////////////////
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // CAUTION: Followings are PROHIBITED here
 //  * XMEM external SRAM R/W
 //  * invoke /BUSREQ
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//
+///////////////////////////////////////////////////////////////////
 // Console Input
-//
+///////////////////////////////////////////////////////////////////
 uint8_t IN_00_CONIN()
 {
 	// Get a character from RX1 console input buffer
@@ -117,9 +113,9 @@ uint8_t IN_03_CONIN_GetIntLevel()
 	return z80_int_num_rx1;
 }
 
-//
+///////////////////////////////////////////////////////////////////
 // Console Output
-//
+///////////////////////////////////////////////////////////////////
 void OUT_05_CONOUT(uint8_t data)
 {
 	// set character TX1 console buffer

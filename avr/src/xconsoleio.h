@@ -32,5 +32,6 @@ extern int x_putchar(int c);
 extern int x_getchar(void);
 extern int x_getchar_tout(int32_t us);
 
+extern int x_printf_TX1(const char *format, ...);
 
 #endif /* XCONSOLEIO_H_ */

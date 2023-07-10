@@ -255,6 +255,12 @@
     <Compile Include="src\emuldev\em_diskio.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\emuldev\em_led.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\emuldev\em_led.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\intelhex.c">
       <SubType>compile</SubType>
     </Compile>

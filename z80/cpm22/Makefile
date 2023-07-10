@@ -34,3 +34,6 @@ $(TMPDIR)/cpm2-asm.zip:
 
 clean:
 	rm -fr $(TMPDIR)
+	rm -f ipl.rel ipl.lst ipl.ihx ipl.hlr
+	rm -f bios.rel bios.lst bios.ihx bios.hlr
+	rm -f cpm22.rel cpm22.ihx

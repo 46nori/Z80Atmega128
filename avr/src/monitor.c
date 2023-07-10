@@ -185,6 +185,7 @@ static const char help_str[] PROGMEM =	\
 	"mem             : remaining Internal RAM size\n"\
 	"sei             : enable  interrupt\n"\
 	"cli             : disable interrupt\n"\
+	"test [adr]      : XMEM R/W test\n"\
 	"== Z80 Commands ==\n"\
 	"xload           : load INTEL HEX by XMODEM\n"\
 	"bload [adr]     : load binary by XMODEM\n"\
@@ -221,7 +222,8 @@ static const char help_str[] PROGMEM =	\
 //   src : internal SRAM
 //   len : transfer length
 static const unsigned char *read_extram(const unsigned char *dst,
-                                        const unsigned char *src, size_t len) {
+                                        const unsigned char *src,
+                                        size_t len) {
 	size_t rest;
 	unsigned int offset;
 	ExtMem_attach();
@@ -231,7 +233,7 @@ static const unsigned char *read_extram(const unsigned char *dst,
 			// src is in (1) : shadow
 			memcpy((void *)dst, (void *)(offset + src), len);
 			ExtMem_unmap();
-			} else {
+		} else {
 			// src is in (2) : shadow
 			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)src;
 			memcpy((void *)dst, (void *)(offset + src), rest);
@@ -239,10 +241,10 @@ static const unsigned char *read_extram(const unsigned char *dst,
 			// src is in (3) : real
 			memcpy((void *)(dst+rest), (void *)(src + rest), len - rest);
 		}
-		} else if (src <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
+	} else if (src <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
 		// src is in (4) : real
 		memcpy((void *)dst, (void *)src, len);
-		} else {
+	} else {
 		// src is in (5) : real
 		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)src;
 		memcpy((void *)dst, src, rest);
@@ -260,7 +262,8 @@ static const unsigned char *read_extram(const unsigned char *dst,
 //   src : external SRAM
 //   len : transfer length
 static const unsigned char *write_extram(const unsigned char *dst,
-const unsigned char *src, size_t len) {
+                                         const unsigned char *src,
+                                         size_t len) {
 	size_t rest;
 	unsigned int offset;
 	ExtMem_attach();
@@ -270,24 +273,24 @@ const unsigned char *src, size_t len) {
 			// dst is in (1) : shadow
 			memcpy((void *)(offset + dst), (void *)src, len);
 			ExtMem_unmap();
-			} else {
+		} else {
 			// dst is in (2) : shadow
 			rest = (unsigned char *)INTERNAL_RAM_SIZE - (unsigned char *)dst;
 			memcpy((void *)(offset + dst), (void *)src, rest);
 			ExtMem_unmap();
 			// dst is in (3) : real
-			memcpy((void *)(src+rest), (void *)(dst + rest), len - rest);
+			memcpy((void *)(dst+rest), (void *)(src + rest), len - rest);
 		}
-		} else if (dst <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
+	} else if (dst <= (unsigned char *)EXTERNAL_RAM_SIZE - len) {
 		// dst is in (4) : real
-		memcpy((void *)src, (void *)dst, len);
-		} else {
+		memcpy((void *)dst, (void *)src, len);
+	} else {
 		// dst is in (5) : real
 		rest = (unsigned char *)EXTERNAL_RAM_SIZE - (unsigned char *)dst;
-		memcpy((void *)src, dst, rest);
+		memcpy((void *)dst, src, rest);
 		// dst is in (6) : shadow
 		offset = (unsigned int)ExtMem_map();
-		memcpy((void *)(src + rest), (void *)offset, len - rest);
+		memcpy((void *)(dst + rest), (void *)offset, len - rest);
 		ExtMem_unmap();
 	}
 	ExtMem_detach();
@@ -464,8 +467,9 @@ static int write_a_byte_to_external_ram(unsigned int adr, unsigned int dat) {
 	if (adr < INTERNAL_RAM_SIZE) {
 		*(volatile uint8_t *)(adr + (unsigned int)ExtMem_map()) = dat;
 		ExtMem_unmap();
-		} else {
+	} else {
 		*(volatile uint8_t *)adr = dat;
+		//x_printf_TX1("%x : %x\n", adr, dat);
 	}
 	ExtMem_detach();
 	return 0;
@@ -702,25 +706,50 @@ static int c_avr_cli(token_list *t) {
  *********************************************************/
 static int c_test(token_list *t) {
 	// External memory test
+    unsigned int offset = 0;
+    if (t->n > 1) {
+	    unsigned int tmp;
+	    if (get_uint(t, T_PARAM1, &tmp) != NO_ERROR) {
+		    return ERR_PARAM_VAL;
+	    }
+	    offset = tmp;
+    }
+
 	ExtMem_attach();
-	uint8_t *adr = ExtMem_map();
+	
+	uint8_t *adr = (uint8_t *)offset;
+	bool isShadow = false;
+	if (offset < INTERNAL_RAM_SIZE - 0x600) {
+		adr = (uint8_t *)ExtMem_map() + offset;
+		isShadow = true;
+	}
+
 	int i;
 	// Write phase
 	unsigned int w_sum = 0;
-	for (i = 0; i < 0x100; adr[i] = i,    w_sum += i,    i++);
-	for (     ; i < 0x200; adr[i] = 0x55, w_sum += 0x55, i++);
+	for (i = 0; i < 0x100; adr[i] = 0x55, w_sum += 0x55, i++);
+	for (     ; i < 0x200; adr[i] = i,    w_sum += i,    i++);
 	for (     ; i < 0x300; adr[i] = 0xaa, w_sum += 0xaa, i++);
 	for (     ; i < 0x400; adr[i] = 0x00, w_sum += 0x00, i++);
 	for (     ; i < 0x500; adr[i] = 0xff, w_sum += 0xff, i++);
 	// Read phase
 	unsigned int r_sum = 0;
 	for (     ; i > 0; r_sum += adr[--i]);
-	ExtMem_unmap();
+
+	if (isShadow) {
+		ExtMem_unmap();
+	}
 	ExtMem_detach();
 
 	x_printf("write sum=%x\n", w_sum);
 	x_printf("read  sum=%x\n", r_sum);
-
+	if (w_sum != r_sum) {
+		dump(t, &adr, ExtRAM);
+		x_puts("XMEM NG!\n");
+	} else {
+		x_puts("XMEM OK!\n");
+	}
+	
 	// SD Card Test	
 	if (sdcard_test() == 0) {
 		x_puts("SD Card OK.");

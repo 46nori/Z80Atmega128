@@ -149,3 +149,21 @@ char x_dequeue(ConsoleBuffer* cb) {
 	cb->count--;
 	return data;
 }
+
+
+//////////////////////////////////////////////////////
+int x_printf_TX1(const char *format, ...) {
+	char buffer[128];
+	int size;
+	va_list argptr;
+	va_start(argptr, format);
+	size = vsnprintf(buffer, sizeof(buffer), format, argptr);
+	va_end(argptr);
+	for (int i = 0; i < size; i++) {
+		if (buffer[i] == '\n') {
+			USART1_Transmit('\r');
+		}
+		USART1_Transmit(buffer[i]);
+	}
+	return size;
+}

@@ -12,6 +12,7 @@
 //
 void init_emuldev(void)
 {
+	init_em_led();
 	init_em_console();
 	init_em_diskio();
 }
@@ -54,23 +55,23 @@ uint8_t (* const InHandler[PORT_MAX])(void) = {
 	IN_Undefined,
 	IN_Undefined,
 	IN_Undefined,
-	IN_Undefined
+	IN_1F_LED_Get
 };
 
 ///////////////////////////////////////////////////////////////////
 // Z80 OUT instruction Handler table
 ///////////////////////////////////////////////////////////////////
 void (* const OutHandler[PORT_MAX])(uint8_t) = {
-	IN_Undefined,
-	IN_Undefined,
+	OUT_Undefined,
+	OUT_Undefined,
 	OUT_02_CONIN_Flush,
 	OUT_03_CONIN_SetIntLevel,
-	IN_Undefined,
+	OUT_Undefined,
 	OUT_05_CONOUT,
-	IN_Undefined,
+	OUT_Undefined,
 	OUT_07_CONOUT_Flush,
 	OUT_08_CONOUT_SetIntLevel,
-	IN_Undefined,
+	OUT_Undefined,
 	OUT_0A_DSK_SelectDisk,
 	OUT_0B_DSK_WritePos_Low,
 	OUT_0C_DSK_WritePos_Mid,
@@ -92,5 +93,5 @@ void (* const OutHandler[PORT_MAX])(uint8_t) = {
 	OUT_Undefined,
 	OUT_Undefined,
 	OUT_Undefined,
-	OUT_Undefined
+	OUT_1F_LED_Set
 };

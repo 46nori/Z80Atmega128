@@ -7,7 +7,9 @@
 
 #ifndef EMULDEV_H_
 #define EMULDEV_H_
+
 #include "asf.h"
+#include "em_led.h"
 #include "em_consoleio.h"
 #include "em_diskio.h"
 

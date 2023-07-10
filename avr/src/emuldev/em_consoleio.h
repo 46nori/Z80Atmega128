@@ -27,7 +27,7 @@ extern void OUT_05_CONOUT(uint8_t data);
 extern void OUT_07_CONOUT_Flush(uint8_t data);
 extern void OUT_08_CONOUT_SetIntLevel(uint8_t data);
 
-extern void EnqueueRX1_NotifyZ80(void);
+extern void Enqueue_RX1_Buf(void);
 extern void Transmit_TX1_Buf(void);
 
 #endif /* EM_CONSOLEIO_H_ */
