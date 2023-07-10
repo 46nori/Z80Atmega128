@@ -38,26 +38,34 @@
 | 0x10 | OUT       | Set DISK WRITE Buffer length (low)    | Low byte of the length               |
 | 0x11 | IN        | Get DISK WRITE Buffer length (high)   | High byte of the length              |
 | 0x11 | OUT       | Set DISK WRITE Buffer length (high)   | High byte of the length              |
-| 0x12 | IN        | Get DISK WRITE status                 | Bit0: Completed(0) / Writing(1)<br>Bit1: Success(0) / Error(1) |
-| 0x12 | OUT       | Execute DISK WRITE                    | 0-127: Mode2 INT level<br>Other: No interrupt |
-| 0x13 | IN        | Get DISK WRITE Position (low)         | Low byte of the physical position    |
-| 0x13 | OUT       | Set DISK WRITE Position (low)         | Low byte of the physical position    |
-| 0x14 | IN        | Get DISK WRITE Position (middle)      | Middle byte of the physical position |
-| 0x14 | OUT       | Set DISK WRITE Position (middle)      | Middle byte of the physical position |
-| 0x15 | IN        | Get DISK WRITE Position (high)        | High byte of the physical position   |
-| 0x15 | OUT       | Set DISK WRITE Position (high)        | High byte of the physical position   |
-| 0x16 | IN        | Get DISK READ Buffer address (low)    | Low address of the buffer            |
-| 0x16 | OUT       | Set DISK READ Buffer address (low)    | Low address of the buffer            |
-| 0x17 | IN        | Get DISK READ Buffer address (high)   | High address of the buffer           |
-| 0x17 | OUT       | Set DISK READ Buffer address (high)   | High address of the buffer           |
-| 0x18 | IN        | Get DISK READ Buffer length (low)     | Low byte of the length               |
-| 0x18 | OUT       | Set DISK READ Buffer length (low)     | Low byte of the length               |
-| 0x19 | IN        | Get DISK READ Buffer length (high)    | High byte of the length              |
-| 0x19 | OUT       | Set DISK READ Buffer length (high)    | High byte of the length              |
-| 0x1a | IN        | Get DISK READ status                  | Bit0: Completed(0) / Reading(1)<br>Bit1: Success(0) / Error(1) |
-| 0x1a | OUT       | Execute DISK READ                     | 0-127: Mode2 INT level<br>Other: No interrupt |
+| 0x12 | IN        | Get DISK WRITE status                 | Bit 0: Completed(0) / Writing(1)<br>Bit 1: Success(0) / Error(1) |
+| 0x12 | OUT       | Execute DISK WRITE                    |                                      |
+| 0x13 | IN        | Get DISK WRITE interrupt level        | Interrupt level                      |
+| 0x13 | OUT       | Set DISK WRITE interrupt level        | 0-127: Mode2 INT level<br>Other: No interrupt |
+| 0x14 | IN        | Get DISK WRITE Position (low)         | Low byte of the physical position    |
+| 0x14 | OUT       | Set DISK WRITE Position (low)         | Low byte of the physical position    |
+| 0x15 | IN        | Get DISK WRITE Position (middle)      | Middle byte of the physical position |
+| 0x15 | OUT       | Set DISK WRITE Position (middle)      | Middle byte of the physical position |
+| 0x16 | IN        | Get DISK WRITE Position (high)        | High byte of the physical position   |
+| 0x16 | OUT       | Set DISK WRITE Position (high)        | High byte of the physical position   |
+| 0x17 | IN        | Get DISK READ Buffer address (low)    | Low address of the buffer            |
+| 0x17 | OUT       | Set DISK READ Buffer address (low)    | Low address of the buffer            |
+| 0x18 | IN        | Get DISK READ Buffer address (high)   | High address of the buffer           |
+| 0x18 | OUT       | Set DISK READ Buffer address (high)   | High address of the buffer           |
+| 0x19 | IN        | Get DISK READ Buffer length (low)     | Low byte of the length               |
+| 0x19 | OUT       | Set DISK READ Buffer length (low)     | Low byte of the length               |
+| 0x1a | IN        | Get DISK READ Buffer length (high)    | High byte of the length              |
+| 0x1a | OUT       | Set DISK READ Buffer length (high)    | High byte of the length              |
+| 0x1b | IN        | Get DISK READ status                  | Bit 0: Completed(0) / Reading(1)<br>Bit 1: Success(0) / Error(1) |
+| 0x1b | OUT       | Execute DISK READ                     | 0-127: Mode2 INT level<br>Other: No interrupt |
+| 0x1c | IN        | Get DISK READ interrupt level         | Interrupt level                      |
+| 0x1c | OUT       | Set DISK READ interrupt level         | 0-127: Mode2 INT level<br>Other: No interrupt |
+|  ..  | IN        | Undefined                             |                                      |
+|  ..  | OUT       | Undefined                             |                                      |
+| 0x1f | IN        | Get LED Status                        | bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
+| 0x1f | OUT       | Set LED                               | bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 
-From 0x1b onwards, it becomes a shadow area for 0x00-0x1a.
+From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 
 ----
 **Japanese**
@@ -69,8 +77,8 @@ From 0x1b onwards, it becomes a shadow area for 0x00-0x1a.
 |0x01|OUT|未定義||
 |0x02|IN |コンソールバッファサイズ取得|バッファサイズ|
 |0x02|OUT|コンソール入力バッファフラッシュ||
-|0x03|IN |コンソール入力割り込みレベル取得|レベル番号|
-|0x03|OUT|コンソール入力割り込みレベル設定|0-127: Mode2割り込みレベル番号<br>それ以外: 割り込みなし|
+|0x03|IN |コンソール入力割り込みレベル取得|割り込みレベル|
+|0x03|OUT|コンソール入力割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
 |0x04|IN |未定義||
 |0x04|OUT|未定義||
 |0x05|IN |未定義||
@@ -79,8 +87,8 @@ From 0x1b onwards, it becomes a shadow area for 0x00-0x1a.
 |0x06|OUT|未定義||
 |0x07|IN |コンソール出力バッファサイズ取得|バッファサイズ|
 |0x07|OUT|コンソール出力バッファフラッシュ||
-|0x08|IN |コンソール出力エンプティ割り込みレベル設定|0-127: Mode2割り込みレベル番号<br>それ以外: 割り込みなし|
-|0x08|OUT|コンソール出力エンプティ割り込みレベル取得|レベル番号|
+|0x08|IN |コンソール出力エンプティ割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
+|0x08|OUT|コンソール出力エンプティ割り込みレベル取得|割り込みレベル|
 |0x09|IN |未定義||
 |0x09|OUT|未定義||
 |0x0a|IN|DISK番号参照|選択中のDISK番号|
@@ -100,22 +108,30 @@ From 0x1b onwards, it becomes a shadow area for 0x00-0x1a.
 |0x11|IN|DISKライトバッファ長参照|長さの上位バイト|
 |0x11|OUT|DISKライトバッファ長設定|長さの上位バイト|
 |0x12|IN|DISKライトステータス|Bit0: 完了(0) / リード中(1)<br>Bit1: 成功(0) / エラー(1)|
-|0x12|OUT|DISKライト実行|0-127: Mode2割り込みレベル番号<br>それ以外: 割り込みなし|
-|0x13|IN|DISKリード物理位置指定|リード位置の下位アドレス|
-|0x13|OUT|DISKリード物理位置指定|リード位置の下位アドレス|
-|0x14|IN|DISKリード物理位置指定|リード位置の中位アドレス|
-|0x14|OUT|DISKリード物理位置指定|リード位置の中位アドレス|
-|0x15|IN|DISKリード物理位置指定|リード位置の上位アドレス|
-|0x15|OUT|DISKリード物理位置指定|リード位置の上位アドレス|
-|0x16|IN|DISKリードバッファアドレス参照|バッファの下位アドレス|
-|0x16|OUT|DISKリードバッファアドレス設定|バッファの下位アドレス|
-|0x17|IN|DISKリードバッファアドレス参照|バッファの上位アドレス|
-|0x17|OUT|DISKリードバッファアドレス設定|バッファの上位アドレス|
-|0x18|IN|DISKリードバッファ長参照|長さの下位バイト|
-|0x18|OUT|DISKリードバッファ長設定|長さの下位バイト|
-|0x19|IN|DISKリードバッファ長参照|長さの上位バイト|
-|0x19|OUT|DISKリードバッファ長設定|長さの上位バイト|
-|0x1a|IN|DISKリードステータス|Bit0: 完了(0) / リード中(1)<br>Bit1: 成功(0) / エラー(1)|
-|0x1a|OUT|DISKリード実行|0-127: Mode2割り込みレベル番号<br>それ以外: 割り込みなし|
+|0x12|OUT|DISKライト実行||
+|0x13|IN |DISKライト完了割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
+|0x13|OUT|DISKライト完了割り込みレベル取得|割り込みレベル|
+|0x14|IN|DISKリード物理位置指定|リード位置の下位アドレス|
+|0x14|OUT|DISKリード物理位置指定|リード位置の下位アドレス|
+|0x15|IN|DISKリード物理位置指定|リード位置の中位アドレス|
+|0x15|OUT|DISKリード物理位置指定|リード位置の中位アドレス|
+|0x16|IN|DISKリード物理位置指定|リード位置の上位アドレス|
+|0x16|OUT|DISKリード物理位置指定|リード位置の上位アドレス|
+|0x17|IN|DISKリードバッファアドレス参照|バッファの下位アドレス|
+|0x17|OUT|DISKリードバッファアドレス設定|バッファの下位アドレス|
+|0x18|IN|DISKリードバッファアドレス参照|バッファの上位アドレス|
+|0x18|OUT|DISKリードバッファアドレス設定|バッファの上位アドレス|
+|0x19|IN|DISKリードバッファ長参照|長さの下位バイト|
+|0x19|OUT|DISKリードバッファ長設定|長さの下位バイト|
+|0x1a|IN|DISKリードバッファ長参照|長さの上位バイト|
+|0x1a|OUT|DISKリードバッファ長設定|長さの上位バイト|
+|0x1b|IN|DISKリードステータス|Bit0: 完了(0) / リード中(1)<br>Bit1: 成功(0) / エラー(1)|
+|0x1b|OUT|DISKリード実行||
+|0x1c|IN |DISKリード完了割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
+|0x1c|OUT|DISKリード完了割り込みレベル取得|割り込みレベル|
+| .. |IN|未定義|
+| .. |OUT|未定義|
+|0x1f|IN |LED点灯状態取得| bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
+|0x1f|OUT|LED点灯設定| bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 
-0x1b以降は0x00-0x1aのシャドウエリアとなる。
+0x20以降は0x00-0x1fのシャドウエリアとなる。
