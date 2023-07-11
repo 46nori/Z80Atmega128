@@ -1,11 +1,12 @@
 ;
 ;       CP/M 2.2 BIOS for Z80ATmega128
 ;
-MEM	        .equ    62      ; 62k CP/M
-CCP_ENTRY       .equ    0x3400+(MEM-20)*1024
+MEM	        .equ    62              ; 62K CP/M
+CCP_ENTRY       .equ    (MEM-7)*1024
 BDOS_ENTRY      .equ    CCP_ENTRY+0x800
 BIOS_ENTRY      .equ    CCP_ENTRY+0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
+IOBYTE          .equ    0x0003
 
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00
@@ -82,17 +83,6 @@ MSG_CCP_BDOS:
         .str    "Loaded CCP & BDOS.\r\n"
         .db     0
 
-;   Load BIOS
-LOAD_BIOS:
-        ; debug
-        LD HL, MSG_BIOS
-        CALL PRINT_STR
-        RET
-MSG_BIOS:
-        .str    "Loaded BIOS.\r\n"
-        .db     0
-
-
 ;******************************************************************
 ;   00: Cold Boot
 ;******************************************************************
@@ -103,6 +93,7 @@ CBOOT:
         LD A, H
         LD i, A
         IM 2
+
         ; Disable interrupt of emulated Console device
         LD A, 128
         OUT (PORT_CONIN_INT), A
@@ -112,10 +103,20 @@ CBOOT:
 ;        LD A, 7
 ;        CALL LED_ON
 
-        CALL LOAD_BIOS
-        CALL LOAD_CCP_BDOS
+        ; Boot message
+        LD HL, BOOT_MSG
+        CALL PRINT_STR
+
+        ; Set IOBYTE
+        LD A, 0
+        LD (IOBYTE), A
 
         JP CCP_ENTRY
+
+BOOT_MSG:
+        .str    "\r\n"
+        .str    "CP/M-80 Ver2.2 on Z80ATmega128\r\n"
+        .db     0
 
 ;******************************************************************
 ;   01: Warm Boot
@@ -124,23 +125,20 @@ WBOOT:
         ; Reload CCP and BDOS
         CALL LOAD_CCP_BDOS
 
-        PUSH HL
         ; Set 'JP _WBOOT' at 0x0000
         LD A, 0xC3
         LD (0x0000), A
         LD HL, _WBOOT
         LD (0x0001), HL
 
-        ; Set 'JP BDOS_ENTRY' at 0x0005
+        ; Set 'JP BDOS_ENTRY + 6' at 0x0005
         LD A, 0xC3
         LD (0x0005), A
-        LD HL, BDOS_ENTRY
+        LD HL, BDOS_ENTRY + 6 
         LD (0x0006), HL
-        POP HL
 
-        ; Set default drive 0
-        XOR A
-        LD C, A
+        ; Set default drive as A:(0)
+        LD C, 0
 
         LD SP, CCP_ENTRY
         JP CCP_ENTRY + 3
@@ -207,14 +205,17 @@ HOME:
 SELDSK:
         LD A, C
         OUT (PORT_SELDSK), A
-        LD HL, 0        ; no disk
+        LD (DRIVE_NO), A
+;        LD HL, DPH00
+        LD HL, 0
         RET
+DRIVE_NO:
+        .db     0
 
 ;******************************************************************
 ;   10: Set logical track number
 ;******************************************************************
 SETTRK:
-        LD HL, DPH
         RET
 
 ;******************************************************************
@@ -303,10 +304,34 @@ LED_OFF:
         RET
 
 ;******************************************************************
-;   Disk Parameter Header (DPH)
+;       Disk Parameter Header (DPH)
 ;******************************************************************
-DPH:
-        .dw     XLATE
+; DISK A
+DPH00:
+        .dw    0               ; XLT: Translation Table address (0 if no table)
+        .dw    0               ; SPA: scratch pad area 1
+        .dw    0               ; SPA: scratch pad area 2
+        .dw    0               ; SPA: scratch pad area 3
+        .dw    DIRB00          ; DIRB: Directory Buffer address
+        .dw    DPB00           ; DPB: Disk Parameter Block address
+        .dw    CSV00           ; CSV: Check sum vector address
+        .dw    ALV00           ; ALV: Allocation(bit map) vector address
+;
+;       Disk Parameter Block (DPB)
+;
+DPB00:  .dw    16              ;sectors per track from bios.
+        .db    2               ;block shift.sector in a block 128*2^n
+        .db    3               ;block mask.sector no. in a block - 1
+        .db    0               ;extent mask.
+        .dw    23              ;disk size (number of blocks-1).
+        .dw    31              ;directory size.(max file name no.-1)
+        .dw    0xC0            ;storage for first bytes of bit map (dir space used).
+        .dw    8               ;check sum vector size
+        .dw    0               ;offset. first usable track number.
+;
+DIRB00: .ds     128
+CSV00:  .db     0,0,0,0,0,0,0,0
+ALV00:  .db     0,0,0
 
 ;******************************************************************
 ;   Disk Parameter Block (DPB)
@@ -323,12 +348,8 @@ ALLOC1:	.dw	0
 OFFSET:	.dw	0		;first usable track number.
 XLATE:	.dw	0		;sector translation table address.
 
-
 ;******************************************************************
 ;   DMA buffer
 ;******************************************************************
-DMABUF_RD:
+DMABUF:
         .ds     512
-DMABUF_WR:
-        .ds     512
-
