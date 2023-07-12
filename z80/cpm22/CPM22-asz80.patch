@@ -1,5 +1,5 @@
 --- CPM22.Z80	2023-07-11 00:01:59.020534000 +0900
-+++ cpm22.asm	2023-07-11 00:07:11.056159100 +0900
++++ cpm22.asm	2023-07-12 15:22:50.237644300 +0900
 @@ -11,35 +11,37 @@
  ;   Set memory limit here. This is the amount of contigeous
  ; ram starting from 0000. CP/M will reside at the end of this space.
@@ -569,15 +569,14 @@
  	LD	HL,CHGDRV
  	OR	(HL)
  	JP	NZ,SYNERR
-@@ -1205,30 +1213,37 @@
+@@ -1205,30 +1213,36 @@
  ;
  ;   ccp stack area.
  ;
 -	DEFB	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 -CCPSTACK EQU	$	;end of ccp stack area.
 +	.db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-+;CCPSTACK .equ	$	;end of ccp stack area.
-+CCPSTACK:
++CCPSTACK .equ	#.	;end of ccp stack area.
  ;
  ;   Batch (or SUBMIT) processing information storage.
  ;
@@ -618,7 +617,7 @@
  ;
  ;**************************************************************
  ;*
-@@ -1240,10 +1255,10 @@
+@@ -1240,10 +1254,10 @@
  ;
  ;   Bdos error table.
  ;
@@ -633,7 +632,7 @@
  ;
  ;   Entry into bdos. (DE) or (E) are the parameters passed. The
  ; function number desired is in register (C).
-@@ -1281,14 +1296,14 @@
+@@ -1281,14 +1295,14 @@
  ;
  ;   BDOS function jump table.
  ;
@@ -655,7 +654,7 @@
  ;
  ;   Bdos error message section.
  ;
-@@ -1309,19 +1324,19 @@
+@@ -1309,19 +1323,19 @@
  ERROR5:	CALL	PRTERR
  	JP	0		;always reboot on these errors.
  ;
@@ -682,7 +681,7 @@
  	LD	(BDOSDRV),A	;and put in message.
  	LD	BC,BDOSERR	;and print it.
  	CALL	PRTMESG
-@@ -1361,7 +1376,7 @@
+@@ -1361,7 +1375,7 @@
  	RET	Z
  	CP	BS
  	RET	Z
@@ -691,7 +690,7 @@
  	RET	
  ;
  ;   Check the console during output. Halt on a control-s, then
-@@ -1373,7 +1388,7 @@
+@@ -1373,7 +1387,7 @@
  	OR	A		;if anything, just return without checking.
  	JP	NZ,CKCON2
  	CALL	CONST		;nothing in buffer. Check console.
@@ -700,7 +699,7 @@
  	RET	Z		;return if nothing.
  	CALL	CONIN		;ok, get it.
  	CP	CNTRLS		;if not control-s, return with zero cleared.
-@@ -1410,7 +1425,7 @@
+@@ -1410,7 +1424,7 @@
  	CP	DEL		;rubouts don't do anything here.
  	RET	Z
  	INC	(HL)		;bump line pointer.
@@ -709,7 +708,7 @@
  	RET	NC
  	DEC	(HL)		;restore and check for the start of the line.
  	LD	A,(HL)
-@@ -1433,10 +1448,10 @@
+@@ -1433,10 +1447,10 @@
  	CALL	CHKCHAR		;check character.
  	JP	NC,OUTCON	;not a control, use normal output.
  	PUSH	AF
@@ -722,7 +721,7 @@
  	LD	C,A
  ;
  ;   Function to output (C) to the console device and expand tabs
-@@ -1445,11 +1460,11 @@
+@@ -1445,11 +1459,11 @@
  OUTCON:	LD	A,C
  	CP	TAB		;is it a tab?
  	JP	NZ,OUTCHAR	;use regular output.
@@ -736,7 +735,7 @@
  	JP	NZ,OUTCON1
  	RET	
  ;
-@@ -1457,7 +1472,7 @@
+@@ -1457,7 +1471,7 @@
  ; on the screen.
  ;
  BACKUP:	CALL	BACKUP1		;backup the screen 1 place.
@@ -745,7 +744,7 @@
  	CALL	CONOUT
  BACKUP1:LD	C,BS		;then back space once more.
  	JP	CONOUT
-@@ -1465,14 +1480,14 @@
+@@ -1465,14 +1479,14 @@
  ;   Signal a deleted line. Print a '#' at the end and start
  ; over.
  ;
@@ -762,7 +761,7 @@
  	CALL	OUTCHAR		;nope, keep going.
  	JP	NEWLN1
  ;
-@@ -1486,7 +1501,7 @@
+@@ -1486,7 +1500,7 @@
  ;   Print message pointed to by (BC). It will end with a '$'.
  ;
  PRTMESG:LD	A,(BC)		;check for terminating character.
@@ -771,7 +770,7 @@
  	RET	Z
  	INC	BC
  	PUSH	BC		;otherwise, bump pointer and print it.
-@@ -1507,7 +1522,7 @@
+@@ -1507,7 +1521,7 @@
  RDBUF1:	PUSH	BC
  	PUSH	HL
  RDBUF2:	CALL	GETCHAR		;get the next input character.
@@ -780,7 +779,7 @@
  	POP	HL		;reset registers.
  	POP	BC
  	CP	CR		;en of the line?
-@@ -1681,24 +1696,25 @@
+@@ -1681,24 +1695,24 @@
  IOERR1:	LD	A,1
  	JP	SETSTAT
  ;
@@ -810,8 +809,7 @@
 -STATUS:	DEFW	0		;status returned from bdos function.
 +	.db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 +	.db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-+;STKAREA .equ	$		;end of stack area.
-+STKAREA:
++STKAREA .equ	#.		;end of stack area.
 +;
 +USERNO:	.db	0		;current user number.
 +ACTIVE:	.db	0		;currently active drive.
@@ -820,7 +818,7 @@
  ;
  ;   Select error occured, jump to error routine.
  ;
-@@ -1761,11 +1777,11 @@
+@@ -1761,11 +1775,11 @@
  	LD	HL,(DSKSIZE)	;check disk size.
  	LD	A,H		;more than 256 blocks on this?
  	LD	HL,BIGDISK
@@ -834,7 +832,7 @@
  	OR	A
  	RET	
  ;
-@@ -2040,7 +2056,7 @@
+@@ -2040,7 +2054,7 @@
  CHECKSUM: LD	C,128		;length of buffer.
  	LD	HL,(DIRBUF)	;get its location.
  	XOR	A		;clear summation byte.
@@ -843,7 +841,7 @@
  	INC	HL
  	DEC	C
  	JP	NZ,CHKSUM1
-@@ -2079,7 +2095,7 @@
+@@ -2079,7 +2093,7 @@
  	LD	C,A
  	CALL	SHIFTR		;shift status such that bit 0 is the
  	LD	A,L		;one of interest for this drive.
@@ -852,7 +850,7 @@
  	RET	
  ;
  ;   Function to write protect the current disk.
-@@ -2149,7 +2165,7 @@
+@@ -2149,7 +2163,7 @@
  ;   Set bit 7 in the 's2' byte of the fcb.
  ;
  SETS2B7:CALL	GETS2		;get the byte.
@@ -861,7 +859,7 @@
  	LD	(HL),A		;then store.
  	RET	
  ;
-@@ -2165,7 +2181,7 @@
+@@ -2165,7 +2179,7 @@
  	SUB	(HL)
  	INC	HL
  	LD	A,D
@@ -870,7 +868,7 @@
  	RET	
  ;
  ;   Call this routine to prevent (SCRATCH1) from being greater
-@@ -2191,7 +2207,7 @@
+@@ -2191,7 +2205,7 @@
  ;
  ;   Set the directory checksum byte.
  ;
@@ -879,7 +877,7 @@
  ;
  ;   Routine to set or compare the directory checksum byte. If
  ; (C)=0ffh, then this will set the checksum byte. Else the byte
-@@ -2271,7 +2287,7 @@
+@@ -2271,7 +2285,7 @@
  ;
  ;   Set location (FILEPOS) to 0ffffh.
  ;
@@ -888,7 +886,7 @@
  	LD	(FILEPOS),HL
  	RET	
  ;
-@@ -2292,7 +2308,7 @@
+@@ -2292,7 +2306,7 @@
  	JP	NC,NXENT1	;is there more room left?
  	JP	STFILPOS	;no. Set this flag and return.
  NXENT1:	LD	A,(FILEPOS)	;get file position within directory.
@@ -897,7 +895,7 @@
  	LD	B,5		;convert to relative position (32 bytes each).
  NXENT2:	ADD	A,A		;note that this is not efficient code.
  	DEC	B		;5 'ADD A's would be better.
-@@ -2313,7 +2329,7 @@
+@@ -2313,7 +2327,7 @@
  ; this block number and (HL) will point to the address for it.
  ;
  CKBITMAP: LD	A,C		;determine bit number of interest.
@@ -906,7 +904,7 @@
  	INC	A
  	LD	E,A		;save particular bit number.
  	LD	D,A
-@@ -2324,7 +2340,7 @@
+@@ -2324,7 +2338,7 @@
  	RRCA			;now shift right 3 bits.
  	RRCA	
  	RRCA	
@@ -915,7 +913,7 @@
  	LD	C,A
  	LD	A,B
  	ADD	A,A		;now shift (B) into bits 7,6,5.
-@@ -2338,7 +2354,7 @@
+@@ -2338,7 +2352,7 @@
  	RRCA	
  	RRCA	
  	RRCA	
@@ -924,7 +922,7 @@
  	LD	B,A		;and now (B) is completed.
  ;
  ;   use this as an offset into the disk space allocation
-@@ -2358,7 +2374,7 @@
+@@ -2358,7 +2372,7 @@
  ;
  STBITMAP: PUSH	DE
  	CALL	CKBITMAP	;get the byte of interest.
@@ -933,7 +931,7 @@
  	POP	BC
  	OR	C		;and now set it acording to (C).
  ;
-@@ -2454,12 +2470,12 @@
+@@ -2454,12 +2468,12 @@
  	INC	HL		;in a sector.
  	LD	(HL),0
  	CALL	STFILPOS	;clear initial file position also.
@@ -948,7 +946,7 @@
  	CP	(HL)		;empty file entry?
  	JP	Z,BITMAP2
  	LD	A,(USERNO)	;no, correct user number?
-@@ -2467,7 +2483,7 @@
+@@ -2467,7 +2481,7 @@
  	JP	NZ,BITMAP3
  	INC	HL
  	LD	A,(HL)		;yes, does name start with a '$'?
@@ -957,7 +955,7 @@
  	JP	NZ,BITMAP3
  	DEC	A		;yes, set atatus to minus one.
  	LD	(STATUS),A
-@@ -2497,7 +2513,7 @@
+@@ -2497,7 +2511,7 @@
  	POP	AF		;now mask second extent and compare
  	AND	B		;with the first one.
  	SUB	C
@@ -966,7 +964,7 @@
  	POP	BC		;the zero flag is set if they are the same.
  	RET			;restore (BC) and return.
  ;
-@@ -2505,7 +2521,7 @@
+@@ -2505,7 +2519,7 @@
  ; register (C) should contain the number of bytes of the fcb
  ; that must match.
  ;
@@ -975,7 +973,7 @@
  	LD	(FNDSTAT),A
  	LD	HL,COUNTER	;save character count.
  	LD	(HL),C
-@@ -2525,7 +2541,7 @@
+@@ -2525,7 +2539,7 @@
  	LD	HL,(SAVEFCB)	;set (DE) pointing to filename to match.
  	EX	DE,HL
  	LD	A,(DE)
@@ -984,7 +982,7 @@
  	JP	Z,FNDNXT1	;(* are we trying to reserect erased entries? *)
  	PUSH	DE
  	CALL	MOREFLS		;more files in directory?
-@@ -2539,7 +2555,7 @@
+@@ -2539,7 +2553,7 @@
  	OR	A
  	JP	Z,FNDNXT5
  	LD	A,(DE)		;no, check next byte.
@@ -993,7 +991,7 @@
  	JP	Z,FNDNXT4
  	LD	A,B		;get bytes position in fcb.
  	CP	13		;don't care about the thirteenth byte either.
-@@ -2548,7 +2564,7 @@
+@@ -2548,7 +2562,7 @@
  	LD	A,(DE)
  	JP	Z,FNDNXT3
  	SUB	(HL)		;otherwise compare characters.
@@ -1002,7 +1000,7 @@
  	JP	NZ,FINDNXT	;not the same, check next entry.
  	JP	FNDNXT4		;so far so good, keep checking.
  FNDNXT3:PUSH	BC		;check the extent byte here.
-@@ -2566,7 +2582,7 @@
+@@ -2566,7 +2580,7 @@
  	DEC	C		;adjust character counter.
  	JP	FNDNXT2
  FNDNXT5:LD	A,(FILEPOS)	;return the position of this entry.
@@ -1011,7 +1009,7 @@
  	LD	(STATUS),A
  	LD	HL,FNDSTAT
  	LD	A,(HL)
-@@ -2579,7 +2595,7 @@
+@@ -2579,7 +2593,7 @@
  ;   Filename was not found. Set appropriate status.
  ;
  FNDNXT6:CALL	STFILPOS	;set (FILEPOS) to 0ffffh.
@@ -1020,7 +1018,7 @@
  	JP	SETSTAT
  ;
  ;   Erase files from the directory. Only the first byte of the
-@@ -2592,7 +2608,7 @@
+@@ -2592,7 +2606,7 @@
  	RET	Z		;nope, we must be done.
  	CALL	CHKROFL		;is file read only?
  	CALL	FCB2HL		;nope, get address of fcb and
@@ -1029,7 +1027,7 @@
  	LD	C,0		;clear the space from the bit map.
  	CALL	SETFILE
  	CALL	DIRWRITE	;now write the directory sector back out.
-@@ -2803,7 +2819,7 @@
+@@ -2803,7 +2817,7 @@
  	CALL	GETWPRT		;get write protect bit for this drive.
  	RET	NZ		;just return if it is set.
  	CALL	GETS2		;else get the 's2' byte.
@@ -1038,7 +1036,7 @@
  	RET	NZ		;just return if set.
  	LD	C,15		;else look up this file in directory.
  	CALL	FINDFST
-@@ -2848,7 +2864,7 @@
+@@ -2848,7 +2862,7 @@
  	INC	HL
  	DEC	C		;there are 16 entries only.
  	JP	NZ,CLOSEIT1	;continue if more to do.
@@ -1047,7 +1045,7 @@
  	ADD	HL,BC
  	EX	DE,HL
  	ADD	HL,BC
-@@ -2862,7 +2878,7 @@
+@@ -2862,7 +2876,7 @@
  	ADD	HL,BC
  	LD	A,(HL)		;get from user.
  	LD	(DE),A		;and put in directory.
@@ -1056,7 +1054,7 @@
  	LD	(CLOSEFLG),A
  	JP	UPDATE1		;update the directory now.
  CLOSEIT7: LD	HL,STATUS	;set return status and then return.
-@@ -2912,7 +2928,7 @@
+@@ -2912,7 +2926,7 @@
  	ADD	HL,BC
  	LD	A,(HL)		;and increment it.
  	INC	A
@@ -1065,7 +1063,7 @@
  	LD	(HL),A
  	JP	Z,GTNEXT1	;overflow?
  	LD	B,A		;mask extent byte.
-@@ -2926,7 +2942,7 @@
+@@ -2926,7 +2940,7 @@
  	ADD	HL,BC
  	INC	(HL)		;and bump it.
  	LD	A,(HL)		;too many extents?
@@ -1074,7 +1072,7 @@
  	JP	Z,GTNEXT5	;yes, set error code.
  ;
  ;   Get here to open the next extent.
-@@ -2957,7 +2973,7 @@
+@@ -2957,7 +2971,7 @@
  ;
  RDSEQ:	LD	A,1		;set sequential access mode.
  	LD	(MODE),A
@@ -1083,7 +1081,7 @@
  	LD	(RDWRTFLG),A
  	CALL	STRDATA		;put rec# and ext# into fcb.
  	LD	A,(SAVNREC)	;get next record to read.
-@@ -3111,7 +3127,7 @@
+@@ -3111,7 +3125,7 @@
  ;
  	PUSH	AF
  	CALL	GETS2		;set 'extent written to' flag.
@@ -1092,7 +1090,7 @@
  	LD	(HL),A
  	POP	AF		;get record count for this extent.
  WTSEQ99:CP	127		;is it full?
-@@ -3157,21 +3173,21 @@
+@@ -3157,21 +3171,21 @@
  	LD	HL,33		;now get byte 'r0'.
  	ADD	HL,DE
  	LD	A,(HL)
@@ -1117,7 +1115,7 @@
  	LD	B,A		;and save it in (B).
  	POP	AF		;get record number back to (A).
  	INC	HL		;check overflow byte 'r2'.
-@@ -3192,7 +3208,7 @@
+@@ -3192,7 +3206,7 @@
  	ADD	HL,DE
  	LD	A,B
  	SUB	(HL)
@@ -1126,7 +1124,7 @@
  	JP	Z,POSITN3	;same, we are almost done then.
  ;
  ;  Get here when another extent is required.
-@@ -3237,7 +3253,7 @@
+@@ -3237,7 +3251,7 @@
  ;
  POSITN4:PUSH	HL
  	CALL	GETS2
@@ -1135,7 +1133,7 @@
  	POP	HL
  ;
  ;   Return with error code (presently in L).
-@@ -3249,7 +3265,7 @@
+@@ -3249,7 +3263,7 @@
  ;
  ;   Read a random record.
  ;
@@ -1144,7 +1142,7 @@
  	CALL	POSITION	;position the file to proper record.
  	CALL	Z,RDSEQ1	;and read it as usual (if no errors).
  	RET	
-@@ -3277,7 +3293,7 @@
+@@ -3277,7 +3291,7 @@
  	ADD	HL,DE
  	LD	A,(HL)		;compute (BC)=(record #)+(extent)*128.
  	RRCA			;move lower bit into bit 7.
@@ -1153,7 +1151,7 @@
  	ADD	A,C		;add to our record number.
  	LD	C,A
  	LD	A,0		;take care of any carry.
-@@ -3285,7 +3301,7 @@
+@@ -3285,7 +3299,7 @@
  	LD	B,A
  	LD	A,(HL)		;now get the upper bits of extent into
  	RRCA			;bit positions 0-3.
@@ -1162,7 +1160,7 @@
  	ADD	A,B		;add this in to 'r1' byte.
  	LD	B,A
  	LD	HL,14		;get the 's2' byte (extra extent).
-@@ -3303,7 +3319,7 @@
+@@ -3303,7 +3317,7 @@
  	LD	A,L
  	POP	HL		;and same for first carry flag.
  	OR	L		;either one of these set?
@@ -1171,7 +1169,7 @@
  	RET	
  ;
  ;   Routine to setup the fcb (bytes 'r0', 'r1', 'r2') to
-@@ -3337,10 +3353,10 @@
+@@ -3337,10 +3351,10 @@
  	SUB	(HL)		;in the fcb represent a larger size than
  	INC	HL		;this extent does.
  	LD	A,B
@@ -1184,7 +1182,7 @@
  	JP	C,RANSIZ2
  	LD	(HL),E		;we found a larger (in size) extent.
  	DEC	HL		;stuff these values into fcb.
-@@ -3403,20 +3419,20 @@
+@@ -3403,20 +3417,20 @@
  ; of the fcb is examined for a drive specification. If non
  ; zero then the drive will be selected and loged in.
  ;
@@ -1209,7 +1207,7 @@
  	LD	(HL),A		;something)?
  	CALL	SETDSK		;select and log in this drive.
  AUTOSL1:LD	A,(USERNO)	;move user number into fcb.
-@@ -3427,7 +3443,7 @@
+@@ -3427,7 +3441,7 @@
  ;
  ;   Function to return the current cp/m version number.
  ;
@@ -1218,7 +1216,7 @@
  	JP	SETSTAT
  ;
  ;   Function to reset the disk system.
-@@ -3460,11 +3476,11 @@
+@@ -3460,11 +3474,11 @@
  GETFST:	LD	C,0		;prepare for special search.
  	EX	DE,HL
  	LD	A,(HL)		;is first byte a '?'?
@@ -1232,7 +1230,7 @@
  	CALL	NZ,CLEARS2	;otherwise, look for a zero 's2' byte.
  	CALL	AUTOSEL		;select proper drive.
  	LD	C,15		;compare bytes 0-14 in fcb (12&13 excluded).
-@@ -3552,11 +3568,11 @@
+@@ -3552,11 +3566,11 @@
  ; Else set the user number from (E).
  ;
  GETUSER:LD	A,(EPARAM)	;get parameter.
@@ -1246,7 +1244,7 @@
  	LD	(USERNO),A	;bits (0-4) only.
  	RET	
  ;
-@@ -3647,66 +3663,66 @@
+@@ -3647,66 +3661,66 @@
  ;*
  ;**************************************************************
  ;
