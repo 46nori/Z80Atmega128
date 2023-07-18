@@ -11,6 +11,8 @@
 #include "xconsoleio.h"
 #include "emuldev/emuldev.h"
 
+static void DebugTwinkleLED(void);
+
 //
 // External Interrupt
 //
@@ -27,17 +29,18 @@ void ExtInt_Init(void) {
 ///////////////////////////////////////////////////////////////////
 ISR(INT0_vect) {
 	// Emulate device and return port data to Z80
+//	x_printf("IN(%x)\n", PINF);
 	PORTA = (*InHandler[PINF % PORT_MAX])();
 	DDRA  = 0xff;					// Set Port A output
 
-	// Clear /WAIT (instead of Z80_CLRWAIT())
+	// Clear /WAIT
+	// Pulse width must be >250ns (Z80 1CLK@4MHz)
+	//   62.5ns(AVR 1CLK@16MHz) * 5CLK = 312.5ns
 	CLR_BIT(PORTD, PORTD5);			// Inactivate Z80 /WAIT
-	asm("NOP");						// Ensure data latch before PortA High-Z
-	PORTA = 0xff;					// Set PortA input and High-Z
-	DDRA  = 0x00;
-	SET_BIT(PORTD, PORTD5);
-
-//	CLR_BIT(PORTE, PORTE5);			// DEBUG: BLUE LED ON PE5
+	asm("NOP");						// 1CLK, Ensure data latch before PortA High-Z
+	PORTA = 0xff;					// 1CLK, Set PortA input and High-Z
+	DDRA  = 0x00;					// 1CLK
+	SET_BIT(PORTD, PORTD5);			// 2CLK
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -48,11 +51,17 @@ ISR(INT1_vect) {
 	PORTA = 0xff;
 	DDRA  = 0x00;
 	// Emulate device with Z80 port data
+//	x_printf("OUT(%x)\n", PINF);
 	(*OutHandler[PINF % PORT_MAX])(PINA);
-	// Clear /WAIT (instead of Z80_CLRWAIT())
-	Z80_CLRWAIT();
 
-//	CLR_BIT(PORTE, PORTE6);			// DEBUG: YELLOW LED ON PE6
+	// Clear /WAIT
+	// Pulse width must be >250ns (Z80 1CLK@4MHz)
+	//   62.5ns(AVR 1CLK@16MHz) * 5CLK = 312.5ns
+	CLR_BIT(PORTD, PORTD5);			// Inactivate Z80 /WAIT
+	asm("NOP");						// 1 CLK
+	asm("NOP");						// 1 CLK
+	asm("NOP");						// 1 CLK
+	SET_BIT(PORTD, PORTD5);			// 2 CLK
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -66,13 +75,13 @@ ISR(INT4_vect) {
 	DDRA  = 0xff;
 
 	// Clear /WAIT (instead of Z80_CLRWAIT())
+	// Pulse width must be >250ns (Z80 1CLK@4MHz)
+	//   62.5ns(AVR 1CLK@16MHz) * 5CLK = 312.5ns
 	CLR_BIT(PORTD, PORTD5);			// Inactivate Z80 /WAIT
-	asm("NOP");						// Ensure data latch before PortA High-Z
-	PORTA = 0xff;					// Set PortA input and High-Z
-	DDRA  = 0x00;
-	SET_BIT(PORTD, PORTD5);
-
-//	CLR_BIT(PORTE, PORTE7);			// DEBUG: RED LED ON PE7
+	asm("NOP");						// 1 CLK, Ensure data latch before PortA High-Z
+	PORTA = 0xff;					// 1 CLK Set PortA input and High-Z
+	DDRA  = 0x00;					// 1 CLK
+	SET_BIT(PORTD, PORTD5);			// 2 CLK
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -86,7 +95,6 @@ ISR(USART1_RX_vect)
 ///////////////////////////////////////////////////////////////////
 // Timer0 handler
 ///////////////////////////////////////////////////////////////////
-static void DebugTwinkleLED(void);
 ISR(TIMER0_COMP_vect) {
 	Transmit_TX1_Buf();
 }
@@ -96,6 +104,8 @@ ISR(TIMER0_COMP_vect) {
 ///////////////////////////////////////////////////////////////////
 ISR(TIMER2_COMP_vect) {
 	DebugTwinkleLED();
+	em_disk_read();
+	em_disk_write();
 }
 
 // Debug

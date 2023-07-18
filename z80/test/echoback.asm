@@ -3,10 +3,36 @@ VECT_TBL    .equ    0x0100
     .area TEST (ABS)
     .org 0x0000
 
-PORT_CONIN      .equ    0x00
-PORT_CONIN_STS  .equ    0x01
-PORT_CONIN_INT  .equ    0x03
-PORT_CONOUT     .equ    0x05
+; Emulated I/O address 
+PORT_CONIN      .equ    0x00    ; Get a character from CONIN
+PORT_CONIN_STS  .equ    0x01    ; Check CONIN status
+PORT_CONIN_INT  .equ    0x03    ; Interrupt setting of CONIN
+PORT_CONOUT     .equ    0x05    ; Send a character to CONOUT
+PORT_CONOUT_STS .equ    0x06    ; Check CONOUT status
+PORT_CONOUT_INT .equ    0x08    ; Interrupt setting of CONOUT
+PORT_SELDSK     .equ    0x0A    ; Select DISK
+PORT_DSKSTS     .equ    0x0A    ; Check selected DISK status
+PORT_DSKWRPOS_L .equ    0x0B    ; Write position(L) of DISK
+PORT_DSKWRPOS_M .equ    0x0C    ; Write position(M) of DISK
+PORT_DSKWRPOS_H .equ    0x0D    ; Write position(H) of DISK
+PORT_DSKWRBUF_L .equ    0x0E    ; Source buffer address(L) in Write
+PORT_DSKWRBUF_H .equ    0x0F    ; Source buffer address(H) in Write
+PORT_DSKWRLEN_L .equ    0x10    ; Data size(L) to Write
+PORT_DSKWRLEN_H .equ    0x11    ; Data size(H) to Write
+PORT_DSKWR      .equ    0x12    ; Write to DISK
+PORT_DSKWR_STS  .equ    0x12    ; Check Write DISK status
+PORT_DSKWR_INT  .equ    0x13    ; Interrupt setting of DISK Write
+PORT_DSKRDPOS_L .equ    0x14    ; Read position (L) of DISK
+PORT_DSKRDPOS_M .equ    0x15    ; Read position (M) of DISK
+PORT_DSKRDPOS_H .equ    0x16    ; Read position (H) of DISK
+PORT_DSKRDBUF_L .equ    0x17    ; Destination buffer address(L) in Read
+PORT_DSKRDBUF_H .equ    0x18    ; Destination buffer address(H) in Read
+PORT_DSKRDLEN_L .equ    0x19    ; Data size(L) to Read
+PORT_DSKRDLEN_H .equ    0x1A    ; Data size(H) to Read
+PORT_DSKRD      .equ    0x1B    ; Read from DISK
+PORT_DSKRD_STS  .equ    0x1B    ; Check Read DISK status
+PORT_DSKRD_INT  .equ    0x1C    ; Interrupt setting of DISK Read
+PORT_LED        .equ    0x1F
 
     di
     ld sp, 0x0000
@@ -14,16 +40,11 @@ PORT_CONOUT     .equ    0x05
     ld a, h
     ld i, a
     im 2
-    ld hl, VECTNO
     ei
 
-    ; RX1 int 0x10
-    ld a, 0x10
+    ; RX1 int
+    ld a, 0
     out (PORT_CONIN_INT), a
-
-    ; reset interrupt count for debug
-    xor a
-    ld (INTCOUNT), a
 
 ;    call HELLO
 
@@ -34,29 +55,24 @@ LOOP:
 ; echo back
 ;
 ECHO:
-    ; copy interrupt vector for debug
-    ld (hl), a
-
-ECHO_LOOP:
     in a, (PORT_CONIN)      ; read a character
     out (PORT_CONOUT), a    ; write a character
     in a, (PORT_CONIN_STS)  ; check remaining data
     or a
-    jr nz, ECHO_LOOP
-    ; Update interrupt count for debug
+    jr nz, ECHO
 
-    ld a, (INTCOUNT)    ; increment interrupt count
-    inc a
-    ld (INTCOUNT), a
-
-    ei                  ; !!!! IMPORTANT !!!!
+    ei
     ret
 
-    .org 0x0090
-VECTNO:
-    .db 0xaa
-INTCOUNT:
-    .db 0
+HELLO:
+    ld b, 8
+    ld c, PORT_CONOUT
+    ld hl, HELLO_STR
+    otir
+    ret
+HELLO_STR:
+    .str "Hello!\r\n"
+
 ;
 ; Interrupt vector table
 ;
@@ -735,11 +751,3 @@ ISR_7F:
     call ECHO
     retn
 
-HELLO:
-    ld b, 8
-    ld c, 2
-    ld hl, HELLO_STR
-    otir
-    ret
-HELLO_STR:
-    .str "Hello!\r\n"

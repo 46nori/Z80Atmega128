@@ -63,9 +63,10 @@ void Transmit_TX1_Buf(void)
 		USART1_Transmit(data);
 		is_sent = true;
 	}
-	if (is_sent && z80_int_num_rx1 < 128) {
+	if (is_sent && z80_int_num_tx1 < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
 		Z80_EXTINT_low(z80_int_num_tx1 << 1);
+		is_sent = false;
 	}
 }
 
