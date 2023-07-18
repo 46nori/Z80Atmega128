@@ -129,11 +129,14 @@ void Z80_EXTINT(uint8_t vector) {
 
 //
 // Clear /CLRWAIT (PD5) to deactivate Z80 /WAIT
-//   /SET required >20ns low period in 74HC74
+// Pulse width must be >250ns (Z80 1CLK@4MHz)
+//   62.5ns(AVR 1CLK@16MHz) * 5CLK = 312.5ns
 void Z80_CLRWAIT(void) {
 	CLR_BIT(PORTD, PORTD5);
-	asm("NOP");					// 62.5ns (=1CLK@16MHz)
-	SET_BIT(PORTD, PORTD5);
+	asm("NOP");					// 1 CLK
+	asm("NOP");					// 1 CLK
+	asm("NOP");					// 1 CLK
+	SET_BIT(PORTD, PORTD5);		// 2 CLK
 }
 
 //

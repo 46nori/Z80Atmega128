@@ -59,7 +59,7 @@ void board_init(void)
 	Z80_CLRWAIT();					// Reset WAIT circuit
 	Z80_BUSREQ(0);					// /BUSREQ=H
 
-	USART0_Init(9600);				// UART for ATmega128 Monitor
+	USART0_Init(19200);				// UART for ATmega128 Monitor
 	USART1_Init(9600);				// UART for Z80 console
 
 	Timer0_Init();					// Periodic interrupt (TIMER0_COMP)
