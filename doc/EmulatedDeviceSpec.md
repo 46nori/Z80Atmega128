@@ -23,7 +23,7 @@
 | 0x09 | IN        | Undefined                             |                                      |
 | 0x09 | OUT       | Undefined                             |                                      |
 | 0x0a | IN        | Get selected DISK                     | Currently selected DISK number       |
-| 0x0a | OUT       | Select DISK                           | 0-15: DISK number                    |
+| 0x0a | OUT       | Get Selected DISK status              | 0: Success / 1: Error                |
 | 0x0b | IN        | Get DISK WRITE Position (low)         | Low byte of the physical position    |
 | 0x0b | OUT       | Set DISK WRITE Position (low)         | Low byte of the physical position    |
 | 0x0c | IN        | Get DISK WRITE Position (middle)      | Middle byte of the physical position |
@@ -60,8 +60,10 @@
 | 0x1b | OUT       | Execute DISK READ                     | 0-127: Mode2 INT level<br>Other: No interrupt |
 | 0x1c | IN        | Get DISK READ interrupt level         | Interrupt level                      |
 | 0x1c | OUT       | Set DISK READ interrupt level         | 0-127: Mode2 INT level<br>Other: No interrupt |
-|  ..  | IN        | Undefined                             |                                      |
-|  ..  | OUT       | Undefined                             |                                      |
+| 0x1d | IN        | Undefined                             |                                      |
+| 0x1d | OUT       | Undefined                             |                                      |
+| 0x1e | IN        | Undefined                             |                                      |
+| 0x1e | OUT       | Undefined                             |                                      |
 | 0x1f | IN        | Get LED Status                        | bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 | 0x1f | OUT       | Set LED                               | bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 
@@ -91,7 +93,7 @@ From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 |0x08|OUT|コンソール出力エンプティ割り込みレベル取得|割り込みレベル|
 |0x09|IN |未定義||
 |0x09|OUT|未定義||
-|0x0a|IN|DISK番号参照|選択中のDISK番号|
+|0x0a|IN|DISK選択ステータス|成功(0) / エラー(1)|
 |0x0a|OUT|DISK選択|0-15: DISK番号|
 |0x0b|IN|DISKライト物理位置指定|ライト位置の下位アドレス|
 |0x0b|OUT|DISKライト物理位置指定|ライト位置の下位アドレス|
@@ -129,8 +131,10 @@ From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 |0x1b|OUT|DISKリード実行||
 |0x1c|IN |DISKリード完了割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
 |0x1c|OUT|DISKリード完了割り込みレベル取得|割り込みレベル|
-| .. |IN|未定義|
-| .. |OUT|未定義|
+|0x1d|IN|未定義|
+|0x1d|OUT|未定義|
+|0x1e|IN|未定義|
+|0x1e|OUT|未定義|
 |0x1f|IN |LED点灯状態取得| bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 |0x1f|OUT|LED点灯設定| bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 
