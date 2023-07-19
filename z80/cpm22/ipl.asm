@@ -8,4 +8,4 @@ BIOS_ENTRY  .equ        CCP_ENTRY+0x1600
         .area IPL (ABS)
         .org 0x0000
 
-        JP BIOS_ENTRY
+        JP BIOS_ENTRY + 3

@@ -198,6 +198,8 @@ WBOOT:
 
         ; Set default drive as A:(0)
         LD C, 0
+        CALL SELDSK     ; temporaly
+        LD C,0
 
         LD SP, CCP_ENTRY
         JP CCP_ENTRY + 3        ; Exec CCP with clear buffer
@@ -658,7 +660,7 @@ MUL1616_1:
         RL D
         ADD IX, IX
         JR NC, MUL1616_2
-        ADD HL,BC
+        ADD HL, BC
         JR NC, MUL1616_2
         INC DE
 MUL1616_2:
@@ -725,5 +727,3 @@ ALV00:  .dw     0
 ;   DMA buffer
 ;******************************************************************
 DMABUF: .ds     512
-
-
