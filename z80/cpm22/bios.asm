@@ -53,6 +53,7 @@ _CBOOT:         JP CBOOT
 _WBOOT:         JP WBOOT
 _CONST:         JP CONST
 _CONIN:         JP CONIN
+_CONOUT:        JP CONOUT
 _LIST:          JP LIST
 _PUNCH:         JP PUNCH
 _READER:        JP READER
@@ -116,6 +117,30 @@ ISR_02:
 IS_CONOUT_DONE:
         .db     0               ; 0: doing / 1: complete
 
+;
+;       Initialize interrupt
+;
+INIT_INTERRUPT:
+        DI
+        LD HL, VECT_TABLE
+        LD A, H
+        LD i, A
+        IM 2
+
+        XOR A
+        OUT (PORT_DSKRD_INT), A         ; INT 0
+        INC A
+        OUT (PORT_DSKWR_INT), A         ; INT 1
+.if ENABLE_CONOUT_INT
+        INC A
+        OUT (PORT_CONOUT_INT), A        ; INT 2
+.else
+        LD A, 128
+        OUT (PORT_CONOUT_INT), A        ; Disable INT
+.endif
+        EI
+        RET
+
 ;******************************************************************
 ;   Initialization
 ;******************************************************************
@@ -135,26 +160,10 @@ MSG_CCP_BDOS:
 ;       OUT: None
 ;******************************************************************
 CBOOT:
-        DI
         LD SP, CCP_ENTRY
-        LD HL, VECT_TABLE
-        LD A, H
-        LD i, A
-        IM 2
 
         ; Interrupt setting of emulated device
-        XOR A
-        OUT (PORT_DSKRD_INT), A         ; INT 0
-        INC A
-        OUT (PORT_DSKWR_INT), A         ; INT 1
-.if ENABLE_CONOUT_INT
-        INC A
-        OUT (PORT_CONOUT_INT), A        ; INT 2
-.else
-        LD A, 128
-        OUT (PORT_CONOUT_INT), A        ; Disable INT
-.endif
-        EI
+        CALL INIT_INTERRUPT
 
         ; Boot message
         LD HL, BOOT_MSG
@@ -163,10 +172,12 @@ CBOOT:
         LD A, 7
         CALL LED_OFF
 
-        ; Set IOBYTE
-        LD A, 0
+        ; IOBYTE
+        LD A, 0x01              ; CRT: for CONSOLE 
         LD (IOBYTE), A
-        LD C, A
+
+        ; Default deive
+        LD C, 0
 
         JP CCP_ENTRY            ; Exec CCP
 
@@ -181,6 +192,9 @@ BOOT_MSG:
 ;       OUT: C : default DISK number
 ;******************************************************************
 WBOOT:
+        ; Interrupt setting of emulated device
+        CALL INIT_INTERRUPT
+
         ; Reload CCP and BDOS
         ;CALL LOAD_CCP_BDOS
 
@@ -198,8 +212,6 @@ WBOOT:
 
         ; Set default drive as A:(0)
         LD C, 0
-        CALL SELDSK     ; temporaly
-        LD C,0
 
         LD SP, CCP_ENTRY
         JP CCP_ENTRY + 3        ; Exec CCP with clear buffer
@@ -355,7 +367,9 @@ DMA_ADRS:
 ;******************************************************************
 ;   13: Read a record from DISK
 ;       IN:  None
-;       OUT: 0 (Success), 1 (Hardware error)
+;       OUT: 0x00 - Success
+;            0x01 - Unrecoverable error
+;            0xff - Media changed
 ;******************************************************************
 READ:
         EXX
@@ -498,8 +512,13 @@ IS_CACHED:
 
 ;******************************************************************
 ;   14: Write a record to DISK
-;       IN:  None
-;       OUT: 0 (Success), 1 (Hardware error)
+;       IN:  C=0 - Write can be deferred
+;            C=1 - Write must be immediate
+;            C=2 - Write can be deferred, no pre-read is necessary.
+;       OUT: 0x00 - Success
+;            0x01 - Unrecoverable error
+;            0x02 - Read only
+;            0xff - Media changed
 ;******************************************************************
 WRITE:
         EXX
