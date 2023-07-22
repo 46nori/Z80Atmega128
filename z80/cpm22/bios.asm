@@ -1,12 +1,16 @@
+;******************************************************************
+;       CP/M-80 Version 2.2 BIOS for Z80ATmega128
+;       Copyright (C) 2023 46nori
 ;
-;       CP/M 2.2 BIOS for Z80ATmega128
-;
+;******************************************************************
 MEM	        .equ    62              ; 62K CP/M
+
 CCP_ENTRY       .equ    (MEM-7)*1024
 BDOS_ENTRY      .equ    CCP_ENTRY+0x800
 BIOS_ENTRY      .equ    CCP_ENTRY+0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
 IOBYTE          .equ    0x0003
+USER_DRIVE      .equ    0x0004
 
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00    ; Get a character from CONIN
@@ -38,9 +42,6 @@ PORT_DSKRD      .equ    0x1B    ; Read from DISK
 PORT_DSKRD_STS  .equ    0x1B    ; Check Read DISK status
 PORT_DSKRD_INT  .equ    0x1C    ; Interrupt setting of DISK Read
 PORT_LED        .equ    0x1F
-
-; Interrupt settings of emulated device
-ENABLE_CONOUT_INT   .equ    1   ; 1 if enable CONOUT interrupt
 
         .z80
         .area   BIOS (ABS)
@@ -117,30 +118,6 @@ ISR_02:
 IS_CONOUT_DONE:
         .db     0               ; 0: doing / 1: complete
 
-;
-;       Initialize interrupt
-;
-INIT_INTERRUPT:
-        DI
-        LD HL, VECT_TABLE
-        LD A, H
-        LD i, A
-        IM 2
-
-        XOR A
-        OUT (PORT_DSKRD_INT), A         ; INT 0
-        INC A
-        OUT (PORT_DSKWR_INT), A         ; INT 1
-.if ENABLE_CONOUT_INT
-        INC A
-        OUT (PORT_CONOUT_INT), A        ; INT 2
-.else
-        LD A, 128
-        OUT (PORT_CONOUT_INT), A        ; Disable INT
-.endif
-        EI
-        RET
-
 ;******************************************************************
 ;   Initialization
 ;******************************************************************
@@ -160,26 +137,32 @@ MSG_CCP_BDOS:
 ;       OUT: None
 ;******************************************************************
 CBOOT:
+        DI
         LD SP, CCP_ENTRY
 
         ; Interrupt setting of emulated device
-        CALL INIT_INTERRUPT
+        LD HL, VECT_TABLE
+        LD A, H
+        LD I, A
+        IM 2
+        XOR A
+        OUT (PORT_DSKRD_INT), A         ; INT 0
+        INC A
+        OUT (PORT_DSKWR_INT), A         ; INT 1
+        INC A
+        OUT (PORT_CONOUT_INT), A        ; INT 2
+        EI
 
         ; Boot message
         LD HL, BOOT_MSG
         CALL PRINT_STR
 
-        LD A, 7
-        CALL LED_OFF
-
-        ; IOBYTE
-        LD A, 0x01              ; CRT: for CONSOLE 
+        LD A,0x01
         LD (IOBYTE), A
-
-        ; Default deive
-        LD C, 0
-
-        JP CCP_ENTRY            ; Exec CCP
+        XOR A
+        LD (USER_DRIVE), A
+        LD C, A                         ; Default deive
+        JP WBOOT
 
 BOOT_MSG:
         .str    "\r\n"
@@ -192,9 +175,6 @@ BOOT_MSG:
 ;       OUT: C : default DISK number
 ;******************************************************************
 WBOOT:
-        ; Interrupt setting of emulated device
-        CALL INIT_INTERRUPT
-
         ; Reload CCP and BDOS
         ;CALL LOAD_CCP_BDOS
 
@@ -246,7 +226,6 @@ CONOUT:
         PUSH AF
         LD A, C
         OUT (PORT_CONOUT), A
-.if ENABLE_CONOUT_INT
 WAIT_CONOUT:
         LD A, (IS_CONOUT_DONE)
         OR A
@@ -255,14 +234,6 @@ WAIT_CONOUT:
         LD (IS_CONOUT_DONE), A
         POP AF
         RET
-.else
-WAIT_CONOUT:
-        IN A, (PORT_CONOUT_STS)
-        OR A
-        JR NZ, WAIT_CONOUT
-        POP AF
-        RET
-.endif
 
 ;******************************************************************
 ;   05: Output a character to LST: (Not implemented)
@@ -607,7 +578,7 @@ PRSTAT:
         RET
 
 ;******************************************************************
-;   16: Translate logical sector to physical sector
+;   16: Translate logical to physical sector (Not implemented)
 ;       IN:  BC : Sector number
 ;            DE ; Translation table
 ;       OUT: HL : Translated Sector number
@@ -623,17 +594,23 @@ SECTRN:
 ;******************************************************************;
 ;================================================
 ; Print string
-;  HL : address of the string terminated by 0x00
-;  A,C are used internally
+;  IN: HL : address of the string terminated by 0x00
 ;================================================
 PRINT_STR:
+        PUSH AF
+        PUSH BC
+PRINT_STR_LOOP:
         LD A, (HL)
         OR A
-        RET Z
+        JR Z, PRINT_STR_END
         LD C, A
         CALL CONOUT
         INC HL
-        JR PRINT_STR
+        JR PRINT_STR_LOOP
+PRINT_STR_END:
+        POP BC
+        POP AF
+        RET
 
 ;================================================
 ; LED ON/OFF
@@ -707,40 +684,52 @@ ADD32_16:
 ;******************************************************************
 ; DISK A
 DPH00:
-        .dw    0               ; XLT: Translation Table address (0 if no table)
-        .dw    0               ; SPA: scratch pad area 1
-        .dw    0               ; SPA: scratch pad area 2
-        .dw    0               ; SPA: scratch pad area 3
-        .dw    DIRB00          ; DIRB: Directory Buffer address
-        .dw    DPB00           ; DPB: Disk Parameter Block address
-        .dw    CSV00           ; CSV: Check sum vector address
-        .dw    ALV00           ; ALV: Allocation(bit map) vector address
-;
+        .dw     0               ; XLT: Translation Table address (0 if no table)
+        .dw     0               ; SPA: scratch pad area 1
+        .dw     0               ; SPA: scratch pad area 2
+        .dw     0               ; SPA: scratch pad area 3
+        .dw     DIRB00          ; DIRB: Directory Buffer address
+        .dw     DPB00           ; DPB: Disk Parameter Block address
+        .dw     CSV00           ; CSV: Check sum vector address
+        .dw     ALV00           ; ALV: Allocation(bit map) vector address
+
+;==================================================================
 ;       DPB: Disk Parameter Block
 ;
-DPB00_SPT      .equ     16
-DPB00_OFF      .equ     2
-DPB00:  .dw    DPB00_SPT       ; SPT: sectors per track
-        .db    3               ; BSH: block shift factor. sector in a block 128*2^n
-        .db    7               ; BLM: block length mask.  sector no. in a block - 1
-        .db    0               ; EXM: extent mask
-        .dw    255             ; DSM: disk size max (number of blocks-1).
-        .dw    127             ; DRM: directory size max (max file name no.-1)
-        .dw    0xF000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
-        .dw    16              ; CKS: check sum vector size
-        .dw    DPB00_OFF       ; OFF: offset. first usable track number.
+;       Total bytes of a DISK = (DSM+1) * BLS
+;       BLS = (BLM+1) * 128
 ;
+;           BLS  BSH  BLM           EXM
+;                            (DSM<=255)(DSM>255)
+;       ========================================
+;          1024    3    7         0        -
+;          2048    4   15         1        0
+;          4096    5   31         3        1
+;          8192    6   63         7        3
+;         16384    7  127        15        7
+;
+DPB00_SPT       .equ    26
+DPB00_DSM       .equ    242
+DPB00_CSVSIZE   .equ    16
+DPB00_OFF       .equ    2
+DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
+        .db     3               ; BSH: block shift factor. sector in a block 128*2^n
+        .db     7               ; BLM: block length mask.  sector no. in a block - 1
+        .db     0               ; EXM: extent mask
+        .dw     DPB00_DSM       ; DSM: disk size max (number of blocks-1).
+        .dw     63              ; DRM: directory size max (max file name no.-1)
+        .dw     0xC000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
+        .dw     DPB00_CSVSIZE   ; CKS: check sum vector size
+        .dw     DPB00_OFF       ; OFF: offset. first usable track number.
+;==================================================================
 ;       Directory buffer (128bytes)
-;
 DIRB00: .ds     128
-;
+
 ;       Check sum vector table (CKS in DPB bytes)
-;
-CSV00:  .ds     16
-;
-;       Allocation vector table (2bytes)
-;
-ALV00:  .dw     0
+CSV00:  .ds     DPB00_CSVSIZE
+
+;       Allocation vector table (DSM/8+1 bytes)
+ALV00:  .ds     DPB00_DSM / 8 + 1
 
 ;******************************************************************
 ;   DMA buffer
