@@ -75,6 +75,7 @@ _SECTRN:        JP SECTRN
         .dw     ISR_00          ; INT 0 : DISK read  completed
         .dw     ISR_01          ; INT 1 : DISK write completed
         .dw     ISR_02          ; INT 2 : CONOUT
+        .dw     ISR_03          ; INT 2 : CONIN
 
 ;******************************************************************
 ;   Interrupt handler
@@ -106,7 +107,7 @@ IS_WRITE_DONE:
         .db     0               ; 0:doing / 1:complate
 
 ;
-;       CONSOLE OUT
+;       CONSOLE OUT complete
 ;
 ISR_02:
         PUSH HL
@@ -117,6 +118,20 @@ ISR_02:
         RETI
 IS_CONOUT_DONE:
         .db     0               ; 0: doing / 1: complete
+
+;
+;       CONSOLE IN data queuing
+;
+ISR_03:
+        PUSH HL
+        LD HL, IS_CONIN_QUEUING
+        LD (HL), 1
+        POP HL
+        EI
+        RETI
+IS_CONIN_QUEUING:
+        .db     0               ; 0: no data / 1: queuing
+
 
 ;******************************************************************
 ;   Initialization
@@ -151,6 +166,8 @@ CBOOT:
         OUT (PORT_DSKWR_INT), A         ; INT 1
         INC A
         OUT (PORT_CONOUT_INT), A        ; INT 2
+        INC A
+        OUT (PORT_CONIN_INT), A         ; INT 3
         EI
 
         ; Boot message
@@ -161,7 +178,7 @@ CBOOT:
         LD (IOBYTE), A
         XOR A
         LD (USER_DRIVE), A
-        LD C, A                         ; Default deive
+;        LD C, A                         ; Default drive
         JP WBOOT
 
 BOOT_MSG:
@@ -172,7 +189,7 @@ BOOT_MSG:
 ;******************************************************************
 ;   01: Warm Boot
 ;       IN : None
-;       OUT: C : default DISK number
+;       OUT: C = default DISK number
 ;******************************************************************
 WBOOT:
         ; Reload CCP and BDOS
@@ -190,36 +207,69 @@ WBOOT:
         LD HL, BDOS_ENTRY + 6 
         LD (0x0006), HL
 
+
+.if 0   ; Debug loopback
+LOOP:   CALL CONST
+        OR A
+        JR Z, LOOP
+        CALL CONIN
+        LD C, A
+        CALL CONOUT
+        JR LOOP
+.endif
+
         ; Set default drive as A:(0)
+        XOR A
+        LD (IS_CACHED), A       ; Clear read cache
         LD C, 0
 
         LD SP, CCP_ENTRY
-        JP CCP_ENTRY + 3        ; Exec CCP with clear buffer
+        JP CCP_ENTRY            ; Exec CCP
+;        JP CCP_ENTRY + 3        ; Exec CCP with clear buffer
 
 ;******************************************************************
 ;   02: Get status of CON:
 ;       IN : None
-;       OUT: A : 0 (Not available), 0xFF (Available)
+;       OUT: A = 0x00 - Not available
+;                0xFF - Available
 ;******************************************************************
 CONST:
+.if 0
         IN A, (PORT_CONIN_STS)
         OR A
         RET Z
         LD A, 0xFF
         RET
+.else
+        PUSH HL
+        XOR A                   ; A = 0
+        LD HL, IS_CONIN_QUEUING
+        CP (HL)
+        POP HL
+        RET Z
+        CPL                     ; A = 0xFF
+        RET
+.endif
 
 ;******************************************************************
 ;   03: Input a character from CON:
 ;       IN : None
-;       OUT: A : Received character
+;       OUT: A = Received character
 ;******************************************************************
 CONIN:
         IN A, (PORT_CONIN)
+        PUSH AF
+        IN A, (PORT_CONIN_STS)
+        OR A
+        JR NZ, CONIN_RET
+        LD (IS_CONIN_QUEUING), A
+CONIN_RET:
+        POP AF
         RET
 
 ;******************************************************************
 ;   04: Output a character to CON:
-;       IN:  C : Character to output
+;       IN:  C = Character to output
 ;       OUT: None
 ;******************************************************************
 CONOUT:
@@ -251,7 +301,7 @@ PUNCH:
 ;   07: Input a character from RDR: (Not implemented)
 ;******************************************************************
 READER:
-        LD A, 0x1A      ; Terminator
+        LD A, 0x1A              ; Terminator
         RET
 
 ;******************************************************************
@@ -262,75 +312,60 @@ HOME:
 
 ;******************************************************************
 ;   09: Select DISK
-;       IN:  C : DISK number
-;       OUT: HL: DPH address
+;       IN:  C  = DISK number
+;       OUT: HL = DPH address - Success
+;               = 0x0000      - Error
 ;******************************************************************
 SELDSK:
         PUSH AF
+        XOR A
+        LD (IS_CACHED), A       ; Clear read cache
+
         LD A, C
-        OUT (PORT_SELDSK), A
-        IN A, (PORT_DSKSTS)
+        OUT (PORT_SELDSK), A    ; Open DISK
+        IN A, (PORT_DSKSTS)     ; Check DISK status
         OR A
         JR NZ, DISK_ERROR
 
         ; Success
-        LD HL, DPH00            ; Set DPH
-        LD A, C
-        LD (DRIVE_NO), A        ; Save current drive
-        XOR A
-        LD (IS_CACHED), A       ; Clear read cache
+        LD HL, DPH00            ; Return HL = DPH
         POP AF
         RET
-
+        ; Error
 DISK_ERROR:
+        LD HL, 0                ; Return HL = 0
         POP AF
-        LD HL, 0
         RET
-
-DRIVE_NO:
-        .db     0
 
 ;******************************************************************
 ;   10: Set logical track number
-;       IN:  BC : Track number
+;       IN:  BC = Track number
 ;       OUT: None
 ;******************************************************************
 SETTRK:
-        PUSH IX
-        LD IX, CURRENT_TRACK_NO
-        LD (IX+0), C
-        LD (IX+1), B
-        POP IX
+        LD (CURRENT_TRACK_NO), BC
         RET
 CURRENT_TRACK_NO:
         .dw     0
 
 ;******************************************************************
 ;   11: Set logical sector number
-;       IN:  BC : Sector number
+;       IN:  BC = Sector number
 ;       OUT: None
 ;******************************************************************
 SETSEC:
-        PUSH IX
-        LD IX, CURRENT_SECTOR_NO
-        LD (IX+0), C
-        LD (IX+1), B
-        POP IX
+        LD (CURRENT_SECTOR_NO), BC
         RET
 CURRENT_SECTOR_NO:
         .dw     0
 
 ;******************************************************************
 ;   12: Set data buffer address
-;       IN:  BC : Buffer address
+;       IN:  BC = Buffer address
 ;       OUT: None
 ;******************************************************************
 SETDMA:
-        PUSH IX
-        LD IX, DMA_ADRS
-        LD (IX+0), C
-        LD (IX+1), B
-        POP IX
+        LD (DMA_ADRS), BC
         RET
 DMA_ADRS:
         .dw     0
@@ -338,13 +373,83 @@ DMA_ADRS:
 ;******************************************************************
 ;   13: Read a record from DISK
 ;       IN:  None
-;       OUT: 0x00 - Success
-;            0x01 - Unrecoverable error
-;            0xff - Media changed
+;       OUT: A = 0x00 - Success
+;                0x01 - Unrecoverable error
+;                0xff - Media changed
 ;******************************************************************
 READ:
-        EXX
-        ; Set destination buffer address
+        PUSH BC
+        PUSH DE
+        PUSH HL
+        PUSH IX
+        PUSH IY
+
+        ; DE,HL = TRACK * SPT + SECTOR
+        LD HL, (CURRENT_TRACK_NO)
+        LD DE, DPB00_SPT
+        CALL MUL16_16
+        LD BC, (CURRENT_SECTOR_NO)
+        CALL ADD32_16
+
+        ; Check cache
+        LD A, (IS_CACHED)
+        OR A
+        JR Z, MISHIT_CACHE
+        LD IX, CACHE_SECTOR_NO
+        LD A, D
+        CP (IX + 0)
+        JR NZ, MISHIT_CACHE
+        LD A, E
+        CP (IX + 1)
+        JR NZ, MISHIT_CACHE
+        LD A, H
+        CP (IX + 2)
+        JR NZ, MISHIT_CACHE
+        LD A, L
+        AND 0xFC                ; A = L / 4
+        CP (IX + 3)
+        JR NZ, MISHIT_CACHE
+
+        ; Cache hit
+        LD A, L
+        AND 0x03
+        LD B, A                 ; B = L % 4 (blocking factor)
+        CALL READ_DMA_BUFFER    ; Return cache data
+        XOR A                   ; Success A=0
+        JR READ_EXIT
+
+MISHIT_CACHE:
+        ; calc 512byte bundary sector
+        LD A, L
+        AND 0x03
+        LD B, A                 ; B = L % 4 (blocking factor)
+
+        LD A, L
+        AND 0xFC
+        LD L, A                 ; L = L / 4 (truncation)
+
+        ; Here, DE,HL = (TRACK * SPT + SECTOR) & 0xfffffffc
+        PUSH DE
+        POP IX                  ; IX = DE
+        PUSH HL
+        POP IY                  ; IY = HL
+
+        ; Set SD Card address to read
+        ;  (DE,HL) * 128
+        ;  0eeeeeee ehhhhhhh hlllllll l0000000
+        ;             HIGH     MID      LOW
+        SRL E
+        RR H
+        LD A, H
+        OUT (PORT_DSKRDPOS_H), A
+        RR L
+        LD A, L
+        OUT (PORT_DSKRDPOS_M), A
+        LD A,0
+        RRA
+        OUT (PORT_DSKRDPOS_L), A
+
+        ; Read a SD card sector (512bytes)
         LD HL, DMABUF
         LD A, H
         OUT (PORT_DSKRDBUF_H), A
@@ -357,72 +462,8 @@ READ:
         LD A, 0x00
         OUT (PORT_DSKRDLEN_L), A
 
-        ; DE,HL = (TRACK + OFF) * SPT + SECTOR
-        LD HL, (CURRENT_TRACK_NO)
-        LD DE, DPB00_OFF
-        ADD HL, DE
-        LD DE, DPB00_SPT
-        CALL MUL16_16
-        LD IX, (CURRENT_SECTOR_NO)
-        PUSH IX
-        POP BC
-        CALL ADD32_16
-
-        ; Check cache
-        LD IX, CACHE_SECTOR_NO
-        LD A, D
-        CP (IX + 0)
-        JR NZ, MISHIT_CACHE
-        LD A, E
-        CP (IX + 1)
-        JR NZ, MISHIT_CACHE
-        LD A, H
-        CP (IX + 2)
-        JR NZ, MISHIT_CACHE
-        LD A, L
-        CP (IX + 3)
-        JR NZ, MISHIT_CACHE
-
-        ; Cache hit
-        LD A, L
-        AND 0x03
-        LD B, A                 ; B = L % 4 (blocking factor)
-        CALL READ_DMA_BUFFER
-        EXX
-        XOR A                   ; Success A=0
-        RET                     ; Exit
-
-MISHIT_CACHE:
-        ; calc 512byte bundary sector
-        LD B, L
-        LD A, 0xf8
-        AND L
-        LD L, A                 ; L = L / 4 (truncation)
-
-        LD A, 0x03
-        AND B
-        LD B, A                 ; B = L % 4 (blocking factor)
-
-        ; Here, DE,HL = (TRACK + OFF) * SPT + SECTOR
-
-        ; Set SD Card address to read
-        ;  (DE,HL) * 128
-        ;  0eeeeeee ehhhhhhh hlllllll l0000000
-        ;             HIGH     MID      LOW
-        SRL E
-        RRC H
-        LD A, H
-        OUT (PORT_DSKRDPOS_H), A
-        RRC L
-        LD A, L
-        OUT (PORT_DSKRDPOS_M), A
-        LD A,0
-        ADC A 
-        OUT (PORT_DSKRDPOS_L), A
-
-        ; Read a SD card sector (512bytes)
-RETRY_READ:
         ; READ
+RETRY_READ:
         OUT (PORT_DSKRD), A
 WAIT_READ_COMPLETE:
         ; Wait for complete interrupt
@@ -443,6 +484,10 @@ WAIT_READ_COMPLETE:
         CALL READ_DMA_BUFFER
 
         ; save cache info
+        PUSH IX
+        POP DE
+        PUSH IY
+        POP HL
         LD IX, CACHE_SECTOR_NO
         LD (IX + 0), D
         LD (IX + 1), E
@@ -450,25 +495,28 @@ WAIT_READ_COMPLETE:
         LD (IX + 3), L
         LD A, 1
         LD (IS_CACHED), A       ; Set cache flag
-        EXX
         XOR A                   ; Success A=0
-        RET                     ; Exit
+        JR READ_EXIT
 
 READ_ERROR:
-        EXX
         XOR A
         LD (IS_CACHED), A       ; Clear cache flag
         INC A                   ; Error A=1
-        RET                     ; Exit
 
+READ_EXIT:
+        POP IY
+        POP IX
+        POP HL
+        POP DE
+        POP BC
+        RET
+
+        ; Copy BIOS buffer to DMA buffer
 READ_DMA_BUFFER:
         ; BC = 128 * B (blocking factor)
-        LD A, B
-        SRL A
-        LD B, A
         LD C, 0
-        ADC C
-        LD C, A
+        SRL B
+        RR C
         LD HL, DMABUF
         ADD HL, BC              ; HL = source buffer
         LD DE, (DMA_ADRS)
@@ -483,16 +531,18 @@ IS_CACHED:
 
 ;******************************************************************
 ;   14: Write a record to DISK
-;       IN:  C=0 - Write can be deferred
-;            C=1 - Write must be immediate
-;            C=2 - Write can be deferred, no pre-read is necessary.
-;       OUT: 0x00 - Success
-;            0x01 - Unrecoverable error
-;            0x02 - Read only
-;            0xff - Media changed
+;       IN:  C = 0 - Write can be deferred
+;            C = 1 - Write must be immediate
+;            C = 2 - Write can be deferred, no pre-read is necessary.
+;       OUT: A = 0x00 - Success
+;                0x01 - Unrecoverable error
+;                0x02 - Read only
+;                0xff - Media changed
 ;******************************************************************
 WRITE:
-        EXX
+        PUSH BC
+        PUSH DE
+        PUSH HL
 
         ; Clear cache
         XOR A
@@ -517,15 +567,11 @@ WRITE:
         LD A, 128
         OUT (PORT_DSKWRLEN_L), A
 
-        ; DE,HL = (TRACK + OFF) * SPT + SECTOR
+        ; DE,HL = TRACK * SPT + SECTOR
         LD HL, (CURRENT_TRACK_NO)
-        LD DE, DPB00_OFF
-        ADD HL, DE
         LD DE, DPB00_SPT
         CALL MUL16_16
-        LD IX, (CURRENT_SECTOR_NO)
-        PUSH IX
-        POP BC
+        LD BC, (CURRENT_SECTOR_NO)
         CALL ADD32_16
 
         ; Set SD Card address to write
@@ -542,8 +588,6 @@ WRITE:
         LD A,0
         ADC A 
         OUT (PORT_DSKWRPOS_L), A
-
-        EXX
 
         ; Write a SD card sector (512bytes)
 RETRY_WRITE:
@@ -564,10 +608,15 @@ WAIT_WRITE_COMPLETE:
         BIT 2, A
         JR NZ, RETRY_WRITE      ; retry if rejected
         XOR A
-        RET                     ; Success A=0
+        JR WRITE_EXIT           ; Success A=0
 
 WRITE_ERROR:
         LD A, 1                 ; Error A=1
+
+WRITE_EXIT:
+        POP HL
+        POP DE
+        POP BC
         RET
 
 ;******************************************************************
@@ -579,9 +628,9 @@ PRSTAT:
 
 ;******************************************************************
 ;   16: Translate logical to physical sector (Not implemented)
-;       IN:  BC : Sector number
-;            DE ; Translation table
-;       OUT: HL : Translated Sector number
+;       IN:  BC = Sector number
+;            DE = Translation table
+;       OUT: HL = Translated Sector number
 ;******************************************************************
 SECTRN:
         ; No translation
@@ -594,7 +643,7 @@ SECTRN:
 ;******************************************************************;
 ;================================================
 ; Print string
-;  IN: HL : address of the string terminated by 0x00
+;  IN: HL : string terminated by 0x00
 ;================================================
 PRINT_STR:
         PUSH AF
@@ -696,7 +745,7 @@ DPH00:
 ;==================================================================
 ;       DPB: Disk Parameter Block
 ;
-;       Total bytes of a DISK = (DSM+1) * BLS
+;       Total bytes of a DISK = (DSM+1) * BLS = MaxTracks * SPT * 128
 ;       BLS = (BLM+1) * 128
 ;
 ;           BLS  BSH  BLM           EXM
@@ -708,10 +757,10 @@ DPH00:
 ;          8192    6   63         7        3
 ;         16384    7  127        15        7
 ;
+.if 0
 DPB00_SPT       .equ    26
 DPB00_DSM       .equ    242
 DPB00_CSVSIZE   .equ    16
-DPB00_OFF       .equ    2
 DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
         .db     3               ; BSH: block shift factor. sector in a block 128*2^n
         .db     7               ; BLM: block length mask.  sector no. in a block - 1
@@ -720,7 +769,22 @@ DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
         .dw     63              ; DRM: directory size max (max file name no.-1)
         .dw     0xC000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
         .dw     DPB00_CSVSIZE   ; CKS: check sum vector size
-        .dw     DPB00_OFF       ; OFF: offset. first usable track number.
+        .dw     2               ; OFF: offset. first usable track number.
+.else
+DPB00_SPT       .equ    32
+DPB00_DSM       .equ    2047
+DPB00_DRM       .equ    1023
+DPB00_CSVSIZE   .equ    (DPB00_DRM+1)/8
+DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
+        .db     5               ; BSH: block shift factor. sector in a block 128*2^n
+        .db     31              ; BLM: block length mask.  sector no. in a block - 1
+        .db     1               ; EXM: extent mask
+        .dw     DPB00_DSM       ; DSM: disk size max (number of blocks-1).
+        .dw     DPB00_DRM       ; DRM: directory size max (max file name no.-1)
+        .dw     0xC000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
+        .dw     DPB00_CSVSIZE   ; CKS: check sum vector size
+        .dw     6               ; OFF: offset. first usable track number.
+.endif
 ;==================================================================
 ;       Directory buffer (128bytes)
 DIRB00: .ds     128

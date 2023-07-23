@@ -155,7 +155,7 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 	// Set file pointer to beginning of file
 	pf_lseek(0);
 	disk_status = 0;			// success
-	x_printf("SELSDK: %s\n", filename);
+	x_printf("###SELSDK: %s\n", filename);
 }
 uint8_t IN_0A_DSK_GetDiskStatus()
 {
@@ -227,11 +227,13 @@ void em_disk_write(void)
 	}
 	wr_st = DOING;
 
-	DWORD pos = (DWORD)write_pos_high << 16 | write_pos_mid << 8 | write_pos_low;
+	DWORD pos = (DWORD)write_pos_high << 16 |
+	            (DWORD)write_pos_mid  << 8  |
+	            (DWORD)write_pos_low;
 	pf_lseek(pos);
 
-	void *buf = (void *)(write_buf_high << 8 | write_buf_low);
-	UINT len = write_buf_len_high << 8 | write_buf_len_low;
+	void *buf = (void *)((uint16_t)write_buf_high << 8 | write_buf_low);
+	UINT len = (UINT)write_buf_len_high << 8 | write_buf_len_low;
 	UINT bw;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
@@ -252,7 +254,7 @@ void em_disk_write(void)
 	}
 
 error_skip:
-	x_printf("WRITE:%02x\n", write_result);
+	x_printf(">>>WRITE:%06lx : %02x\n\n", pos, write_result);
 
 	if (write_int_level < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
@@ -329,18 +331,17 @@ void em_disk_read(void)
 	}
 	rd_st = DOING;
 
-	x_puts("*");
-
 	// CAUTION: don't consume long time
-	DWORD pos = (DWORD)read_pos_high << 16 | read_pos_mid << 8 | read_pos_low;
+	DWORD pos = (DWORD)read_pos_high << 16 |
+				(DWORD)read_pos_mid  << 8  |
+				(DWORD)read_pos_low;
 	pf_lseek(pos);
 
-	void *buf = (void *)(read_buf_high << 8 | read_buf_low);
-	UINT len = read_buf_len_high << 8 | read_buf_len_low;
+	void *buf = (void *)((uint16_t)read_buf_high << 8 | read_buf_low);
+	UINT len = (UINT)read_buf_len_high << 8 | read_buf_len_low;
 	UINT br;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
-		x_printf("%d", i);
 		if ((read_result = pf_read(tmpbuf, len, &br)) != FR_OK) {
 			goto error_skip;
 		}
@@ -363,7 +364,7 @@ void em_disk_read(void)
 	}
 	
 error_skip:
-	x_printf("READ:%02x\n", read_result);
+	x_printf(">>>READ:%06lx : %02x\n\n", pos, read_result);
 
 	if (read_int_level < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
