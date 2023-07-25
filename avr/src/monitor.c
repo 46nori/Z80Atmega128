@@ -680,8 +680,8 @@ static int c_z80_int(token_list *t) {
  * Show Z80 status
  *********************************************************/
 static int c_z80_status(token_list *t) {
-	x_printf("/BUSRQ:%d\n", Is_Z80_BUSRQ());
-	x_printf("/HALT :%d\n", Is_Z80_HALT());
+	x_printf("/BUSRQ:%c\n", Is_Z80_BUSRQ() ? 'H' : 'L');
+	x_printf("/HALT :%c\n", Is_Z80_HALT() ?  'H' : 'L');
 	return NO_ERROR;
 }
 
