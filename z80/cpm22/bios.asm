@@ -8,6 +8,7 @@ MEM	        .equ    62              ; 62K CP/M
 CCP_ENTRY       .equ    (MEM-7)*1024
 BDOS_ENTRY      .equ    CCP_ENTRY+0x800
 BIOS_ENTRY      .equ    CCP_ENTRY+0x1600
+CCP_BDOS_LENGTH .equ    0x800+0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
 IOBYTE          .equ    0x0003
 USER_DRIVE      .equ    0x0004
@@ -192,8 +193,37 @@ BOOT_MSG:
 ;       OUT: C = default DISK number
 ;******************************************************************
 WBOOT:
+.if 0
+        ;
         ; Reload CCP and BDOS
-        ;CALL LOAD_CCP_BDOS
+        ;
+        ; Open DISK
+        LD C, 0
+        CALL SELDSK
+
+        ; Set DISK read length (size of CPP+BDOS)
+        LD HL, CCP_BDOS_LENGTH
+        LD A, H
+        OUT (PORT_DSKRDLEN_H), A
+        LD A, L
+        OUT (PORT_DSKRDLEN_L), A
+
+        ; Set DISK read position
+        LD DE, DPB00_SPT
+        LD HL, 128
+        CALL MUL16_16
+        LD A, E
+        OUT (PORT_DSKRDPOS_H), A
+        LD A, H
+        OUT (PORT_DSKRDPOS_M), A
+        LD A, L
+        OUT (PORT_DSKRDPOS_L), A
+
+        ; Load CPP+BDOS
+        CALL DISK_READ_SUB
+        OR A
+        JR NZ, BOOT_ERROR
+.endif
 
         ; Set 'JP _WBOOT' at 0x0000
         LD A, 0xC3
@@ -206,7 +236,6 @@ WBOOT:
         LD (0x0005), A
         LD HL, BDOS_ENTRY + 6 
         LD (0x0006), HL
-
 
 .if 0   ; Debug loopback
 LOOP:   CALL CONST
@@ -226,6 +255,14 @@ LOOP:   CALL CONST
         LD SP, CCP_ENTRY
         JP CCP_ENTRY            ; Exec CCP
 ;        JP CCP_ENTRY + 3        ; Exec CCP with clear buffer
+
+BOOT_ERROR:
+        LD HL, BOOT_ERROR_MSG
+        CALL PRINT_STR
+        HALT
+BOOT_ERROR_MSG:
+        .str    "System HALT due to CCP+BDOS load error.\r\n"
+        .db     0
 
 ;******************************************************************
 ;   02: Get status of CON:
@@ -383,7 +420,15 @@ READ:
         PUSH HL
         PUSH IX
         PUSH IY
+        CALL READ_SUB
+        POP IY
+        POP IX
+        POP HL
+        POP DE
+        POP BC
+        RET
 
+READ_SUB:
         ; DE,HL = TRACK * SPT + SECTOR
         LD HL, (CURRENT_TRACK_NO)
         LD DE, DPB00_SPT
@@ -416,7 +461,7 @@ READ:
         LD B, A                 ; B = L % 4 (blocking factor)
         CALL READ_DMA_BUFFER    ; Return cache data
         XOR A                   ; Success A=0
-        JR READ_EXIT
+        RET
 
 MISHIT_CACHE:
         ; calc 512byte bundary sector
@@ -463,6 +508,7 @@ MISHIT_CACHE:
         OUT (PORT_DSKRDLEN_L), A
 
         ; READ
+.if 0
 RETRY_READ:
         OUT (PORT_DSKRD), A
 WAIT_READ_COMPLETE:
@@ -479,6 +525,14 @@ WAIT_READ_COMPLETE:
         JR NZ, READ_ERROR
         BIT 2, A
         JR NZ, RETRY_READ       ; retry if rejected
+.else
+RETRY_READ:
+        CALL DISK_READ_SUB
+        BIT 1, A
+        JR NZ, READ_ERROR
+        BIT 2, A
+        JR NZ, RETRY_READ       ; retry if rejected
+.endif
 
         ; Read successfully and Copy buffer
         CALL READ_DMA_BUFFER
@@ -496,19 +550,26 @@ WAIT_READ_COMPLETE:
         LD A, 1
         LD (IS_CACHED), A       ; Set cache flag
         XOR A                   ; Success A=0
-        JR READ_EXIT
+        RET
 
 READ_ERROR:
         XOR A
         LD (IS_CACHED), A       ; Clear cache flag
         INC A                   ; Error A=1
+        RET
 
-READ_EXIT:
-        POP IY
-        POP IX
-        POP HL
-        POP DE
-        POP BC
+        ; DISK READ
+        ; OUT: A = disk status
+DISK_READ_SUB:
+        OUT (PORT_DSKRD), A
+WAIT_READ_COMPLETE:
+        ; Wait for complete interrupt
+        LD A, (IS_READ_DONE)
+        OR A
+        JR Z, WAIT_READ_COMPLETE
+        XOR A
+        LD (IS_READ_DONE), A   ; reset flag
+        IN A, (PORT_DSKRD_STS) ; Check read status
         RET
 
         ; Copy BIOS buffer to DMA buffer
@@ -745,12 +806,16 @@ DPH00:
 ;==================================================================
 ;       DPB: Disk Parameter Block
 ;
-;       Total bytes of a DISK = (DSM+1) * BLS = MaxTracks * SPT * 128
-;       BLS = (BLM+1) * 128
+;       SSZ: Sector size, 128 bytes
+;       BLS: Block size, (BLM+1) * SSZ
+;       Total bytes of a DISK = (DSM+1) * BLS = MaxTracks * SPT * SSZ
 ;
 ;           BLS  BSH  BLM           EXM
 ;                            (DSM<=255)(DSM>255)
 ;       ========================================
+;       (   128    0    0         0        -  )
+;       (   256    1    1         0        -  )
+;       (   512    2    3         0        -  )
 ;          1024    3    7         0        -
 ;          2048    4   15         1        0
 ;          4096    5   31         3        1
@@ -760,40 +825,41 @@ DPH00:
 .if 0
 DPB00_SPT       .equ    26
 DPB00_DSM       .equ    242
-DPB00_CSVSIZE   .equ    16
+DPB00_CSVSZ     .equ    16
 DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
-        .db     3               ; BSH: block shift factor. sector in a block 128*2^n
-        .db     7               ; BLM: block length mask.  sector no. in a block - 1
+        .db     3               ; BSH: block shift factor. sector in a block SSZ*2^n
+        .db     7               ; BLM: block length mask.  sector number in a block - 1
         .db     0               ; EXM: extent mask
         .dw     DPB00_DSM       ; DSM: disk size max (number of blocks-1).
         .dw     63              ; DRM: directory size max (max file name no.-1)
         .dw     0xC000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
-        .dw     DPB00_CSVSIZE   ; CKS: check sum vector size
+        .dw     DPB00_CSVSZ     ; CKS: check sum vector size
         .dw     2               ; OFF: offset. first usable track number.
 .else
 DPB00_SPT       .equ    32
 DPB00_DSM       .equ    2047
 DPB00_DRM       .equ    1023
-DPB00_CSVSIZE   .equ    (DPB00_DRM+1)/8
+DPB00_CSVSZ     .equ    (DPB00_DRM + 1) / 8
+DPB00_ALVSZ     .equ    DPB00_DSM / 8 + 1
 DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
         .db     5               ; BSH: block shift factor. sector in a block 128*2^n
         .db     31              ; BLM: block length mask.  sector no. in a block - 1
         .db     1               ; EXM: extent mask
         .dw     DPB00_DSM       ; DSM: disk size max (number of blocks-1).
         .dw     DPB00_DRM       ; DRM: directory size max (max file name no.-1)
-        .dw     0xC000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
-        .dw     DPB00_CSVSIZE   ; CKS: check sum vector size
-        .dw     6               ; OFF: offset. first usable track number.
+        .dw     0x8000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
+        .dw     DPB00_CSVSZ     ; CKS: check sum vector size
+        .dw     2               ; OFF: offset. first unusable track number.
 .endif
 ;==================================================================
 ;       Directory buffer (128bytes)
 DIRB00: .ds     128
 
 ;       Check sum vector table (CKS in DPB bytes)
-CSV00:  .ds     DPB00_CSVSIZE
+CSV00:  .ds     DPB00_CSVSZ
 
 ;       Allocation vector table (DSM/8+1 bytes)
-ALV00:  .ds     DPB00_DSM / 8 + 1
+ALV00:  .ds     DPB00_ALVSZ
 
 ;******************************************************************
 ;   DMA buffer
