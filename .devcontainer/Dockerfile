@@ -24,7 +24,12 @@ WORKDIR /src/
 #
 #   Basic tools
 #
-RUN sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc
+RUN sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc bsdmainutils
+
+#
+#   CP/M tools
+#
+RUN sudo apt-get install -y cpmtools
 
 #
 #   ASxxxx
