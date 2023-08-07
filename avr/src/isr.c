@@ -6,9 +6,7 @@
  */ 
 #include "isr.h"
 #include "interrupt.h"
-#include "usart.h"
 #include "z80io.h"
-#include "xconsoleio.h"
 #include "emuldev/emuldev.h"
 
 static void DebugTwinkleLED(void);
@@ -29,7 +27,6 @@ void ExtInt_Init(void) {
 ///////////////////////////////////////////////////////////////////
 ISR(INT0_vect) {
 	// Emulate device and return port data to Z80
-//	x_printf("IN(%x)\n", PINF);
 	PORTA = (*InHandler[PINF % PORT_MAX])();
 	DDRA  = 0xff;					// Set Port A output
 
@@ -51,7 +48,6 @@ ISR(INT1_vect) {
 	PORTA = 0xff;
 	DDRA  = 0x00;
 	// Emulate device with Z80 port data
-//	x_printf("OUT(%x)\n", PINF);
 	(*OutHandler[PINF % PORT_MAX])(PINA);
 
 	// Clear /WAIT

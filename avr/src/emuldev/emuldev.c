@@ -12,6 +12,7 @@
 //
 void init_emuldev(void)
 {
+	init_em_debugger();
 	init_em_led();
 	init_em_console();
 	init_em_diskio();
@@ -53,7 +54,7 @@ uint8_t (* const InHandler[PORT_MAX])(void) = {
 	IN_1A_DSK_ReadLen_High,
 	IN_1B_DSK_ReadStatus,
 	IN_1C_DSK_ReadIntLevel,
-	IN_Undefined,
+	IN_1D_DEBUG_IntLevel,
 	IN_Undefined,
 	IN_1F_LED_Get
 };
@@ -81,7 +82,7 @@ void (* const OutHandler[PORT_MAX])(uint8_t) = {
 	OUT_10_DSK_WriteLen_Low,
 	OUT_11_DSK_WriteLen_High,
 	OUT_12_DSK_Write,
-	OUT_Undefined,
+	OUT_13_DSK_WriteIntLevel,
 	OUT_14_DSK_ReadPos_Low,
 	OUT_15_DSK_ReadPos_Mid,
 	OUT_16_DSK_ReadPos_High,
@@ -90,8 +91,8 @@ void (* const OutHandler[PORT_MAX])(uint8_t) = {
 	OUT_19_DSK_ReadLen_Low,
 	OUT_1A_DSK_ReadLen_High,
 	OUT_1B_DSK_Read,
-	OUT_Undefined,
-	OUT_Undefined,
-	OUT_Undefined,
+	OUT_1C_DSK_ReadIntLevel,
+	OUT_1D_DEBUG_IntLevel,
+	OUT_1E_DEBUG_OUT,
 	OUT_1F_LED_Set
 };

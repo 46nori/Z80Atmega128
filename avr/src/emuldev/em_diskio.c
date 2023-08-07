@@ -24,7 +24,7 @@ static uint8_t write_buf_low  = 0;
 static uint8_t write_buf_high = 0;
 static uint8_t write_buf_len_low  = 0;
 static uint8_t write_buf_len_high = 0;
-static uint8_t write_int_level = 0;
+static uint8_t write_int_level = 128;
 static uint8_t read_pos_low  = 0;
 static uint8_t read_pos_mid  = 0;
 static uint8_t read_pos_high = 0;
@@ -32,7 +32,7 @@ static uint8_t read_buf_low  = 0;
 static uint8_t read_buf_high = 0;
 static uint8_t read_buf_len_low  = 0;
 static uint8_t read_buf_len_high = 0;
-static uint8_t read_int_level = 0;
+static uint8_t read_int_level = 128;
 
 enum DISKIO_STATUS {IDLE, REQUESTING, DOING, REJECTED};
 static enum DISKIO_STATUS rd_st = IDLE;
@@ -80,7 +80,7 @@ static const char* get_filename(int disk_no)
 //  * XMEM external SRAM R/W
 //  * invoke /BUSREQ
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#if 0
+#if 1
 void OUT_0B_DSK_WritePos_Low(uint8_t data)	{write_pos_low  = data;}
 void OUT_0C_DSK_WritePos_Mid(uint8_t data)	{write_pos_mid  = data;}
 void OUT_0D_DSK_WritePos_High(uint8_t data) {write_pos_high = data;}
@@ -155,7 +155,7 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 	// Set file pointer to beginning of file
 	pf_lseek(0);
 	disk_status = 0;			// success
-	x_printf("###SELSDK: %s\n", filename);
+	//x_printf("###SELSDK: %s\n", filename);
 }
 uint8_t IN_0A_DSK_GetDiskStatus()
 {
@@ -187,6 +187,7 @@ void OUT_12_DSK_Write(uint8_t data)
 uint8_t IN_12_DSK_WriteStatus()
 {
 	// CAUTION: don't consume long time
+	cli();
 	uint8_t st = 0x00;
 	switch (rd_st) {
 	case IDLE:
@@ -202,13 +203,13 @@ uint8_t IN_12_DSK_WriteStatus()
 		st = 0x04;			// rejected
 		break;
 	}
+	sei();
 	return st;
 }
 
 void OUT_13_DSK_WriteIntLevel(uint8_t data)
 {
 	write_int_level = data;
-	x_printf("WINT:%d\n", data);
 }
 
 uint8_t IN_13_DSK_WriteIntlevel(void)
@@ -237,19 +238,23 @@ void em_disk_write(void)
 	UINT bw;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
+		cli();
 		ExtMem_attach();
 		memcpy(tmpbuf, buf, sizeof(tmpbuf));
 		ExtMem_detach();
-		if ((write_result = pf_write(tmpbuf, len, &bw)) != FR_OK) {
+		sei();
+		if ((write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bw)) != FR_OK) {
 			goto error_skip;
 		}
 		buf = (uint8_t*)buf + sizeof(tmpbuf);
 	}
 	len = len % sizeof(tmpbuf);
 	if (len > 0) {
+		cli();
 		ExtMem_attach();
 		memcpy(tmpbuf, buf, len);
 		ExtMem_detach();
+		sei();
 		write_result = pf_write(tmpbuf, len, &bw);
 	}
 
@@ -268,29 +273,31 @@ error_skip:
 ///////////////////////////////////////////////////////////////////
 void OUT_1B_DSK_Read(uint8_t data)
 {
+	x_printf("READ:%d -> ", rd_st);
 	// Reject if WRITE is on going
 	if (wr_st == DOING || wr_st == REQUESTING) {
 		rd_st = REJECTED;
-		return;
+	} else {
+		switch (rd_st) {
+		case IDLE:
+		case REJECTED:
+			rd_st = REQUESTING;
+			break;
+		case REQUESTING:
+		case DOING:
+			rd_st = REJECTED;
+			break;
+		default:
+			break;
+		}
 	}
-	switch (rd_st) {
-	case IDLE:
-	case REJECTED:
-		rd_st = REQUESTING;
-		break;
-	case REQUESTING:
-	case DOING:
-		rd_st = REJECTED;
-		break;
-	default:
-		break;
-	}
-	x_printf("READ:%d\n", rd_st);
+	x_printf("%d\n", rd_st);
 }
 
 uint8_t IN_1B_DSK_ReadStatus()
 {
 	// CAUTION: don't consume long time
+	cli();
 	uint8_t st = 0x00;
 	switch (rd_st) {
 	case IDLE:
@@ -306,13 +313,13 @@ uint8_t IN_1B_DSK_ReadStatus()
 		st = 0x04;			// rejected
 		break;
 	}
+	sei();
 	return st;
 }
 
 void OUT_1C_DSK_ReadIntLevel(uint8_t data)
 {
 	read_int_level = data;
-	x_printf("RINT:%d\n", data);
 }
 
 uint8_t IN_1C_DSK_ReadIntLevel(void)
@@ -342,7 +349,7 @@ void em_disk_read(void)
 	UINT br;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
-		if ((read_result = pf_read(tmpbuf, len, &br)) != FR_OK) {
+		if ((read_result = pf_read(tmpbuf, sizeof(tmpbuf), &br)) != FR_OK) {
 			goto error_skip;
 		}
 		cli();

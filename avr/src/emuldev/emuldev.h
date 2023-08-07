@@ -9,9 +9,10 @@
 #define EMULDEV_H_
 
 #include "asf.h"
-#include "em_led.h"
 #include "em_consoleio.h"
 #include "em_diskio.h"
+#include "em_debugger.h"
+#include "em_led.h"
 
 #define PORT_MAX 32
 extern uint8_t (* const InHandler[PORT_MAX])(void);

@@ -8,10 +8,10 @@ MEM	        .equ    62              ; 62K CP/M
 CCP_ENTRY       .equ    (MEM-7)*1024
 BDOS_ENTRY      .equ    CCP_ENTRY+0x800
 BIOS_ENTRY      .equ    CCP_ENTRY+0x1600
-CCP_BDOS_LENGTH .equ    0x800+0x1600
+CCP_BDOS_LENGTH .equ    0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
 IOBYTE          .equ    0x0003
-USER_DRIVE      .equ    0x0004
+CURRENT_DISK    .equ    0x0004
 
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00    ; Get a character from CONIN
@@ -42,7 +42,9 @@ PORT_DSKRDLEN_H .equ    0x1A    ; Data size(H) to Read
 PORT_DSKRD      .equ    0x1B    ; Read from DISK
 PORT_DSKRD_STS  .equ    0x1B    ; Check Read DISK status
 PORT_DSKRD_INT  .equ    0x1C    ; Interrupt setting of DISK Read
-PORT_LED        .equ    0x1F
+PORT_DEBUG_INT  .equ    0x1D    ; Interrupt setting of Debugger
+PORT_DEBUG_OP   .equ    0x1E    ; Get OP code of the break point
+PORT_LED        .equ    0x1F    ; LED control
 
         .z80
         .area   BIOS (ABS)
@@ -51,7 +53,7 @@ PORT_LED        .equ    0x1F
 ;******************************************************************
 ;   BIOS jump table
 ;******************************************************************
-_CBOOT:         JP CBOOT
+_BOOT:          JP BOOT
 _WBOOT:         JP WBOOT
 _CONST:         JP CONST
 _CONIN:         JP CONIN
@@ -70,13 +72,37 @@ _PRSTAT:        JP PRSTAT
 _SECTRN:        JP SECTRN
 
 ;******************************************************************
+;   Debugger (RST 7 handler)
+;******************************************************************
+DEBUGGER_ENTRY:
+        JP BREAKPOINT
+
+BREAKPOINT:
+        DI
+        EX (SP),HL
+        DEC HL
+        LD (BREAKPOINT_ADR), HL
+        EX (SP),HL              ; Set resume address
+        EI
+        PUSH AF
+        LD A, (BREAKPOINT_ADR)
+        OUT (PORT_DEBUG_OP), A  ; send low address of breakpoint
+        POP AF
+        HALT                    ; Wait for INT 4
+        RET                     ; Reesume
+
+BREAKPOINT_ADR:
+        .dw     0
+
+;******************************************************************
 ;   Interrupt vector table
 ;******************************************************************
         .org    VECT_TABLE
         .dw     ISR_00          ; INT 0 : DISK read  completed
         .dw     ISR_01          ; INT 1 : DISK write completed
         .dw     ISR_02          ; INT 2 : CONOUT
-        .dw     ISR_03          ; INT 2 : CONIN
+        .dw     ISR_03          ; INT 3 : CONIN
+        .dw     ISR_04          ; INT 4 : Debugger
 
 ;******************************************************************
 ;   Interrupt handler
@@ -133,26 +159,18 @@ ISR_03:
 IS_CONIN_QUEUING:
         .db     0               ; 0: no data / 1: queuing
 
-
-;******************************************************************
-;   Initialization
-;******************************************************************
-;   Load CCP and BDOS
-LOAD_CCP_BDOS:
-        ; debug
-        LD HL, MSG_CCP_BDOS
-        CALL PRINT_STR
-        RET
-MSG_CCP_BDOS:
-        .str    "Loaded CCP & BDOS.\r\n"
-        .db     0
+;
+;       Debugger
+;
+ISR_04: EI                      ; do nothing. Just release HALT.
+        RETI
 
 ;******************************************************************
 ;   00: Cold Boot
 ;       IN : None
 ;       OUT: None
 ;******************************************************************
-CBOOT:
+BOOT:
         DI
         LD SP, CCP_ENTRY
 
@@ -169,62 +187,32 @@ CBOOT:
         OUT (PORT_CONOUT_INT), A        ; INT 2
         INC A
         OUT (PORT_CONIN_INT), A         ; INT 3
+        INC A
+        OUT (PORT_DEBUG_INT), A         ; INT 4
         EI
 
         ; Boot message
         LD HL, BOOT_MSG
         CALL PRINT_STR
 
-        LD A,0x01
+        CALL INIT_SYSTEM_AREA
+
+        ; Init IOBYTE
+        LD A,0x00
         LD (IOBYTE), A
+
+        ; Set default drive as A:(0)
         XOR A
-        LD (USER_DRIVE), A
-;        LD C, A                         ; Default drive
-        JP WBOOT
+        LD (CURRENT_DISK), A
+        LD C, A
+        JP CCP_ENTRY+3          ; Exec CCP
 
 BOOT_MSG:
         .str    "\r\n"
         .str    "CP/M-80 Ver2.2 on Z80ATmega128\r\n"
         .db     0
 
-;******************************************************************
-;   01: Warm Boot
-;       IN : None
-;       OUT: C = default DISK number
-;******************************************************************
-WBOOT:
-.if 0
-        ;
-        ; Reload CCP and BDOS
-        ;
-        ; Open DISK
-        LD C, 0
-        CALL SELDSK
-
-        ; Set DISK read length (size of CPP+BDOS)
-        LD HL, CCP_BDOS_LENGTH
-        LD A, H
-        OUT (PORT_DSKRDLEN_H), A
-        LD A, L
-        OUT (PORT_DSKRDLEN_L), A
-
-        ; Set DISK read position
-        LD DE, DPB00_SPT
-        LD HL, 128
-        CALL MUL16_16
-        LD A, E
-        OUT (PORT_DSKRDPOS_H), A
-        LD A, H
-        OUT (PORT_DSKRDPOS_M), A
-        LD A, L
-        OUT (PORT_DSKRDPOS_L), A
-
-        ; Load CPP+BDOS
-        CALL DISK_READ_SUB
-        OR A
-        JR NZ, BOOT_ERROR
-.endif
-
+INIT_SYSTEM_AREA:
         ; Set 'JP _WBOOT' at 0x0000
         LD A, 0xC3
         LD (0x0000), A
@@ -237,31 +225,85 @@ WBOOT:
         LD HL, BDOS_ENTRY + 6 
         LD (0x0006), HL
 
-.if 0   ; Debug loopback
-LOOP:   CALL CONST
-        OR A
-        JR Z, LOOP
-        CALL CONIN
-        LD C, A
-        CALL CONOUT
-        JR LOOP
-.endif
+        ; Set 'JP DEBUG_ENTRY' at 0x0038 for debugger
+        LD A, 0xC3
+        LD (0x0038), A
+        LD HL, DEBUGGER_ENTRY
+        LD (0x0039), HL
 
-        ; Set default drive as A:(0)
+        RET
+
+;******************************************************************
+;   01: Warm Boot
+;       IN : None
+;       OUT: C = default DISK number
+;******************************************************************
+WBOOT:
+        ;
+        ; Reload CCP and BDOS
+        ;
+        ; Open DISK
+        LD C, 0
+        CALL SELDSK
+
+        ; Set DISK read position
+        XOR A
+        OUT (PORT_DSKRDPOS_H), A
+        OUT (PORT_DSKRDPOS_M), A
+        OUT (PORT_DSKRDPOS_L), A
+
+        ; Set load address
+        LD HL, CCP_ENTRY
+        LD A, H
+        OUT (PORT_DSKRDBUF_H), A
+        LD A, L
+        OUT (PORT_DSKRDBUF_L), A
+
+        ; Set DISK read length (size of CPP+BDOS)
+        LD HL, CCP_BDOS_LENGTH
+        LD A, H
+        OUT (PORT_DSKRDLEN_H), A
+        LD A, L
+        OUT (PORT_DSKRDLEN_L), A
+
+        ; Load CPP+BDOS
+        CALL DISK_READ_SUB
+        OR A
+        JR NZ, BOOT_ERROR
+        LD HL, RELOAD_MSG
+        CALL PRINT_STR
+
+        CALL INIT_SYSTEM_AREA
+
+        ; Set current DISK
         XOR A
         LD (IS_CACHED), A       ; Clear read cache
-        LD C, 0
+        LD A, (CURRENT_DISK)
+        LD C, A
 
-        LD SP, CCP_ENTRY
+        ; Start CP/M
+        LD SP, CCP_ENTRY        ; Init SP
         JP CCP_ENTRY            ; Exec CCP
-;        JP CCP_ENTRY + 3        ; Exec CCP with clear buffer
 
+        ; System boot error
 BOOT_ERROR:
         LD HL, BOOT_ERROR_MSG
-        CALL PRINT_STR
+BOOT_ERROR_PRINT:
+        LD A, (HL)
+        OR A
+        JR Z, BOOT_ERROR_HALT
+        LD C, A
+        OUT (PORT_CONOUT), A
+        INC HL
+        JR BOOT_ERROR_PRINT
+BOOT_ERROR_HALT:
         HALT
+
 BOOT_ERROR_MSG:
         .str    "System HALT due to CCP+BDOS load error.\r\n"
+        .db     0
+RELOAD_MSG:
+        .str    "\r\nCCP+BDOS reloaded.\r\n"
         .db     0
 
 ;******************************************************************
@@ -508,33 +550,14 @@ MISHIT_CACHE:
         OUT (PORT_DSKRDLEN_L), A
 
         ; READ
-.if 0
-RETRY_READ:
-        OUT (PORT_DSKRD), A
-WAIT_READ_COMPLETE:
-        ; Wait for complete interrupt
-        LD A, (IS_READ_DONE)
-        OR A
-        JR Z, WAIT_READ_COMPLETE
-        XOR A
-        LD (IS_READ_DONE), A   ; reset flag
-
-        ; Check read status
-        IN A, (PORT_DSKRD_STS)
-        BIT 1, A
-        JR NZ, READ_ERROR
-        BIT 2, A
-        JR NZ, RETRY_READ       ; retry if rejected
-.else
 RETRY_READ:
         CALL DISK_READ_SUB
         BIT 1, A
         JR NZ, READ_ERROR
         BIT 2, A
         JR NZ, RETRY_READ       ; retry if rejected
-.endif
 
-        ; Read successfully and Copy buffer
+        ; Copy buffer
         CALL READ_DMA_BUFFER
 
         ; save cache info
@@ -558,37 +581,42 @@ READ_ERROR:
         INC A                   ; Error A=1
         RET
 
-        ; DISK READ
-        ; OUT: A = disk status
+CACHE_SECTOR_NO:                ; sector # of the 1st DMA buffer
+        .db     0, 0, 0, 0
+IS_CACHED:
+        .db     0
+
+;================================================
+; Copy BIOS buffer to DMA buffer
+;  IN: B = blocking factor (0,1,2,3)
+;  OUT: (DMA_ADRS) <- (DMABUF+128*B) for 128 bytes
+;================================================
+READ_DMA_BUFFER:
+        LD HL, DMABUF
+        LD C, 0
+        SRL B
+        RR C                    ; BC = 128*B
+        ADD HL, BC              ; HL = DMABUF+128*B
+        LD DE, (DMA_ADRS)       ; DE = destination
+        LD BC, 128
+        LDIR
+        RET
+
+;================================================
+; DISK READ
+;  OUT: A = disk status
+;================================================
 DISK_READ_SUB:
-        OUT (PORT_DSKRD), A
+        XOR A
+        LD (IS_READ_DONE), A    ; reset flag
+        OUT (PORT_DSKRD), A     ; read disk
 WAIT_READ_COMPLETE:
         ; Wait for complete interrupt
         LD A, (IS_READ_DONE)
         OR A
         JR Z, WAIT_READ_COMPLETE
-        XOR A
-        LD (IS_READ_DONE), A   ; reset flag
-        IN A, (PORT_DSKRD_STS) ; Check read status
+        IN A, (PORT_DSKRD_STS)  ; Check read status
         RET
-
-        ; Copy BIOS buffer to DMA buffer
-READ_DMA_BUFFER:
-        ; BC = 128 * B (blocking factor)
-        LD C, 0
-        SRL B
-        RR C
-        LD HL, DMABUF
-        ADD HL, BC              ; HL = source buffer
-        LD DE, (DMA_ADRS)
-        LD BC, 128
-        LDIR
-        RET
-
-CACHE_SECTOR_NO:                ; sector # of the 1st DMA buffer
-        .db     0, 0, 0, 0
-IS_CACHED:
-        .db     0
 
 ;******************************************************************
 ;   14: Write a record to DISK
@@ -640,14 +668,14 @@ WRITE:
         ;  0eeeeeee ehhhhhhh hlllllll l0000000
         ;             HIGH     MID      LOW
         SRL E
-        RRC H
+        RR H
         LD A, H
         OUT (PORT_DSKWRPOS_H), A
-        RRC L
+        RR L
         LD A, L
         OUT (PORT_DSKWRPOS_M), A
         LD A,0
-        ADC A 
+        RRA
         OUT (PORT_DSKWRPOS_L), A
 
         ; Write a SD card sector (512bytes)
@@ -792,7 +820,6 @@ ADD32_16:
 ;******************************************************************
 ;       DPH: Disk Parameter Header
 ;******************************************************************
-; DISK A
 DPH00:
         .dw     0               ; XLT: Translation Table address (0 if no table)
         .dw     0               ; SPA: scratch pad area 1
@@ -806,60 +833,48 @@ DPH00:
 ;==================================================================
 ;       DPB: Disk Parameter Block
 ;
-;       SSZ: Sector size, 128 bytes
+;       SSZ: 128 bytes per a sector 
 ;       BLS: Block size, (BLM+1) * SSZ
-;       Total bytes of a DISK = (DSM+1) * BLS = MaxTracks * SPT * SSZ
+;       Total DISK size = (DSM+1) * BLS = MaxTracks * SPT * SSZ
+;       N: Number of '1's in regard AL0,AL1 as bit fields
 ;
-;           BLS  BSH  BLM           EXM
-;                            (DSM<=255)(DSM>255)
-;       ========================================
-;       (   128    0    0         0        -  )
-;       (   256    1    1         0        -  )
-;       (   512    2    3         0        -  )
-;          1024    3    7         0        -
-;          2048    4   15         1        0
-;          4096    5   31         3        1
-;          8192    6   63         7        3
-;         16384    7  127        15        7
+;           BLS  BSH  BLM         EXM             DRM
+;                          (DSM<=255)(DSM>255)  
+;       ==================================================
+;          1024    3    7       0       -        32 x N
+;          2048    4   15       1       0        64 x N
+;          4096    5   31       3       1       128 x N
+;          8192    6   63       7       3       256 x N
+;         16384    7  127      15       7       512 x N
 ;
-.if 0
-DPB00_SPT       .equ    26
-DPB00_DSM       .equ    242
-DPB00_CSVSZ     .equ    16
+;       CKS: check sum vector size
+;               (DRM + 1) / 4 if removable disk
+;               0 if hard disk
+;       AVL: Allocation vector size, DSM / 8 + 1
+;==================================================================
+DPB00_SPT       .equ    256
+DPB00_DSM       .equ    1023
+DPB00_DRM       .equ    255
+DPB00_CKS       .equ    0       ; (DPB00_DRM + 1) / 4
 DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
-        .db     3               ; BSH: block shift factor. sector in a block SSZ*2^n
-        .db     7               ; BLM: block length mask.  sector number in a block - 1
-        .db     0               ; EXM: extent mask
-        .dw     DPB00_DSM       ; DSM: disk size max (number of blocks-1).
-        .dw     63              ; DRM: directory size max (max file name no.-1)
-        .dw     0xC000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
-        .dw     DPB00_CSVSZ     ; CKS: check sum vector size
-        .dw     2               ; OFF: offset. first usable track number.
-.else
-DPB00_SPT       .equ    32
-DPB00_DSM       .equ    2047
-DPB00_DRM       .equ    1023
-DPB00_CSVSZ     .equ    (DPB00_DRM + 1) / 8
-DPB00_ALVSZ     .equ    DPB00_DSM / 8 + 1
-DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
-        .db     5               ; BSH: block shift factor. sector in a block 128*2^n
-        .db     31              ; BLM: block length mask.  sector no. in a block - 1
-        .db     1               ; EXM: extent mask
+        .db     6               ; BSH: block shift factor. sector in a block SSZ*2^n
+        .db     63              ; BLM: block length mask.  sector number in a block - 1
+        .db     3               ; EXM: extent mask
         .dw     DPB00_DSM       ; DSM: disk size max (number of blocks-1).
         .dw     DPB00_DRM       ; DRM: directory size max (max file name no.-1)
         .dw     0x8000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
-        .dw     DPB00_CSVSZ     ; CKS: check sum vector size
-        .dw     2               ; OFF: offset. first unusable track number.
-.endif
+        .dw     DPB00_CKS       ; CKS: check vector table size
+        .dw     1               ; OFF: offset. first usable track number.
+
 ;==================================================================
 ;       Directory buffer (128bytes)
 DIRB00: .ds     128
 
-;       Check sum vector table (CKS in DPB bytes)
-CSV00:  .ds     DPB00_CSVSZ
+;       Check vector table (CKS in DPB bytes)
+CSV00:  .ds     DPB00_CKS
 
 ;       Allocation vector table (DSM/8+1 bytes)
-ALV00:  .ds     DPB00_ALVSZ
+ALV00:  .ds     DPB00_DSM / 8 + 1
 
 ;******************************************************************
 ;   DMA buffer

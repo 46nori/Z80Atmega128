@@ -249,6 +249,12 @@
     <Compile Include="src\emuldev\em_consoleio.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\emuldev\em_debugger.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\emuldev\em_debugger.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\emuldev\em_diskio.c">
       <SubType>compile</SubType>
     </Compile>

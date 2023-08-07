@@ -15,6 +15,7 @@
 #include "z80io.h"
 #include "intelhex.h"
 #include "sdcard.h"
+#include "emuldev/em_debugger.h"
 
 #define DLIMITER	" "
 #define MAX_TOKENS	3
@@ -119,6 +120,10 @@ static int c_z80_reset(token_list *t);
 static int c_z80_nmi(token_list *t);
 static int c_z80_int(token_list *t);
 static int c_z80_status(token_list *t);
+static int c_z80_break(token_list *t);
+static int c_z80_delete(token_list *t);
+static int c_z80_info_break(token_list *t);
+static int c_z80_continue(token_list *t);
 static int c_avr_sei(token_list *t);
 static int c_avr_cli(token_list *t);
 static int c_test(token_list *t);
@@ -143,6 +148,10 @@ static const struct {
 	{"nmi",   c_z80_nmi},
 	{"int",   c_z80_int},
 	{"sts",   c_z80_status},
+	{"brk",   c_z80_break},
+	{"del",   c_z80_delete},
+	{"cont",  c_z80_continue},
+	{"ib",    c_z80_info_break},
 	{"sei",   c_avr_sei},
 	{"cli",   c_avr_cli},
 	{"test",  c_test},
@@ -193,6 +202,10 @@ static const char help_str[] PROGMEM =	\
 	"nmi             : NMI\n"\
 	"int <dat>       : interrupt\n"\
 	"sts             : show Z80 status\n"\
+	"brk <adr>       : set breakpoint\n"\
+	"del <adr>       : delete n\n"\
+	"con             : continue from breakpoint\n"\
+	"ib              : info breakpoints\n"\
 	"";
 
 #if 1	
@@ -214,8 +227,6 @@ static const char help_str[] PROGMEM =	\
 // |<-----shadow---->|<--------real--------->|
 // -(6)--|
 //
-#define INTERNAL_RAM_SIZE	0x1100
-#define EXTERNAL_RAM_SIZE	0x10000
 
 // Block read from external SRAM
 //   dst : external SRAM
@@ -682,6 +693,58 @@ static int c_z80_int(token_list *t) {
 static int c_z80_status(token_list *t) {
 	x_printf("/BUSRQ:%c\n", Is_Z80_BUSRQ() ? 'H' : 'L');
 	x_printf("/HALT :%c\n", Is_Z80_HALT() ?  'H' : 'L');
+	return NO_ERROR;
+}
+
+/*********************************************************
+ * Add breakpoint
+ *********************************************************/
+static int c_z80_break(token_list *t)
+{
+	if (t->n < 2) {
+		return ERR_PARAM_MISS;     // missing parameters
+	}
+
+	unsigned int adr;
+	if (get_uint(t, T_PARAM1, &adr) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
+	}
+	dbg_AddBreakPoint((uint8_t *)adr);
+	return NO_ERROR;
+}
+
+/*********************************************************
+ * Delete breakpoint
+ *********************************************************/
+static int c_z80_delete(token_list *t)
+{
+	if (t->n < 2) {
+		return ERR_PARAM_MISS;     // missing parameters
+	}
+
+	unsigned int adr;
+	if (get_uint(t, T_PARAM1, &adr) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
+	}
+	dbg_DeleteBreakPoint((uint8_t *)adr);
+	return NO_ERROR;
+}
+
+/*********************************************************
+ * List breakpoints
+ *********************************************************/
+static int c_z80_info_break(token_list *t)
+{
+	dbg_ListBreakPoint();
+	return NO_ERROR;
+}
+
+/*********************************************************
+ * Continue from breakpoint
+ *********************************************************/
+static int c_z80_continue(token_list *t)
+{
+	dbg_Continue();
 	return NO_ERROR;
 }
 
