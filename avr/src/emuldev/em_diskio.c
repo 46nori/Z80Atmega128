@@ -35,8 +35,8 @@ static uint8_t read_buf_len_high = 0;
 static uint8_t read_int_level = 128;
 
 enum DISKIO_STATUS {IDLE, REQUESTING, DOING, REJECTED};
-static enum DISKIO_STATUS rd_st = IDLE;
-static enum DISKIO_STATUS wr_st = IDLE;
+static volatile enum DISKIO_STATUS rd_st = IDLE;
+static volatile enum DISKIO_STATUS wr_st = IDLE;
 static uint8_t tmpbuf[512];
 
 static FRESULT read_result;

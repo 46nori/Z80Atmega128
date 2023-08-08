@@ -55,7 +55,7 @@ uint8_t (* const InHandler[PORT_MAX])(void) = {
 	IN_1B_DSK_ReadStatus,
 	IN_1C_DSK_ReadIntLevel,
 	IN_1D_DEBUG_IntLevel,
-	IN_Undefined,
+	IN_1E_DEBUG_BreakPointAddress,
 	IN_1F_LED_Get
 };
 
@@ -93,6 +93,6 @@ void (* const OutHandler[PORT_MAX])(uint8_t) = {
 	OUT_1B_DSK_Read,
 	OUT_1C_DSK_ReadIntLevel,
 	OUT_1D_DEBUG_IntLevel,
-	OUT_1E_DEBUG_OUT,
+	OUT_1E_DEBUG_BreakPointAddress,
 	OUT_1F_LED_Set
 };

@@ -42,8 +42,8 @@ PORT_DSKRDLEN_H .equ    0x1A    ; Data size(H) to Read
 PORT_DSKRD      .equ    0x1B    ; Read from DISK
 PORT_DSKRD_STS  .equ    0x1B    ; Check Read DISK status
 PORT_DSKRD_INT  .equ    0x1C    ; Interrupt setting of DISK Read
-PORT_DEBUG_INT  .equ    0x1D    ; Interrupt setting of Debugger
-PORT_DEBUG_OP   .equ    0x1E    ; Get OP code of the break point
+PORT_DEBUG_INT  .equ    0x1D    ; Interrupt setting for resumption from HALT
+PORT_DEBUG_BP   .equ    0x1E    ; Send break point address
 PORT_LED        .equ    0x1F    ; LED control
 
         .z80
@@ -85,8 +85,11 @@ BREAKPOINT:
         EX (SP),HL              ; Set resume address
         EI
         PUSH AF
+        IN A, (PORT_DEBUG_BP)   ; reset address sequencer
+        LD A, (BREAKPOINT_ADR + 1)
+        OUT (PORT_DEBUG_BP), A  ; send High address of breakpoint
         LD A, (BREAKPOINT_ADR)
-        OUT (PORT_DEBUG_OP), A  ; send low address of breakpoint
+        OUT (PORT_DEBUG_BP), A  ; send low address of breakpoint
         POP AF
         HALT                    ; Wait for INT 4
         RET                     ; Reesume
