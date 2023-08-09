@@ -76,9 +76,9 @@
   ```
   /* I/O Ports */
   typedef struct PORT_struct {
-	  volatile uint8_t PINCRL;         /* I/O Port PIN DATA READ ONLY */
-	  volatile uint8_t DIR;            /* I/O Port Data Direction Set */
-	  volatile uint8_t PORTDATA;       /* I/O Port DATA register */
+    volatile uint8_t PINCRL;         /* I/O Port PIN DATA READ ONLY */
+    volatile uint8_t DIR;            /* I/O Port Data Direction Set */
+    volatile uint8_t PORTDATA;       /* I/O Port DATA register */
   } PORT_t;
   ```
 - 一方、PORT E,F,Gのレジスタマップを見ると、PORT Fは明らかに不連続になっている。PORTE,Gも連続しているものの、PORT A,B,C,Dとはアドレスが離れている。データシートをよく見ると、PORT E,F,Gは拡張I/Oレジスタ領域に存在する。どうもASFでサポートされるのはPORT A,B,C,Dだけのようだ。 
@@ -544,11 +544,11 @@
 - 理由がさっぱりわからないのでタイマーによる周期割り込みを実装してみた。
   8bitのTimer0を使用。CTCモードのコンペアマッチで10ms毎に割り込みかける。クロック入力はF_CPU(16MHz)を1024分周している。sei()するだけでハンドラが呼び出された。
   ```
-	OCR0  = 10 * F_CPU/1024000UL;           // 1024/16MHz x Count (every 10msec)
-	TCCR0 = _BV(WGM01)|                     // CTC mode
-	        _BV(CS02)|_BV(CS01)|_BV(CS00);　// start with 1/1024 pre-scaler
-	TIFR |= _BV(OCF0);                      // Interrupt every compare match
-	TIMSK|= _BV(OCIE0);                     // Enable interrupt
+  OCR0  = 10 * F_CPU/1024000UL;           // 1024/16MHz x Count (every 10msec)
+  TCCR0 = _BV(WGM01)|                     // CTC mode
+          _BV(CS02)|_BV(CS01)|_BV(CS00);　// start with 1/1024 pre-scaler
+  TIFR |= _BV(OCF0);                      // Interrupt every compare match
+  TIMSK|= _BV(OCIE0);                     // Enable interrupt
   ```
   ```
   ISR(TIMER0_COMP_vect) {
@@ -1069,7 +1069,7 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
   - これを回避するにはヒゲのない74HC74の出力をそのまま利用する。この信号を/WAIT_0とし、回路図を修正した。
 
 ## 2023/7/18
-- OUT命令のINT1ハンドラの/CLRWのパルス幅が短かったのを修正した。/CLRWがLowの期間、74HC74のQ出力はHighをキープできる。Z80が確実にWAIT解除を認識するよう、1クロック以上Highになるよう調整。
+- OUT命令のINT1ハンドラの/CLRWのパルス幅が短かったのを修正した。/CLRWがLowの期間、74HC74のQ出力はHighをキープできる。Z80が確実にWAIT解除を認識するよう、1クロック以上Highになるよう調整。時々WAITが解除されない問題に随分悩まされたが、結局原因はこれだった。
   - /CLRWAITのパルス幅 = 5CLK x 62.5ns(@AVR 16MHz) = 312.5ns > 250ns(@Z80 4MHz)
 
 ## 2023/7/19
@@ -1222,10 +1222,80 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
   - `del <adr>` : adrに書き込んだ命令を元に戻し、ブレークポイントを削除する。
   - `cont` : AVRからZ80に割り込みをかけることで、HALTを解除し、ブレークポイント位置に復帰する。~~復帰先の命令は0xffのままなので、実行前に`del`で命令の復帰とブレークポイント削除を行っておかないと、再度ブレークがかかってしまうので注意。~~ (2023/8/8 ブレークポイントを消すことなくcontできるようにした。)
   - `ib` : ブレークポイントの一覧(アドレスと0xffセット前の命令)を表示する。
-- ブレークするとAVRのコンソールにが表示される。(2023/8/8 ブレークアドレスは、下位だけでなく上位アドレスも表示するようにした。)
+- ブレークするとAVRのコンソールに以下が表示される。(2023/8/8 ブレークアドレスは、下位だけでなく上位アドレスも表示するようにした。)
   - `>>>Break! at ブレークアドレス` → 登録したブレークポイントにヒットした
   - `>>>Break! at ブレークアドレス (unexpected)` → 暴走などでRST 7(0xff)を実行
 
 ## 2023/8/8
-- [エミュレーションデバイス仕様書](../doc/EmulatedDeviceSpec.md)を更新。
+- [エミュレーションデバイス仕様書](EmulatedDeviceSpec.md)を更新。ブレークポイント機能のためのポート0x1d, 0x1eを追加。これで余剰ポートがなくなってしまった。まぁ、足りなくなったらもう1ビット増やせばいいのだけど。
 - ブレークポイントの振る舞いを少し賢くしたので、本格的にデバッグすることにしよう。
+
+## 2023/8/9
+- ブレークポイント機能を使って、CCP/BDOSの動きを追っていった。
+- まず、DDA1の`CALL ENTRY`の前後にブレークを張って観察する。この呼び出しで`^@`が大量表示された。ここはBDOS 10番コール(RDBUFF)で、コンソールからの1行入力。
+  ```
+  DC06 7F                   53 INBUFF:  .db 127   ;length of input buffer.
+  DC07 00                   54          .db 0     ;current length of contents.
+  DC08 43 6F 70 79 72 69    55 	.str	"Copyright"
+  ```
+  ```
+                            292 ;
+                            293 ;   Get here for normal keyboard input. Delete the submit file
+                            294 ; incase there was one.
+                            295 ;
+   DD96 CD DD DD      [17]  296 GETINP1:CALL	DELBATCH	;delete file ($$$.sub).
+   DD99 CD 1A DD      [17]  297 	CALL	SETCDRV		;reset active disk.
+   DD9C 0E 0A         [ 7]  298 	LD	C,10		;get line from console device.
+   DD9E 11 06 DC      [10]  299 	LD	DE,INBUFF
+   DDA1 CD 05 00      [17]  300 	CALL	ENTRY
+   DDA4 CD 29 DD      [17]  301 	CALL	MOVECD		;reset current drive (again).
+  ```
+  - コンソール入力がないのに、なぜかリターンしてきてDDA4でブレークする。入力文字数がセットされるDC07の値は127になっている。そして確かに127個の`^@`が表示されている。(ちなみにこの値はバッファサイズに連動している。INBUFFの127を3に変えると、DC07の値も3になった。)  
+  - DC08からの文字列バッファは0で埋められている。初期値の`Copyright`が消えているので、確かに上書きされている。
+- 以上より、コンソール入力周りが怪しい。無入力にも関わらず、入力として受け取ったダミー値をバッファに目一杯書き込んでいるように見える。この条件ではAVRはIN命令で0を返すので辻褄があう。BDOSのバグとは考えにくいので、BIOSの入力チェック(CONSTS)がおかしいのかも？
+- DDA1のCALL ENTRYはBDOSのRDBUFFの呼び出しなので、ここを読み進める。
+  ```
+                          1512 ;
+                          1513 ;   Function to execute a buffered read.
+                          1514 ;
+  E5E1 3A 0C E7      [13] 1515 RDBUFF:	LD	A,(CURPOS)	;use present location as starting one.
+  E5E4 32 0B E7      [13] 1516 	LD	(STARTING),A
+  E5E7 2A 43 E7      [16] 1517 	LD	HL,(PARAMS)	;get the maximum buffer space.
+  E5EA 4E            [ 7] 1518 	LD	C,(HL)
+  E5EB 23            [ 6] 1519 	INC	HL		;point to first available space.
+  E5EC E5            [11] 1520 	PUSH	HL		;and save.
+  E5ED 06 00         [ 7] 1521 	LD	B,0		;keep a character count.
+  E5EF C5            [11] 1522 RDBUF1:	PUSH	BC
+  E5F0 E5            [11] 1523 	PUSH	HL
+  E5F1 CD FB E4      [17] 1524 RDBUF2:	CALL	GETCHAR		;get the next input character.
+  ```
+  - E5F1の`CALL GETCHAR`(1文字入力)で以下につながる。バッファはまだ空なので`JP CONIN`が呼ばれる。これはBIOSのCONIN(1文字入力)呼び出しのことだ。
+  ```
+                          1345 ;
+                          1346 ;   Get an input character. We will check our 1 character
+                          1347 ; buffer first. This may be set by the console status routine.
+                          1348 ;
+  E4FB 21 0E E7      [10] 1349 GETCHAR:LD	HL,CHARBUF	;check character buffer.
+  E4FE 7E            [ 7] 1350 	LD	A,(HL)		;anything present already?
+  E4FF 36 00         [10] 1351 	LD	(HL),0		;...either case clear it.
+  E501 B7            [ 4] 1352 	OR	A
+  E502 C0            [11] 1353 	RET	NZ		;yes, use it.
+  E503 C3 09 F2      [10] 1354 	JP	CONIN		;nope, go get a character responce.
+  ```
+  - おい？ちょっと待て。BIOSのキー入力チェック(CONSTS)で入力チェックしてから呼ばれるんじゃないのか？まさかCONINてブロッキングAPIだったの？
+    - 答え：　応用CP/M P.11のCONINの説明:「このルーチンは、入力がない場合は内部で入力があるまでループさせること。」
+- **原因判明。CONINはブロッキングAPIだった。**
+- ということでBIOSのCONINを入力があるまで待つように書き換えたところ、、、**動いた！**
+  ```
+  CP/M-80 Ver2.2 on Z80ATmega128
+
+  a>dir
+  A: ASM      COM : BIOS     ASM : CPM      SYS : DDT      COM
+  A: DEBLOCK  ASM : DISKDEF  LIB : DSKMAINT COM : DUMP     ASM
+  A: DUMP     COM : ED       COM : LOAD     COM : PIP      COM
+  A: READ     ME  : STAT     COM : SUBMIT   COM : XSUB     COM
+  A: ZORK1    COM : ZORK1    DAT
+  a>stat
+  A: R/W, Space: 0k
+  ```
+- だが、まだ動作が不安定。`dir`表示が糞づまったりするし、トランジェントコマンドが起動できたりできなかったり。`stat`の結果も怪しい。SD Card上のDISKイメージや、DISK IOにまだバグがありそう。いずれにしても、ブレークポイントをサポートしたことで、デバッグが相当楽になった。
