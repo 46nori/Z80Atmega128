@@ -316,37 +316,31 @@ RELOAD_MSG:
 ;                0xFF - Available
 ;******************************************************************
 CONST:
-.if 0
         IN A, (PORT_CONIN_STS)
         OR A
         RET Z
         LD A, 0xFF
         RET
-.else
-        PUSH HL
-        XOR A                   ; A = 0
-        LD HL, IS_CONIN_QUEUING
-        CP (HL)
-        POP HL
-        RET Z
-        CPL                     ; A = 0xFF
-        RET
-.endif
 
 ;******************************************************************
-;   03: Input a character from CON:
+;   03: Input a character from CON: (Never return unless input)
 ;       IN : None
 ;       OUT: A = Received character
 ;******************************************************************
 CONIN:
-        IN A, (PORT_CONIN)
-        PUSH AF
-        IN A, (PORT_CONIN_STS)
+        XOR A
+        DI
+        LD (IS_CONIN_QUEUING), A        ; clear int flag
+        IN A, (PORT_CONIN_STS)          ; check input
+        EI
         OR A
-        JR NZ, CONIN_RET
-        LD (IS_CONIN_QUEUING), A
-CONIN_RET:
-        POP AF
+        JR NZ, CONIN_READ
+CONIN_LOOP:                             ; wait for input
+        LD A, (IS_CONIN_QUEUING)
+        OR A
+        JR Z, CONIN_LOOP
+CONIN_READ:
+        IN A, (PORT_CONIN)              ; read a character
         RET
 
 ;******************************************************************
