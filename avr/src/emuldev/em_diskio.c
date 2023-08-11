@@ -45,6 +45,8 @@ FATFS file_system;
 
 static const char* get_filename(int disk_no);
 
+#define DEBUG_PRINT 0
+
 ///////////////////////////////////////////////////////////////////
 // Initialize emulated device
 ///////////////////////////////////////////////////////////////////
@@ -80,36 +82,8 @@ static const char* get_filename(int disk_no)
 //  * XMEM external SRAM R/W
 //  * invoke /BUSREQ
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#if 1
-void OUT_0B_DSK_WritePos_Low(uint8_t data)	{write_pos_low  = data;}
-void OUT_0C_DSK_WritePos_Mid(uint8_t data)	{write_pos_mid  = data;}
-void OUT_0D_DSK_WritePos_High(uint8_t data) {write_pos_high = data;}
-void OUT_0E_DSK_WriteBuf_Low(uint8_t data)	{write_buf_low  = data;}
-void OUT_0F_DSK_WriteBuf_High(uint8_t data) {write_buf_high = data;}
-void OUT_10_DSK_WriteLen_Low(uint8_t data)	{write_buf_len_low  = data;}
-void OUT_11_DSK_WriteLen_High(uint8_t data)	{write_buf_len_high = data;}
-void OUT_14_DSK_ReadPos_Low(uint8_t data)	{read_pos_low = data;}
-void OUT_15_DSK_ReadPos_Mid(uint8_t data)	{read_pos_mid = data;}
-void OUT_16_DSK_ReadPos_High(uint8_t data)	{read_pos_high = data;}
-void OUT_17_DSK_ReadBuf_Low(uint8_t data)	{read_buf_low  = data;}
-void OUT_18_DSK_ReadBuf_High(uint8_t data)	{read_buf_high = data;}
-void OUT_19_DSK_ReadLen_Low(uint8_t data)	{read_buf_len_low  = data;}
-void OUT_1A_DSK_ReadLen_High(uint8_t data)	{read_buf_len_high = data;}
-uint8_t IN_0B_DSK_WritePos_Low()	{return write_pos_low;}
-uint8_t IN_0C_DSK_WritePos_Mid()	{return write_pos_mid;}
-uint8_t IN_0D_DSK_WritePos_High()	{return write_pos_high;}
-uint8_t IN_0E_DSK_WriteBuf_Low()	{return write_buf_low;}
-uint8_t IN_0F_DSK_WriteBuf_High()	{return write_buf_high;}
-uint8_t IN_10_DSK_WriteLen_Low()	{return write_buf_len_low;}
-uint8_t IN_11_DSK_WriteLen_High()	{return write_buf_len_high;}
-uint8_t IN_14_DSK_ReadPos_Low()		{return read_pos_low;}
-uint8_t IN_15_DSK_ReadPos_Mid()		{return read_pos_mid;}
-uint8_t IN_16_DSK_ReadPos_High()	{return read_pos_high;}
-uint8_t IN_17_DSK_ReadBuf_Low()		{return read_buf_low;}
-uint8_t IN_18_DSK_ReadBuf_High()	{return read_buf_high;}
-uint8_t IN_19_DSK_ReadLen_Low()		{return read_buf_len_low;}
-uint8_t IN_1A_DSK_ReadLen_High()	{return read_buf_len_high;}
-#else  //======== for debug ==========================================================
+#if DEBUG_PRINT
+//======== for debug ==========================================================
 void OUT_0B_DSK_WritePos_Low(uint8_t data)	{write_pos_low  = data;     x_printf("WPOS_L:%02x\n",write_pos_low);}
 void OUT_0C_DSK_WritePos_Mid(uint8_t data)	{write_pos_mid  = data;     x_printf("WPOS_M:%02x\n",write_pos_mid);}
 void OUT_0D_DSK_WritePos_High(uint8_t data) {write_pos_high = data;     x_printf("WPOS_H:%02x\n",write_pos_high);}
@@ -138,6 +112,35 @@ uint8_t IN_17_DSK_ReadBuf_Low()		{return read_buf_low;}
 uint8_t IN_18_DSK_ReadBuf_High()	{return read_buf_high;}
 uint8_t IN_19_DSK_ReadLen_Low()		{return read_buf_len_low;}
 uint8_t IN_1A_DSK_ReadLen_High()	{return read_buf_len_high;}
+#else
+void OUT_0B_DSK_WritePos_Low(uint8_t data)	{write_pos_low  = data;}
+void OUT_0C_DSK_WritePos_Mid(uint8_t data)	{write_pos_mid  = data;}
+void OUT_0D_DSK_WritePos_High(uint8_t data) {write_pos_high = data;}
+void OUT_0E_DSK_WriteBuf_Low(uint8_t data)	{write_buf_low  = data;}
+void OUT_0F_DSK_WriteBuf_High(uint8_t data) {write_buf_high = data;}
+void OUT_10_DSK_WriteLen_Low(uint8_t data)	{write_buf_len_low  = data;}
+void OUT_11_DSK_WriteLen_High(uint8_t data)	{write_buf_len_high = data;}
+void OUT_14_DSK_ReadPos_Low(uint8_t data)	{read_pos_low = data;}
+void OUT_15_DSK_ReadPos_Mid(uint8_t data)	{read_pos_mid = data;}
+void OUT_16_DSK_ReadPos_High(uint8_t data)	{read_pos_high = data;}
+void OUT_17_DSK_ReadBuf_Low(uint8_t data)	{read_buf_low  = data;}
+void OUT_18_DSK_ReadBuf_High(uint8_t data)	{read_buf_high = data;}
+void OUT_19_DSK_ReadLen_Low(uint8_t data)	{read_buf_len_low  = data;}
+void OUT_1A_DSK_ReadLen_High(uint8_t data)	{read_buf_len_high = data;}
+uint8_t IN_0B_DSK_WritePos_Low()	{return write_pos_low;}
+uint8_t IN_0C_DSK_WritePos_Mid()	{return write_pos_mid;}
+uint8_t IN_0D_DSK_WritePos_High()	{return write_pos_high;}
+uint8_t IN_0E_DSK_WriteBuf_Low()	{return write_buf_low;}
+uint8_t IN_0F_DSK_WriteBuf_High()	{return write_buf_high;}
+uint8_t IN_10_DSK_WriteLen_Low()	{return write_buf_len_low;}
+uint8_t IN_11_DSK_WriteLen_High()	{return write_buf_len_high;}
+uint8_t IN_14_DSK_ReadPos_Low()		{return read_pos_low;}
+uint8_t IN_15_DSK_ReadPos_Mid()		{return read_pos_mid;}
+uint8_t IN_16_DSK_ReadPos_High()	{return read_pos_high;}
+uint8_t IN_17_DSK_ReadBuf_Low()		{return read_buf_low;}
+uint8_t IN_18_DSK_ReadBuf_High()	{return read_buf_high;}
+uint8_t IN_19_DSK_ReadLen_Low()		{return read_buf_len_low;}
+uint8_t IN_1A_DSK_ReadLen_High()	{return read_buf_len_high;}
 #endif
 
 ///////////////////////////////////////////////////////////////////
@@ -149,13 +152,17 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 	const char *filename = get_filename(data);
 	if (pf_open(filename) != FR_OK) {
 		disk_status = 1;		// error
+#if DEBUG_PRINT
 		x_printf("%s open error\n");
+#endif
 		return;
 	}	
 	// Set file pointer to beginning of file
 	pf_lseek(0);
 	disk_status = 0;			// success
-	//x_printf("###SELSDK: %s\n", filename);
+#if DEBUG_PRINT
+	x_printf("###SELSDK: %s\n", filename);
+#endif
 }
 uint8_t IN_0A_DSK_GetDiskStatus()
 {
@@ -273,7 +280,9 @@ error_skip:
 ///////////////////////////////////////////////////////////////////
 void OUT_1B_DSK_Read(uint8_t data)
 {
+#if DEBUG_PRINT
 	x_printf("READ:%d -> ", rd_st);
+#endif
 	// Reject if WRITE is on going
 	if (wr_st == DOING || wr_st == REQUESTING) {
 		rd_st = REJECTED;
@@ -291,7 +300,9 @@ void OUT_1B_DSK_Read(uint8_t data)
 			break;
 		}
 	}
+#if DEBUG_PRINT
 	x_printf("%d\n", rd_st);
+#endif
 }
 
 uint8_t IN_1B_DSK_ReadStatus()
@@ -371,8 +382,9 @@ void em_disk_read(void)
 	}
 	
 error_skip:
+#if DEBUG_PRINT
 	x_printf(">>>READ:%06lx : %02x\n\n", pos, read_result);
-
+#endif
 	if (read_int_level < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
 		Z80_EXTINT_low(read_int_level << 1);
