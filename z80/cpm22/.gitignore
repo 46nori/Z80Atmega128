@@ -4,4 +4,9 @@
 *.ihx
 *.hlr
 *.zip
+*.BIN
+*.bin
+*.IMG
+*.img
 tmp/
+cpmdisks

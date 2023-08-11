@@ -1,0 +1,6 @@
+*.BIN
+*.bin
+*.IMG
+*.img
+diskdefs
+tmp/
