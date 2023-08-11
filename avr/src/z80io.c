@@ -155,6 +155,15 @@ void Z80_HALT(void) {
 //
 int Is_Z80_BUSRQ(void)
 {
+	return PIND & _BV(PORTD6) ? 1 : 0;
+}
+
+//
+// Sense Z80 /BUSACK
+//   return 0(Low), 1(High)
+//
+int Is_Z80_BUSACK(void)
+{
 	return PIND & _BV(PORTD7) ? 1 : 0;
 }
 
