@@ -12,6 +12,7 @@ CCP_BDOS_LENGTH .equ    0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
 IOBYTE          .equ    0x0003
 CURRENT_DISK    .equ    0x0004
+MAX_DISK_NUM    .equ    0
 
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00    ; Get a character from CONIN
@@ -42,8 +43,8 @@ PORT_DSKRDLEN_H .equ    0x1A    ; Data size(H) to Read
 PORT_DSKRD      .equ    0x1B    ; Read from DISK
 PORT_DSKRD_STS  .equ    0x1B    ; Check Read DISK status
 PORT_DSKRD_INT  .equ    0x1C    ; Interrupt setting of DISK Read
-PORT_DEBUG_INT  .equ    0x1D    ; Interrupt setting for resumption from HALT
-PORT_DEBUG_BP   .equ    0x1E    ; Send break point address
+PORT_DBG_INT    .equ    0x1D    ; Interrupt setting for resumption from HALT
+PORT_DBG_INFO   .equ    0x1E    ; Send break point address
 PORT_LED        .equ    0x1F    ; LED control
 
         .z80
@@ -79,23 +80,69 @@ DEBUGGER_ENTRY:
 
 BREAKPOINT:
         DI
-        EX (SP),HL
+        LD (DBGTMP), HL         ; (*) Save HL
+        EX (SP), HL             ; Get resume address
         DEC HL
-        LD (BREAKPOINT_ADR), HL
-        EX (SP),HL              ; Set resume address
-        EI
-        PUSH AF
-        IN A, (PORT_DEBUG_BP)   ; reset address sequencer
-        LD A, (BREAKPOINT_ADR + 1)
-        OUT (PORT_DEBUG_BP), A  ; send High address of breakpoint
-        LD A, (BREAKPOINT_ADR)
-        OUT (PORT_DEBUG_BP), A  ; send low address of breakpoint
-        POP AF
-        HALT                    ; Wait for INT 4
-        RET                     ; Reesume
+        LD (BP_ADR), HL         ; (13)
+        LD (SP_ADR), SP         ; (12)
+        EX (SP), HL             ; Set resume address - 1
+        POP HL                  ; SP = SP-1
+        LD HL, (DBGTMP)         ; (*) Restore HL
 
-BREAKPOINT_ADR:
-        .dw     0
+        ; save registers
+        LD SP, REGS   
+        PUSH IY                 ; (1) 
+        PUSH IX                 ; (2)
+        PUSH HL                 ; (3)
+        PUSH DE                 ; (4)
+        PUSH BC                 ; (5)
+        PUSH AF                 ; (6)
+        EX AF, AF'
+        PUSH AF                 ; (7)
+        EXX
+        PUSH HL                 ; (8)
+        PUSH DE                 ; (9)
+        PUSH BC                 ; (10)
+        PUSH AF                 ; (*)
+        LD A, I
+        LD (REGS), A            ; (11)
+
+        PUSH HL                 ; (*)
+        PUSH BC                 ; (*)
+        IN A, (PORT_DBG_INFO)   ; Reset sequencer
+        LD HL, DEBUG_INFO_END - 1
+        LD B,  DEBUG_INFO_END - DEBUG_INFO_BEGIN
+        LD C,  PORT_DBG_INFO
+        OTDR                    ; Send debug info
+        POP BC                  ; (*)
+        POP HL                  ; (*)
+        POP AF                  ; (*)
+        EXX
+
+        LD SP, (SP_ADR)         ; Restore SP
+        EI
+        HALT                    ; Wait for INT 4
+        RET                     ; Resume
+
+;
+; Debug information area
+;
+DBGTMP: .ds     6               ; dummy area for (*)
+DEBUG_INFO_BEGIN:
+        .dw     0               ; (10) BC'
+        .dw     0               ; (9)  DE'
+        .dw     0               ; (8)  HL'
+        .dw     0               ; (7)  AF'
+        .dw     0               ; (6)  AF
+        .dw     0               ; (5)  BC
+        .dw     0               ; (4)  DE
+        .dw     0               ; (3)  HL
+        .dw     0               ; (2)  IX
+        .dw     0               ; (1)  IY
+REGS:   .db     0               ; (11) I
+SP_ADR: .dw     0               ; (12) SP before break
+BP_ADR: .dw     0               ; (13) breakpoint address
+DEBUG_INFO_END:
 
 ;******************************************************************
 ;   Interrupt vector table
@@ -191,7 +238,7 @@ BOOT:
         INC A
         OUT (PORT_CONIN_INT), A         ; INT 3
         INC A
-        OUT (PORT_DEBUG_INT), A         ; INT 4
+        OUT (PORT_DBG_INT), A           ; INT 4
         EI
 
         ; Boot message
@@ -398,6 +445,8 @@ SELDSK:
         LD (IS_CACHED), A       ; Clear read cache
 
         LD A, C
+        CP MAX_DISK_NUM
+        JR C, DISK_ERROR
         OUT (PORT_SELDSK), A    ; Open DISK
         IN A, (PORT_DSKSTS)     ; Check DISK status
         OR A
@@ -859,7 +908,8 @@ DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
         .db     3               ; EXM: extent mask
         .dw     DPB00_DSM       ; DSM: disk size max (number of blocks-1).
         .dw     DPB00_DRM       ; DRM: directory size max (max file name no.-1)
-        .dw     0x8000          ; AL0, AL1: storage for first bytes of bit map (dir space used).
+        .db     0x80            ; AL0: storage for first bytes of bit map (dir space used).
+        .db     0x00            ; AL1: storage for first bytes of bit map (dir space used).
         .dw     DPB00_CKS       ; CKS: check vector table size
         .dw     1               ; OFF: offset. first usable track number.
 

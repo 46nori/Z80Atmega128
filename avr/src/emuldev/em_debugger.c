@@ -10,6 +10,29 @@
 #include "z80io.h"
 #include "xconsoleio.h"
 
+struct Z80Registers {
+	uint8_t I;
+	uint8_t A;
+	uint8_t F;
+	uint8_t B;
+	uint8_t C;
+	uint8_t D;
+	uint8_t E;
+	uint8_t H;
+	uint8_t L;
+	uint8_t A_;
+	uint8_t F_;
+	uint8_t B_;
+	uint8_t C_;
+	uint8_t D_;
+	uint8_t E_;
+	uint8_t H_;
+	uint8_t L_;
+	uint16_t IX;
+	uint16_t IY;
+	uint16_t SP_;
+};
+
 #define NUM_OF_BP	10
 struct BreakPoint {
 	uint8_t *address;
@@ -105,31 +128,135 @@ uint8_t IN_1D_DEBUG_IntLevel(void)
 	return debugger_int_level;
 }
 
-static uint8_t *bp_adr = 0;
-static uint8_t bp_adr_state = 0;
+static uint8_t *bp_adr;
+static int dbginfo_state = 0;
 uint8_t IN_1E_DEBUG_BreakPointAddress(void)
 {
-	bp_adr_state = 0;
+	dbginfo_state = 0;
 	return 0;
 }
 
 void OUT_1E_DEBUG_BreakPointAddress(uint8_t data)
 {
-	if (bp_adr_state == 0) {
-		// Get higher address of breakpoint
-		bp_adr = (uint8_t *)((unsigned int)data << 8);
-		bp_adr_state = 1;
-	} else {
-		// Get lower address of breakpoint
-		bp_adr = (uint8_t *)((unsigned int)bp_adr | data);
-		bp_adr_state = 0;
-		
+	static struct Z80Registers z80reg = {0};
+	
+	switch (dbginfo_state) {
+	case 0:		// Breakpoint high
+		bp_adr = (uint8_t *)((uint16_t)data << 8);
+		dbginfo_state = 1;
+		break;
+	case 1:		// Breakpoint low
+		bp_adr += data;
+		dbginfo_state = 2;
+		break;
+	case 2:		// SP high
+		z80reg.SP_ = (uint16_t)data << 8;
+		dbginfo_state = 3;
+		break;
+	case 3:		// SP low
+		z80reg.SP_ |= data;
+		dbginfo_state = 4;
+		break;
+	case 4:		// I
+		z80reg.I = data;
+		dbginfo_state = 5;
+		break;
+	case 5:		// IY high
+		z80reg.IY = (uint16_t)data << 8;
+		dbginfo_state = 6;
+		break;
+	case 6:		// IY low
+		z80reg.IY |= data;
+		dbginfo_state = 7;
+		break;
+	case 7:		// IX high
+		z80reg.IX = (uint16_t)data << 8;
+		dbginfo_state = 8;
+		break;
+	case 8:		// IX low
+		z80reg.IX |= data;
+		dbginfo_state = 9;
+		break;
+	case 9:		// H
+		z80reg.H = data;
+		dbginfo_state = 10;
+		break;
+	case 10:	// L
+		z80reg.L = data;
+		dbginfo_state = 11;
+		break;
+	case 11:	// D
+		z80reg.D = data;
+		dbginfo_state = 12;
+		break;
+	case 12:	// E
+		z80reg.E = data;
+		dbginfo_state = 13;
+		break;
+	case 13:	// B
+		z80reg.B = data;
+		dbginfo_state = 14;
+		break;
+	case 14:	// C
+		z80reg.C = data;
+		dbginfo_state = 15;
+		break;
+	case 15:	// A
+		z80reg.A = data;
+		dbginfo_state = 16;
+		break;
+	case 16:	// F
+		z80reg.F = data;
+		dbginfo_state = 17;
+		break;
+	case 17:	// A'
+		z80reg.A_ = data;
+		dbginfo_state = 18;
+		break;
+	case 18:	// F'
+		z80reg.F_ = data;
+		dbginfo_state = 19;
+		break;
+	case 19:	// H'
+		z80reg.H_ = data;
+		dbginfo_state = 20;
+		break;
+	case 20:	// L'
+		z80reg.L_ = data;
+		dbginfo_state = 21;
+		break;
+	case 21:	// D'
+		z80reg.D_ = data;
+		dbginfo_state = 22;
+		break;
+	case 22:	// E'
+		z80reg.E_ = data;
+		dbginfo_state = 23;
+		break;
+	case 23:	// B'
+		z80reg.B_ = data;
+		dbginfo_state = 24;
+		break;
+	case 24:	// C'
+		z80reg.C_ = data;
+	default :
+		dbginfo_state = 0;
 		x_printf(">>>Break! at $%04x", bp_adr);
-		if (FindBreakPoint(bp_adr) == -1) {
-			x_puts(" (unexpected)");			
+		int idx = FindBreakPoint(bp_adr);
+		if (idx == -1) {
+			x_puts(" (unexpected)");
 		} else {
 			x_puts("");
 		}
+		x_printf("AF=$%02x%02x [Z:%d C:%d] I=$%02x\n",	z80reg.A, z80reg.F,
+														z80reg.F & 0x40 ? 1:0,
+														z80reg.F & 0x01 ? 1:0,
+														z80reg.I);
+		x_printf("BC=$%02x%02x DE=$%02x%02x HL=$%02x%02x\n",
+														z80reg.B, z80reg.C, z80reg.D,
+														z80reg.E, z80reg.H, z80reg.L);
+		x_printf("IX=$%04x IY=$%04x SP=$%04x\n", z80reg.IX, z80reg.IY, z80reg.SP_);
+		break;
 	}
 }
 
