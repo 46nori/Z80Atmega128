@@ -31,6 +31,7 @@ struct Z80Registers {
 	uint16_t IX;
 	uint16_t IY;
 	uint16_t SP_;
+	uint16_t STACK[3];
 };
 
 #define NUM_OF_BP	10
@@ -139,7 +140,6 @@ uint8_t IN_1E_DEBUG_BreakPointAddress(void)
 void OUT_1E_DEBUG_BreakPointAddress(uint8_t data)
 {
 	static struct Z80Registers z80reg = {0};
-	
 	switch (dbginfo_state) {
 	case 0:		// Breakpoint high
 		bp_adr = (uint8_t *)((uint16_t)data << 8);
@@ -239,6 +239,30 @@ void OUT_1E_DEBUG_BreakPointAddress(uint8_t data)
 		break;
 	case 24:	// C'
 		z80reg.C_ = data;
+		dbginfo_state = 25;
+		break;
+	case 25:
+		z80reg.STACK[0] = (uint16_t)data << 8;
+		dbginfo_state = 26;
+		break;
+	case 26:
+		z80reg.STACK[0] |= data;
+		dbginfo_state = 27;
+		break;
+	case 27:
+		z80reg.STACK[1] = (uint16_t)data << 8;
+		dbginfo_state = 28;
+		break;
+	case 28:
+		z80reg.STACK[1] |= data;
+		dbginfo_state = 29;
+		break;
+	case 29:
+		z80reg.STACK[2] = (uint16_t)data << 8;
+		dbginfo_state = 30;
+		break;
+	case 30:
+		z80reg.STACK[2] |= data;
 	default :
 		dbginfo_state = 0;
 		x_printf(">>>Break! at $%04x", bp_adr);
@@ -256,6 +280,9 @@ void OUT_1E_DEBUG_BreakPointAddress(uint8_t data)
 														z80reg.B, z80reg.C, z80reg.D,
 														z80reg.E, z80reg.H, z80reg.L);
 		x_printf("IX=$%04x IY=$%04x SP=$%04x\n", z80reg.IX, z80reg.IY, z80reg.SP_);
+		x_printf("(SP+0)=$%04x\n", z80reg.STACK[2]);
+		x_printf("(SP+2)=$%04x\n", z80reg.STACK[1]);
+		x_printf("(SP+4)=$%04x\n", z80reg.STACK[0]);
 		break;
 	}
 }

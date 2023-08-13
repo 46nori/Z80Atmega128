@@ -75,19 +75,16 @@ _SECTRN:        JP SECTRN
 ;******************************************************************
 ;   Debugger (RST 7 handler)
 ;******************************************************************
-DEBUGGER_ENTRY:
-        JP BREAKPOINT
-
-BREAKPOINT:
+DEBUGGER:
         DI
-        LD (DBGTMP), HL         ; (*) Save HL
+        LD (SP_ADR), SP         ; (12)
+        LD (DBG_HL), HL         ; Save HL
         EX (SP), HL             ; Get resume address
         DEC HL
         LD (BP_ADR), HL         ; (13)
-        LD (SP_ADR), SP         ; (12)
         EX (SP), HL             ; Set resume address - 1
         POP HL                  ; SP = SP-1
-        LD HL, (DBGTMP)         ; (*) Restore HL
+        LD HL, (DBG_HL)         ; Restore HL
 
         ; save registers
         LD SP, REGS   
@@ -103,20 +100,30 @@ BREAKPOINT:
         PUSH HL                 ; (8)
         PUSH DE                 ; (9)
         PUSH BC                 ; (10)
-        PUSH AF                 ; (*)
+        LD (DBG_A), A           ; Save register
         LD A, I
         LD (REGS), A            ; (11)
 
-        PUSH HL                 ; (*)
-        PUSH BC                 ; (*)
+        LD (DBG_HL), HL         ; Save registers
+        LD (DBG_BC), BC
+        LD (DBG_DE), DE
+
         IN A, (PORT_DBG_INFO)   ; Reset sequencer
         LD HL, DEBUG_INFO_END - 1
         LD B,  DEBUG_INFO_END - DEBUG_INFO_BEGIN
         LD C,  PORT_DBG_INFO
         OTDR                    ; Send debug info
-        POP BC                  ; (*)
-        POP HL                  ; (*)
-        POP AF                  ; (*)
+
+        LD HL, (SP_ADR)
+        LD DE, 2*3-1
+        ADD HL, DE
+        LD B, 2*3
+        OTDR                    ; Send 3 level STACK data
+
+        LD A,  (DBG_A)          ; Restore registers
+        LD BC, (DBG_BC)
+        LD DE, (DBG_DE)
+        LD HL, (DBG_HL)
         EXX
 
         LD SP, (SP_ADR)         ; Restore SP
@@ -124,10 +131,14 @@ BREAKPOINT:
         HALT                    ; Wait for INT 4
         RET                     ; Resume
 
+DBG_A:  .db     0
+DBG_BC: .dw     0
+DBG_DE: .dw     0
+DBG_HL: .dw     0
+
 ;
 ; Debug information area
 ;
-DBGTMP: .ds     6               ; dummy area for (*)
 DEBUG_INFO_BEGIN:
         .dw     0               ; (10) BC'
         .dw     0               ; (9)  DE'
@@ -278,7 +289,7 @@ INIT_SYSTEM_AREA:
         ; Set 'JP DEBUG_ENTRY' at 0x0038 for debugger
         LD A, 0xC3
         LD (0x0038), A
-        LD HL, DEBUGGER_ENTRY
+        LD HL, DEBUGGER
         LD (0x0039), HL
 
         RET
