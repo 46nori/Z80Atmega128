@@ -266,8 +266,9 @@ void em_disk_write(void)
 	}
 
 error_skip:
+#if DEBUG_PRINT
 	x_printf(">>>WRITE:%06lx : %02x\n\n", pos, write_result);
-
+#endif
 	if (write_int_level < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
 		Z80_EXTINT_low(write_int_level << 1);
