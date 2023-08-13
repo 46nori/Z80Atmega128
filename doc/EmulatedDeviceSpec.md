@@ -62,8 +62,8 @@
 | 0x1c | OUT       | Set DISK READ interrupt level         | 0-127: Mode2 INT level<br>Other: No interrupt |
 | 0x1d | IN        | Get interrupt level for resumption from the breakpoint | Interrupt level                               |
 | 0x1d | OUT       | Set interrupt level for resumption from the breakpoint | 0-127: Mode2 INT level<br>Other: No interrupt |
-| 0x1e | IN        | Reset sequencer of breakpoint address | Reset sequencer and wait state for High address |
-| 0x1e | OUT       | Set breakpoint address                | Set to the High address, followed by the Low |
+| 0x1e | IN        | Reset sequencer                       | Reset sequencer and wait 1st byte |
+| 0x1e | OUT       | Send debug info                       | Send debug info(breakpoint, registers and stack data) |
 | 0x1f | IN        | Get LED Status                        | bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 | 0x1f | OUT       | Set LED                               | bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 
@@ -133,8 +133,8 @@ From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 |0x1c|OUT|DISKリード完了割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
 |0x1d|IN|ブレークポイント復帰割り込みレベル取得|割り込みレベル|
 |0x1d|OUT|ブレークポイント復帰割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
-|0x1e|IN|ブレークポイント通知シーケンスリセット|シーケンサーをリセットし、Highアドレス待ちに状態する。|
-|0x1e|OUT|ブレークポイント通知|ブレークポイントのアドレス通知。<br>上位、下位の順にセットする。|
+|0x1e|IN|デバッグ情報通知シーケンスリセット|シーケンサーをリセットする。|
+|0x1e|OUT|デバッグ情報通知|デバッグ情報(ブレークアドレス/Z80レジスタ/スタックデータ)の通知。デバッグ領域の値を逆順に送る。|
 |0x1f|IN |LED点灯状態取得| bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 |0x1f|OUT|LED点灯設定| bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 
