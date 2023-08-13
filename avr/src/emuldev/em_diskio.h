@@ -5,52 +5,32 @@
  *  Author: 46nori
  */ 
 
-#ifndef INCFILE1_H_
-#define INCFILE1_H_
+#ifndef EM_DISKIO_H_
+#define EM_DISKIO_H_
 #include "asf.h"
+
+#define TEMPLATE_IN_OUT_EXTERN(INTNUM,FUNC) \
+extern uint8_t IN_##INTNUM##_##FUNC(void);\
+extern void OUT_##INTNUM##_##FUNC(uint8_t data);
 
 extern void init_em_diskio(void);
 extern void em_disk_read(void);
 extern void em_disk_write(void);
+extern uint8_t	IN_0A_DSK_GetDiskStatus(void);
+extern void		OUT_0A_DSK_SelectDisk(uint8_t data);
+TEMPLATE_IN_OUT_EXTERN(0B,DSK_WritePos)
+TEMPLATE_IN_OUT_EXTERN(0C,DSK_WriteBuf)
+TEMPLATE_IN_OUT_EXTERN(0D,DSK_WriteLen)
+extern uint8_t	IN_0E_DSK_WriteStatus(void);
+extern void		OUT_0E_DSK_Write(uint8_t data);
+extern uint8_t	IN_0F_DSK_WriteIntlevel(void);
+extern void		OUT_0F_DSK_WriteIntLevel(uint8_t data);
+TEMPLATE_IN_OUT_EXTERN(10,DSK_ReadPos)
+TEMPLATE_IN_OUT_EXTERN(11,DSK_ReadBuf)
+TEMPLATE_IN_OUT_EXTERN(12,DSK_ReadLen)
+extern uint8_t	IN_13_DSK_ReadStatus(void);
+extern void		OUT_13_DSK_Read(uint8_t data);
+extern uint8_t	IN_14_DSK_ReadIntLevel(void);
+extern void		OUT_14_DSK_ReadIntLevel(uint8_t data);
 
-extern void OUT_0A_DSK_SelectDisk(uint8_t data);
-extern void OUT_0B_DSK_WritePos_Low(uint8_t data);
-extern void OUT_0C_DSK_WritePos_Mid(uint8_t data);
-extern void OUT_0D_DSK_WritePos_High(uint8_t data);
-extern void OUT_0E_DSK_WriteBuf_Low(uint8_t data);
-extern void OUT_0F_DSK_WriteBuf_High(uint8_t data);
-extern void OUT_10_DSK_WriteLen_Low(uint8_t data);
-extern void OUT_11_DSK_WriteLen_High(uint8_t data);
-extern void OUT_12_DSK_Write(uint8_t data);
-extern void OUT_13_DSK_WriteIntLevel(uint8_t data);
-extern void OUT_14_DSK_ReadPos_Low(uint8_t data);
-extern void OUT_15_DSK_ReadPos_Mid(uint8_t data);
-extern void OUT_16_DSK_ReadPos_High(uint8_t data);
-extern void OUT_17_DSK_ReadBuf_Low(uint8_t data);
-extern void OUT_18_DSK_ReadBuf_High(uint8_t data);
-extern void OUT_19_DSK_ReadLen_Low(uint8_t data);
-extern void OUT_1A_DSK_ReadLen_High(uint8_t data);
-extern void OUT_1B_DSK_Read(uint8_t data);
-extern void OUT_1C_DSK_ReadIntLevel(uint8_t data);
-extern uint8_t IN_0A_DSK_GetDiskStatus(void);
-extern uint8_t IN_0B_DSK_WritePos_Low(void);
-extern uint8_t IN_0C_DSK_WritePos_Mid(void);
-extern uint8_t IN_0D_DSK_WritePos_High(void);
-extern uint8_t IN_0E_DSK_WriteBuf_Low(void);
-extern uint8_t IN_0F_DSK_WriteBuf_High(void);
-extern uint8_t IN_10_DSK_WriteLen_Low(void);
-extern uint8_t IN_11_DSK_WriteLen_High(void);
-extern uint8_t IN_12_DSK_WriteStatus(void);
-extern uint8_t IN_13_DSK_WriteIntlevel(void);
-extern uint8_t IN_14_DSK_ReadPos_Low(void);
-extern uint8_t IN_15_DSK_ReadPos_Mid(void);
-extern uint8_t IN_16_DSK_ReadPos_High(void);
-extern uint8_t IN_17_DSK_ReadBuf_Low(void);
-extern uint8_t IN_18_DSK_ReadBuf_High(void);
-extern uint8_t IN_19_DSK_ReadLen_Low(void);
-extern uint8_t IN_1A_DSK_ReadLen_High(void);
-extern uint8_t IN_1B_DSK_ReadStatus(void);
-extern uint8_t IN_1C_DSK_ReadIntLevel(void);
-
-
-#endif /* INCFILE1_H_ */
+#endif /* EM_DISKIO_H_ */

@@ -12,27 +12,15 @@
 #include "xconsoleio.h"
 #include "z80io.h"
 
+#define DEBUG_PRINT 1
+
 //=================================================================
 // DISK I/O emulated device
 //=================================================================
 // Disk parameters
 static uint8_t disk_status = 0;
-static uint8_t write_pos_low  = 0;
-static uint8_t write_pos_mid  = 0;
-static uint8_t write_pos_high = 0;
-static uint8_t write_buf_low  = 0;
-static uint8_t write_buf_high = 0;
-static uint8_t write_buf_len_low  = 0;
-static uint8_t write_buf_len_high = 0;
 static uint8_t write_int_level = 128;
-static uint8_t read_pos_low  = 0;
-static uint8_t read_pos_mid  = 0;
-static uint8_t read_pos_high = 0;
-static uint8_t read_buf_low  = 0;
-static uint8_t read_buf_high = 0;
-static uint8_t read_buf_len_low  = 0;
-static uint8_t read_buf_len_high = 0;
-static uint8_t read_int_level = 128;
+static uint8_t read_int_level  = 128;
 
 enum DISKIO_STATUS {IDLE, REQUESTING, DOING, REJECTED};
 static volatile enum DISKIO_STATUS rd_st = IDLE;
@@ -44,8 +32,6 @@ static FRESULT write_result;
 FATFS file_system;
 
 static const char* get_filename(int disk_no);
-
-#define DEBUG_PRINT 0
 
 ///////////////////////////////////////////////////////////////////
 // Initialize emulated device
@@ -76,76 +62,12 @@ static const char* get_filename(int disk_no)
 	return filename;
 }
 
-
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // CAUTION: Followings are PROHIBITED here
 //  * XMEM external SRAM R/W
 //  * invoke /BUSREQ
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#if DEBUG_PRINT
-//======== for debug ==========================================================
-void OUT_0B_DSK_WritePos_Low(uint8_t data)	{write_pos_low  = data;     x_printf("WPOS_L:%02x\n",write_pos_low);}
-void OUT_0C_DSK_WritePos_Mid(uint8_t data)	{write_pos_mid  = data;     x_printf("WPOS_M:%02x\n",write_pos_mid);}
-void OUT_0D_DSK_WritePos_High(uint8_t data) {write_pos_high = data;     x_printf("WPOS_H:%02x\n",write_pos_high);}
-void OUT_0E_DSK_WriteBuf_Low(uint8_t data)	{write_buf_low  = data;     x_printf("WBUF_L:%02x\n",write_buf_low);}
-void OUT_0F_DSK_WriteBuf_High(uint8_t data) {write_buf_high = data;     x_printf("WBUF_H:%02x\n",write_buf_high);}
-void OUT_10_DSK_WriteLen_Low(uint8_t data)	{write_buf_len_low  = data; x_printf("WLEN_L:%02x\n",write_buf_len_low);}
-void OUT_11_DSK_WriteLen_High(uint8_t data)	{write_buf_len_high = data; x_printf("WLEN_H:%02x\n",write_buf_len_high);}
-void OUT_14_DSK_ReadPos_Low(uint8_t data)	{read_pos_low = data;       x_printf("RPOS_L:%02x\n",read_pos_low);}
-void OUT_15_DSK_ReadPos_Mid(uint8_t data)	{read_pos_mid = data;       x_printf("RPOS_M:%02x\n",read_pos_mid);}
-void OUT_16_DSK_ReadPos_High(uint8_t data)	{read_pos_high = data;      x_printf("RPOS_H:%02x\n",read_pos_high);}
-void OUT_17_DSK_ReadBuf_Low(uint8_t data)	{read_buf_low  = data;      x_printf("RBUF_L:%02x\n",read_buf_low);}
-void OUT_18_DSK_ReadBuf_High(uint8_t data)	{read_buf_high = data;      x_printf("RBUF_H:%02x\n",read_buf_high);}
-void OUT_19_DSK_ReadLen_Low(uint8_t data)	{read_buf_len_low  = data;  x_printf("RLEN_L:%02x\n",read_buf_len_low);}
-void OUT_1A_DSK_ReadLen_High(uint8_t data)	{read_buf_len_high = data;  x_printf("RLEN_H:%02x\n",read_buf_len_high);}
-uint8_t IN_0B_DSK_WritePos_Low()	{return write_pos_low;}
-uint8_t IN_0C_DSK_WritePos_Mid()	{return write_pos_mid;}
-uint8_t IN_0D_DSK_WritePos_High()	{return write_pos_high;}
-uint8_t IN_0E_DSK_WriteBuf_Low()	{return write_buf_low;}
-uint8_t IN_0F_DSK_WriteBuf_High()	{return write_buf_high;}
-uint8_t IN_10_DSK_WriteLen_Low()	{return write_buf_len_low;}
-uint8_t IN_11_DSK_WriteLen_High()	{return write_buf_len_high;}
-uint8_t IN_14_DSK_ReadPos_Low()		{return read_pos_low;}
-uint8_t IN_15_DSK_ReadPos_Mid()		{return read_pos_mid;}
-uint8_t IN_16_DSK_ReadPos_High()	{return read_pos_high;}
-uint8_t IN_17_DSK_ReadBuf_Low()		{return read_buf_low;}
-uint8_t IN_18_DSK_ReadBuf_High()	{return read_buf_high;}
-uint8_t IN_19_DSK_ReadLen_Low()		{return read_buf_len_low;}
-uint8_t IN_1A_DSK_ReadLen_High()	{return read_buf_len_high;}
-#else
-void OUT_0B_DSK_WritePos_Low(uint8_t data)	{write_pos_low  = data;}
-void OUT_0C_DSK_WritePos_Mid(uint8_t data)	{write_pos_mid  = data;}
-void OUT_0D_DSK_WritePos_High(uint8_t data) {write_pos_high = data;}
-void OUT_0E_DSK_WriteBuf_Low(uint8_t data)	{write_buf_low  = data;}
-void OUT_0F_DSK_WriteBuf_High(uint8_t data) {write_buf_high = data;}
-void OUT_10_DSK_WriteLen_Low(uint8_t data)	{write_buf_len_low  = data;}
-void OUT_11_DSK_WriteLen_High(uint8_t data)	{write_buf_len_high = data;}
-void OUT_14_DSK_ReadPos_Low(uint8_t data)	{read_pos_low = data;}
-void OUT_15_DSK_ReadPos_Mid(uint8_t data)	{read_pos_mid = data;}
-void OUT_16_DSK_ReadPos_High(uint8_t data)	{read_pos_high = data;}
-void OUT_17_DSK_ReadBuf_Low(uint8_t data)	{read_buf_low  = data;}
-void OUT_18_DSK_ReadBuf_High(uint8_t data)	{read_buf_high = data;}
-void OUT_19_DSK_ReadLen_Low(uint8_t data)	{read_buf_len_low  = data;}
-void OUT_1A_DSK_ReadLen_High(uint8_t data)	{read_buf_len_high = data;}
-uint8_t IN_0B_DSK_WritePos_Low()	{return write_pos_low;}
-uint8_t IN_0C_DSK_WritePos_Mid()	{return write_pos_mid;}
-uint8_t IN_0D_DSK_WritePos_High()	{return write_pos_high;}
-uint8_t IN_0E_DSK_WriteBuf_Low()	{return write_buf_low;}
-uint8_t IN_0F_DSK_WriteBuf_High()	{return write_buf_high;}
-uint8_t IN_10_DSK_WriteLen_Low()	{return write_buf_len_low;}
-uint8_t IN_11_DSK_WriteLen_High()	{return write_buf_len_high;}
-uint8_t IN_14_DSK_ReadPos_Low()		{return read_pos_low;}
-uint8_t IN_15_DSK_ReadPos_Mid()		{return read_pos_mid;}
-uint8_t IN_16_DSK_ReadPos_High()	{return read_pos_high;}
-uint8_t IN_17_DSK_ReadBuf_Low()		{return read_buf_low;}
-uint8_t IN_18_DSK_ReadBuf_High()	{return read_buf_high;}
-uint8_t IN_19_DSK_ReadLen_Low()		{return read_buf_len_low;}
-uint8_t IN_1A_DSK_ReadLen_High()	{return read_buf_len_high;}
-#endif
 
-///////////////////////////////////////////////////////////////////
-// DISK WRITE
-///////////////////////////////////////////////////////////////////
 void OUT_0A_DSK_SelectDisk(uint8_t data)
 {
 	// Open file
@@ -164,14 +86,87 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 	x_printf("###SELSDK: %s\n", filename);
 #endif
 }
+
 uint8_t IN_0A_DSK_GetDiskStatus()
 {
 	return disk_status;
 }
 
-void OUT_12_DSK_Write(uint8_t data)
+//
+//	Setter/Getter of DISK I/O parameters
+//
+#define QSTRING(str) #str
+#define TEMPLATE_IN_OUT_4BYTES(INTNUM,FUNC) \
+static int		st_##FUNC = 0;\
+static uint32_t	dt_##FUNC = 0;\
+uint8_t IN_##INTNUM##_##FUNC(void)\
+{\
+	st_##FUNC = 0;\
+	return dt_##FUNC;\
+}\
+void OUT_##INTNUM##_##FUNC(uint8_t data)\
+{\
+	switch (st_##FUNC) {\
+		case 0:\
+		dt_##FUNC = (uint32_t)data << 24;\
+		st_##FUNC = 1;\
+		break;\
+		case 1:\
+		dt_##FUNC |= (uint32_t)data << 16;\
+		st_##FUNC = 2;\
+		break;\
+		case 2:\
+		dt_##FUNC |= (uint32_t)data << 8;\
+		st_##FUNC = 3;\
+		break;\
+		case 3:\
+		dt_##FUNC |= data;\
+		default:\
+		st_##FUNC = 0;\
+		x_printf("%s=%08x\n", QSTRING(FUNC), dt_##FUNC); \
+		break;\
+	}\
+}
+
+#define TEMPLATE_IN_OUT_2BYTES(INTNUM,FUNC) \
+static int		st_##FUNC = 0;\
+static uint16_t	dt_##FUNC = 0;\
+uint8_t IN_##INTNUM##_##FUNC(void)\
+{\
+	st_##FUNC = 0;\
+	return dt_##FUNC;\
+}\
+void OUT_##INTNUM##_##FUNC(uint8_t data)\
+{\
+	switch (st_##FUNC) {\
+		case 0:\
+		dt_##FUNC |= (uint32_t)data << 8;\
+		st_##FUNC = 1;\
+		break;\
+		case 1:\
+		dt_##FUNC |= data;\
+		default:\
+		st_##FUNC = 0;\
+		x_printf("%s=%04x\n", QSTRING(FUNC), dt_##FUNC); \
+		break;\
+	}\
+}
+
+TEMPLATE_IN_OUT_4BYTES(0B,DSK_WritePos)
+TEMPLATE_IN_OUT_2BYTES(0C,DSK_WriteBuf)
+TEMPLATE_IN_OUT_2BYTES(0D,DSK_WriteLen)
+TEMPLATE_IN_OUT_4BYTES(10,DSK_ReadPos)
+TEMPLATE_IN_OUT_2BYTES(11,DSK_ReadBuf)
+TEMPLATE_IN_OUT_2BYTES(12,DSK_ReadLen)
+
+///////////////////////////////////////////////////////////////////
+// DISK WRITE
+///////////////////////////////////////////////////////////////////
+void OUT_0E_DSK_Write(uint8_t data)
 {
-	// CAUTION: don't consume long time
+#if DEBUG_PRINT
+	x_printf("WRITE:%d->", wr_st);
+#endif
 	// Reject if READ is on going
 	if (rd_st == DOING || rd_st == REQUESTING) {
 		wr_st = REJECTED;
@@ -189,14 +184,17 @@ void OUT_12_DSK_Write(uint8_t data)
 	default:
 		break;
 	}
+#if DEBUG_PRINT
+	x_printf("%d\n", wr_st);
+#endif
 }
 
-uint8_t IN_12_DSK_WriteStatus()
+uint8_t IN_0E_DSK_WriteStatus()
 {
 	// CAUTION: don't consume long time
 	cli();
 	uint8_t st = 0x00;
-	switch (rd_st) {
+	switch (wr_st) {
 	case IDLE:
 		if (read_result != FR_OK) {
 			st = 0x02;		// error
@@ -214,12 +212,12 @@ uint8_t IN_12_DSK_WriteStatus()
 	return st;
 }
 
-void OUT_13_DSK_WriteIntLevel(uint8_t data)
+void OUT_0F_DSK_WriteIntLevel(uint8_t data)
 {
 	write_int_level = data;
 }
 
-uint8_t IN_13_DSK_WriteIntlevel(void)
+uint8_t IN_0F_DSK_WriteIntlevel(void)
 {
 	return write_int_level;
 }
@@ -235,13 +233,10 @@ void em_disk_write(void)
 	}
 	wr_st = DOING;
 
-	DWORD pos = (DWORD)write_pos_high << 16 |
-	            (DWORD)write_pos_mid  << 8  |
-	            (DWORD)write_pos_low;
-	pf_lseek(pos);
+	pf_lseek(dt_DSK_WritePos);
 
-	void *buf = (void *)((uint16_t)write_buf_high << 8 | write_buf_low);
-	UINT len = (UINT)write_buf_len_high << 8 | write_buf_len_low;
+	void *buf = (void *)dt_DSK_ReadBuf;
+	UINT len = dt_DSK_WriteLen;
 	UINT bw;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
@@ -267,7 +262,7 @@ void em_disk_write(void)
 
 error_skip:
 #if DEBUG_PRINT
-	x_printf(">>>WRITE:%06lx : %02x\n\n", pos, write_result);
+	x_printf(">>>WRITE:%06lx : %02x\n\n", dt_DSK_WritePos, write_result);
 #endif
 	if (write_int_level < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
@@ -279,10 +274,10 @@ error_skip:
 ///////////////////////////////////////////////////////////////////
 // DISK READ
 ///////////////////////////////////////////////////////////////////
-void OUT_1B_DSK_Read(uint8_t data)
+void OUT_13_DSK_Read(uint8_t data)
 {
 #if DEBUG_PRINT
-	x_printf("READ:%d -> ", rd_st);
+	x_printf("READ:%d->", rd_st);
 #endif
 	// Reject if WRITE is on going
 	if (wr_st == DOING || wr_st == REQUESTING) {
@@ -306,7 +301,7 @@ void OUT_1B_DSK_Read(uint8_t data)
 #endif
 }
 
-uint8_t IN_1B_DSK_ReadStatus()
+uint8_t IN_13_DSK_ReadStatus()
 {
 	// CAUTION: don't consume long time
 	cli();
@@ -329,12 +324,12 @@ uint8_t IN_1B_DSK_ReadStatus()
 	return st;
 }
 
-void OUT_1C_DSK_ReadIntLevel(uint8_t data)
+void OUT_14_DSK_ReadIntLevel(uint8_t data)
 {
 	read_int_level = data;
 }
 
-uint8_t IN_1C_DSK_ReadIntLevel(void)
+uint8_t IN_14_DSK_ReadIntLevel(void)
 {
 	return read_int_level;	
 }
@@ -342,26 +337,26 @@ uint8_t IN_1C_DSK_ReadIntLevel(void)
 void em_disk_read(void)
 {
 	if (rd_st != REQUESTING) {
+		goto error_exit;
 		return;
 	}
 	if (wr_st == DOING || wr_st == REQUESTING) {
+		goto error_exit;
 		rd_st = REJECTED;
 		return;
 	}
 	rd_st = DOING;
 
 	// CAUTION: don't consume long time
-	DWORD pos = (DWORD)read_pos_high << 16 |
-				(DWORD)read_pos_mid  << 8  |
-				(DWORD)read_pos_low;
-	pf_lseek(pos);
+	pf_lseek(dt_DSK_ReadPos);
 
-	void *buf = (void *)((uint16_t)read_buf_high << 8 | read_buf_low);
-	UINT len = (UINT)read_buf_len_high << 8 | read_buf_len_low;
+	void *buf = (void *)dt_DSK_ReadBuf;
+	UINT len = dt_DSK_ReadLen;
 	UINT br;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
-		if ((read_result = pf_read(tmpbuf, sizeof(tmpbuf), &br)) != FR_OK) {
+		read_result = pf_read(tmpbuf, sizeof(tmpbuf), &br);
+		if (read_result != FR_OK) {
 			goto error_skip;
 		}
 		cli();
@@ -373,7 +368,8 @@ void em_disk_read(void)
 	}
 	len = len % sizeof(tmpbuf);
 	if (len > 0) {
-		if ((read_result = pf_read(tmpbuf, len, &br)) == FR_OK) {
+		read_result = pf_read(tmpbuf, len, &br);
+		if (read_result == FR_OK) {
 			cli();
 			ExtMem_attach();
 			memcpy(buf, tmpbuf, len);
@@ -384,8 +380,9 @@ void em_disk_read(void)
 	
 error_skip:
 #if DEBUG_PRINT
-	x_printf(">>>READ:%06lx : %02x\n\n", pos, read_result);
+	x_printf(">>>READ:%06lx : %02x\n\n", dt_DSK_ReadPos, read_result);
 #endif
+error_exit:
 	if (read_int_level < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
 		Z80_EXTINT_low(read_int_level << 1);

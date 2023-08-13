@@ -23,26 +23,16 @@ PORT_CONOUT_STS .equ    0x06    ; Check CONOUT status
 PORT_CONOUT_INT .equ    0x08    ; Interrupt setting of CONOUT
 PORT_SELDSK     .equ    0x0A    ; Select DISK
 PORT_DSKSTS     .equ    0x0A    ; Check selected DISK status
-PORT_DSKWRPOS_L .equ    0x0B    ; Write position(L) of DISK
-PORT_DSKWRPOS_M .equ    0x0C    ; Write position(M) of DISK
-PORT_DSKWRPOS_H .equ    0x0D    ; Write position(H) of DISK
-PORT_DSKWRBUF_L .equ    0x0E    ; Source buffer address(L) in Write
-PORT_DSKWRBUF_H .equ    0x0F    ; Source buffer address(H) in Write
-PORT_DSKWRLEN_L .equ    0x10    ; Data size(L) to Write
-PORT_DSKWRLEN_H .equ    0x11    ; Data size(H) to Write
-PORT_DSKWR      .equ    0x12    ; Write to DISK
-PORT_DSKWR_STS  .equ    0x12    ; Check Write DISK status
-PORT_DSKWR_INT  .equ    0x13    ; Interrupt setting of DISK Write
-PORT_DSKRDPOS_L .equ    0x14    ; Read position (L) of DISK
-PORT_DSKRDPOS_M .equ    0x15    ; Read position (M) of DISK
-PORT_DSKRDPOS_H .equ    0x16    ; Read position (H) of DISK
-PORT_DSKRDBUF_L .equ    0x17    ; Destination buffer address(L) in Read
-PORT_DSKRDBUF_H .equ    0x18    ; Destination buffer address(H) in Read
-PORT_DSKRDLEN_L .equ    0x19    ; Data size(L) to Read
-PORT_DSKRDLEN_H .equ    0x1A    ; Data size(H) to Read
-PORT_DSKRD      .equ    0x1B    ; Read from DISK
-PORT_DSKRD_STS  .equ    0x1B    ; Check Read DISK status
-PORT_DSKRD_INT  .equ    0x1C    ; Interrupt setting of DISK Read
+PORT_DSKWRPOS   .equ    0x0B    ; Write position of DISK
+PORT_DSKWRBUF   .equ    0x0C    ; Source buffer address in Write
+PORT_DSKWRLEN   .equ    0x0D    ; Data length to Write
+PORT_DSKWR      .equ    0x0E    ; Write DISK / Check status
+PORT_DSKWR_INT  .equ    0x0F    ; Interrupt setting of DISK Write
+PORT_DSKRDPOS   .equ    0x10    ; Read position of DISK
+PORT_DSKRDBUF   .equ    0x11    ; Destination buffer address in Read
+PORT_DSKRDLEN   .equ    0x12    ; Data length to Read
+PORT_DSKRD      .equ    0x13    ; Read DISK / Check status
+PORT_DSKRD_INT  .equ    0x14    ; Interrupt setting of DISK Read
 PORT_DBG_INT    .equ    0x1D    ; Interrupt setting for resumption from HALT
 PORT_DBG_INFO   .equ    0x1E    ; Send break point address
 PORT_LED        .equ    0x1F    ; LED control
@@ -164,7 +154,7 @@ DEBUG_INFO_END:
         .dw     ISR_02          ; INT 2 : CONOUT
         .dw     ISR_03          ; INT 3 : CONIN
         .dw     ISR_04          ; INT 4 : Debugger
-
+ 
 ;******************************************************************
 ;   Interrupt handler
 ;******************************************************************
@@ -236,8 +226,7 @@ BOOT:
         LD SP, CCP_ENTRY
 
         ; Interrupt setting of emulated device
-        LD HL, VECT_TABLE
-        LD A, H
+        LD A, VECT_TABLE >> 8
         LD I, A
         IM 2
         XOR A
@@ -309,23 +298,24 @@ WBOOT:
 
         ; Set DISK read position
         XOR A
-        OUT (PORT_DSKRDPOS_H), A
-        OUT (PORT_DSKRDPOS_M), A
-        OUT (PORT_DSKRDPOS_L), A
+        OUT (PORT_DSKRDPOS), A
+        OUT (PORT_DSKRDPOS), A
+        OUT (PORT_DSKRDPOS), A
+        OUT (PORT_DSKRDPOS), A
 
         ; Set load address
         LD HL, CCP_ENTRY
         LD A, H
-        OUT (PORT_DSKRDBUF_H), A
+        OUT (PORT_DSKRDBUF), A
         LD A, L
-        OUT (PORT_DSKRDBUF_L), A
+        OUT (PORT_DSKRDBUF), A
 
         ; Set DISK read length (size of CPP+BDOS)
         LD HL, CCP_BDOS_LENGTH
         LD A, H
-        OUT (PORT_DSKRDLEN_H), A
+        OUT (PORT_DSKRDLEN), A
         LD A, L
-        OUT (PORT_DSKRDLEN_L), A
+        OUT (PORT_DSKRDLEN), A
 
         ; Load CPP+BDOS
         CALL DISK_READ_SUB
@@ -581,30 +571,32 @@ MISHIT_CACHE:
         ; Set SD Card address to read
         ;  (DE,HL) * 128
         ;  0eeeeeee ehhhhhhh hlllllll l0000000
-        ;             HIGH     MID      LOW
+        ;     HIGH                       LOW
         SRL E
+        LD A, E
+        OUT (PORT_DSKRDPOS), A
         RR H
         LD A, H
-        OUT (PORT_DSKRDPOS_H), A
+        OUT (PORT_DSKRDPOS), A
         RR L
         LD A, L
-        OUT (PORT_DSKRDPOS_M), A
+        OUT (PORT_DSKRDPOS), A
         LD A,0
         RRA
-        OUT (PORT_DSKRDPOS_L), A
+        OUT (PORT_DSKRDPOS), A
 
         ; Read a SD card sector (512bytes)
         LD HL, DMABUF
         LD A, H
-        OUT (PORT_DSKRDBUF_H), A
+        OUT (PORT_DSKRDBUF), A
         LD A, L
-        OUT (PORT_DSKRDBUF_L), A
+        OUT (PORT_DSKRDBUF), A
 
         ; Set read length (512byte)
         LD A, 0x02
-        OUT (PORT_DSKRDLEN_H), A
+        OUT (PORT_DSKRDLEN), A
         LD A, 0x00
-        OUT (PORT_DSKRDLEN_L), A
+        OUT (PORT_DSKRDLEN), A
 
         ; READ
 RETRY_READ:
@@ -672,7 +664,7 @@ WAIT_READ_COMPLETE:
         LD A, (IS_READ_DONE)
         OR A
         JR Z, WAIT_READ_COMPLETE
-        IN A, (PORT_DSKRD_STS)  ; Check read status
+        IN A, (PORT_DSKRD)      ; Check read status
         RET
 
 ;******************************************************************
@@ -703,15 +695,15 @@ WRITE:
         ; Set destination buffer address
         LD HL, DMABUF
         LD A, H
-        OUT (PORT_DSKWRBUF_H), A
+        OUT (PORT_DSKWRBUF), A
         LD A, L
-        OUT (PORT_DSKWRBUF_L), A
+        OUT (PORT_DSKWRBUF), A
 
         ; Set write length (128byte)
         XOR A
-        OUT (PORT_DSKWRLEN_H), A
+        OUT (PORT_DSKWRLEN), A
         LD A, 128
-        OUT (PORT_DSKWRLEN_L), A
+        OUT (PORT_DSKWRLEN), A
 
         ; DE,HL = TRACK * SPT + SECTOR
         LD HL, (CURRENT_TRACK_NO)
@@ -723,17 +715,19 @@ WRITE:
         ; Set SD Card address to write
         ;  (DE,HL) * 128
         ;  0eeeeeee ehhhhhhh hlllllll l0000000
-        ;             HIGH     MID      LOW
+        ;    HIGH                        LOW
         SRL E
+        LD A, E
+        OUT (PORT_DSKWRPOS), A
         RR H
         LD A, H
-        OUT (PORT_DSKWRPOS_H), A
+        OUT (PORT_DSKWRPOS), A
         RR L
         LD A, L
-        OUT (PORT_DSKWRPOS_M), A
+        OUT (PORT_DSKWRPOS), A
         LD A,0
         RRA
-        OUT (PORT_DSKWRPOS_L), A
+        OUT (PORT_DSKWRPOS), A
 
         ; Write a SD card sector (512bytes)
 RETRY_WRITE:
@@ -748,7 +742,7 @@ WAIT_WRITE_COMPLETE:
         LD (IS_WRITE_DONE), A   ; reset flag
 
         ; check write status
-        IN A, (PORT_DSKWR_STS)
+        IN A, (PORT_DSKWR)
         BIT 1, A
         JR NZ, WRITE_ERROR
         BIT 2, A
