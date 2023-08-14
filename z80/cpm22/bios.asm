@@ -297,6 +297,7 @@ WBOOT:
         CALL SELDSK
 
         ; Set DISK read position
+        IN A, (PORT_DSKRDPOS)   ; Reset sequencer
         XOR A
         OUT (PORT_DSKRDPOS), A
         OUT (PORT_DSKRDPOS), A
@@ -304,6 +305,7 @@ WBOOT:
         OUT (PORT_DSKRDPOS), A
 
         ; Set load address
+        IN A, (PORT_DSKRDBUF)   ; Reset sequencer
         LD HL, CCP_ENTRY
         LD A, H
         OUT (PORT_DSKRDBUF), A
@@ -311,6 +313,7 @@ WBOOT:
         OUT (PORT_DSKRDBUF), A
 
         ; Set DISK read length (size of CPP+BDOS)
+        IN A, (PORT_DSKRDLEN)   ; Reset sequencer
         LD HL, CCP_BDOS_LENGTH
         LD A, H
         OUT (PORT_DSKRDLEN), A
@@ -572,6 +575,7 @@ MISHIT_CACHE:
         ;  (DE,HL) * 128
         ;  0eeeeeee ehhhhhhh hlllllll l0000000
         ;     HIGH                       LOW
+        IN A, (PORT_DSKRDPOS)   ; Reset sequencer
         SRL E
         LD A, E
         OUT (PORT_DSKRDPOS), A
@@ -586,6 +590,7 @@ MISHIT_CACHE:
         OUT (PORT_DSKRDPOS), A
 
         ; Read a SD card sector (512bytes)
+        IN A, (PORT_DSKRDBUF)   ; Reset sequencer
         LD HL, DMABUF
         LD A, H
         OUT (PORT_DSKRDBUF), A
@@ -593,6 +598,7 @@ MISHIT_CACHE:
         OUT (PORT_DSKRDBUF), A
 
         ; Set read length (512byte)
+        IN A, (PORT_DSKRDLEN)   ; Reset sequencer
         LD A, 0x02
         OUT (PORT_DSKRDLEN), A
         LD A, 0x00
@@ -693,6 +699,7 @@ WRITE:
         LDIR
 
         ; Set destination buffer address
+        IN A, (PORT_DSKWRBUF)   ; Reset sequencer
         LD HL, DMABUF
         LD A, H
         OUT (PORT_DSKWRBUF), A
@@ -700,6 +707,7 @@ WRITE:
         OUT (PORT_DSKWRBUF), A
 
         ; Set write length (128byte)
+        IN A, (PORT_DSKWRLEN)   ; Reset sequencer
         XOR A
         OUT (PORT_DSKWRLEN), A
         LD A, 128
@@ -716,6 +724,7 @@ WRITE:
         ;  (DE,HL) * 128
         ;  0eeeeeee ehhhhhhh hlllllll l0000000
         ;    HIGH                        LOW
+        IN A, (PORT_DSKWRPOS)   ; Reset sequencer
         SRL E
         LD A, E
         OUT (PORT_DSKWRPOS), A
