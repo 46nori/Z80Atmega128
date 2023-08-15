@@ -1,5 +1,6 @@
 # Emulated external I/O device specification
 
+## Port (English)
 | Port | Direction | Function                              | Value                                |
 | ---- | --------- | ------------------------------------- | ------------------------------------ |
 | 0x00 | IN        | Input single character from Console   | Input character                      |
@@ -69,8 +70,8 @@
 
 From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 
-----
-**Japanese**
+---
+## Port (Japanese)
 |Port|Direction|Function|Value|
 |:----|:----|:----|:----|
 |0x00|IN |コンソール1文字入力|入力文字|
@@ -139,3 +140,127 @@ From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 |0x1f|OUT|LED点灯設定| bit 0: LED0 OFF(0) / ON(1)<br>bit 1: LED1 OFF(0) / ON(1)<br>bit 2: LED2 OFF(0) / ON(1) |
 
 0x20以降は0x00-0x1fのシャドウエリアとなる。
+
+## Console I/O
+### Console Input
+AVRはUART1の入力をリングバッファに値を保存しており、Z80からの1文字入力要求があると、このバッファから値を返す。
+割り込み設定を行うことで、リングバッファにキューイングされるタイミングでZ80に割り込みをかけることができる。
+
+- PORT 0x00 コンソール1文字入力
+  - **[IN]** バッファリングされている文字を返す。バッファが空の場合は0x00を返す。
+- PORT 0x01 コンソール入力バッファステータス取得
+  - **[IN]** 入力バッファに残っている文字数を返す。
+- PORT 0x02 コンソールバッファサイズ取得
+  - **[IN]** 入力バッファのサイズを返す。
+- PORT 0x02 コンソール入力バッファフラッシュ
+  - **[OUT]** 入力バッファを空にする。
+- PORT 0x03 コンソール入力割り込み設定
+  - **[OUT]** コンソール入力発生時にZ80にMode2割り込みをかけることができる。0-127を設定するとそのレベルでの割り込みが発生する。128-255に設定すると割り込みは発生しない。デフォルト値は128。
+  - **[IN]** 現在の割り込みレベルの値を返す。
+
+### Console Output
+- PORT 0x05 コンソール1文字出力
+  - **[OUT]** 文字する出力をセットする。
+- PORT 0x06 コンソール出力バッファステータス取得
+  - **[IN]** まだ出力されずバッファに残っている文字数を返す。
+- PORT 0x07
+  - **[IN]** 出力バッファのサイズを返す。
+  - **[OUT]** 出力バッファを空にする。
+- PORT 0x08 コンソール出力割り込み設定
+  - **[OUT]** 出力バッファが空になったタイミングでZ80にMode2割り込みをかけることができる。0-127を設定するとそのレベルでの割り込みが発生する。128-255に設定すると割り込みは発生しない。デフォルト値は128。
+  - **[IN]** 現在の割り込みレベルの値を返す。
+
+## DISK I/O
+### DISK選択
+- PORT 0x0a DISK選択
+  - **[IN]** DISK選択結果　成功(0) / エラー(1)
+  - **[OUT]** DISK番号(0-15)を選択しアクセス可能にする。指定したDISK番号のイメージファイルDISKxx.IMG (xxはDISK番号)があらかじめ存在していること。
+### WRITE
+- PORT 0x0b
+  - **[IN]** DISKライト位置参照・シーケンサーリセット
+  - **[OUT]** DISKライト位置を指定する。Highアドレスの値から4バイト書き込む。
+- PORT 0x0c
+  - **[IN]** DISKライトバッファアドレス参照・シーケンサーリセット
+  - **[OUT]** DISKライトバッファアドレスを指定する。Highアドレスから2バイト書き込む。
+- PORT 0x0d
+  - **[IN]** DISKライトバッファ長参照・シーケンサーリセット
+  - **[OUT]** DISKライトバッファ長を指定する。Highアドレスから2バイト書き込む。
+- PORT 0x0e
+  - **[OUT]** DISKライト実行
+  - **[IN]** DISKライト状態を返す。
+    - Bit0: 完了(0) / リード中(1)
+    - Bit1: 成功(0) / エラー(1)
+- PORT 0x0f　DISKライト完了割り込み設定
+  - **[OUT]** DISKライト完了時にZ80にMode2割り込みをかけることができる。0-127を設定するとそのレベルでの割り込みが発生する。128-255に設定すると割り込みは発生しない。デフォルト値は128。
+### READ
+- PORT 0x10
+  - **[OUT]** DISKリード位置を指定する。Highアドレスから4バイト書き込む。
+  - **[IN]** DISKリード位置参照・シーケンサーリセット
+- PORT 0x11
+  - **[OUT]** DISKリードバッファアドレスを指定する。Highアドレスから2バイト書き込む。
+  - **[IN]** DISKリードバッファアドレス参照・シーケンサーリセット
+- PORT 0x12
+  - **[OUT]** DISKリードバッファ長を指定する。Highアドレスから2バイト書き込む。
+  - **[IN]** DISKリードバッファ長参照・シーケンサーリセット
+- PORT 0x13
+  - **[OUT]** DISKリード実行
+  - **[IN]** DISKリード状態を返す。
+    - Bit0: 完了(0) / リード中(1)
+    - Bit1: 成功(0) / エラー(1)
+- PORT 0x14 DISKリード完了割り込み設定
+  - **[OUT]** DISKリード完了時にZ80にMode2割り込みをかけることができる。0-127を設定するとそのレベルでの割り込みが発生する。128-255に設定すると割り込みは発生しない。デフォルト値は128。
+  - **[IN]** 現在の割り込みレベルの値を返す。
+
+READ/WRITEの実行はOUT命令の割り込みハンドラで受理される。ここではそれをREQイベントとして表現する。OUT命令の割り込みハンドラ内ではSD Cardのアクセスは行わない。時間がかかるだけでなく、そもそもこの割り込みハンドラ内では外部SRAMへのアクセスができないことが理由である。(外部SRAMのアクセスには/BUSREQを有効にする必要があるが、割り込みサイクルでの処理は両立できない。)このため、SD Cardへの読み書きと、SRAMとのデータ転送は、10msの周期割り込みハンドラでおこなう。ここではREAD/WRITE用のステートマシンが順番に実行される。READとWRITEは同時に実行されることはない。
+
+rd.DOINGおよびwr.DOINGでSD CardのアクセスとSRAMとのデータ転送が行われる。エラーでも正常終了でもIDLEに戻る(DONEイベント)。
+リードライト要求は、IDLEおよびREJECTED状態で受理される。
+- イベント
+    |Event| READ          | WRITE          |
+    |-----|---------------|----------------|
+    | REQ | READ実行(0x13) | WRITE実行(0x0e)|
+    | DONE| READ完了       | WRITE完了      |
+    | INT |タイマー割り込み  |タイマー割り込み  |
+
+- 状態
+    |State     | READ                    | WRITE 　　　　　　　　　　　|
+    |----------|-------------------------|-------------------------|
+    |IDLE      | READ要求待ち。           | WRITE要求待ち。            |
+    |REQUESTING| READ実行待ち。           | WRITE実行待ち。            |
+    |DOING     | READ実行中。             | WRITE実行中。             |
+    |REJECTED  | 要求拒否。次のREAD要求待ち。| 要求拒否。次のWRITE要求待ち。|
+
+- ステートチャート
+    ```mermaid
+    stateDiagram-v2
+        state READ {
+            [*]            --> rd.IDLE
+            rd.IDLE　      --> rd.REQUESTING: REQ
+            rd.IDLE　      --> rd.IDLE: INT
+            rd.REQUESTING  --> rd.DOING : INT
+            rd.REQUESTING  --> rd.REJECTED : REQ
+            rd.REQUESTING  --> rd.REQUESTING : INT
+            rd.DOING       --> rd.REJECTED : REQ
+            rd.DOING       --> rd.DOING : INT
+            rd.DOING       --> rd.IDLE : DONE
+            rd.REJECTED    --> rd.REJECTED : INT
+            rd.REJECTED    --> rd.DOING : REQ
+        }
+
+        state WRITE {
+            [*]         --> wr.IDLE
+            wr.IDLE        --> wr.REQUESTING: REQ
+            wr.IDLE　      --> wr.IDLE: INT
+            wr.REQUESTING  --> wr.DOING : INT
+            wr.REQUESTING  --> wr.REJECTED : REQ
+            wr.REQUESTING  --> wr.REQUESTING : INT
+            wr.DOING       --> wr.REJECTED : REQ
+            wr.DOING       --> wr.DOING : INT
+            wr.DOING       --> wr.IDLE : DONE
+            wr.REJECTED    --> wr.REJECTED : INT
+            wr.REJECTED    --> wr.DOING : REQ
+        }
+    ```
+
+## Debug
+## LED
