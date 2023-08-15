@@ -117,7 +117,7 @@ DEBUGGER:
         EXX
 
         LD SP, (SP_ADR)         ; Restore SP
-        EI
+;        EI
         HALT                    ; Wait for INT 4
         RET                     ; Resume
 
@@ -251,6 +251,10 @@ BOOT:
         LD A,0x00
         LD (IOBYTE), A
 
+        ; Set DMA address
+        LD BC, 0x0080
+        CALL SETDMA
+
         ; Set default drive as A:(0)
         XOR A
         LD (CURRENT_DISK), A
@@ -259,7 +263,9 @@ BOOT:
 
 BOOT_MSG:
         .str    "\r\n"
+        .str    "62K "
         .str    "CP/M-80 Ver2.2 on Z80ATmega128\r\n"
+        .str    "BIOS Copyright (C) 2023 by 46nori\r\n"
         .db     0
 
 INIT_SYSTEM_AREA:
@@ -295,6 +301,9 @@ WBOOT:
         ; Open DISK
         LD C, 0
         CALL SELDSK
+        ; Set DMA address
+        LD BC, 0x0080
+        CALL SETDMA
 
         ; Set DISK read position
         IN A, (PORT_DSKRDPOS)   ; Reset sequencer
@@ -378,6 +387,7 @@ CONST:
 ;       IN : None
 ;       OUT: A = Received character
 ;******************************************************************
+.if 0
 CONIN:
         XOR A
         DI
@@ -393,6 +403,17 @@ CONIN_LOOP:                             ; wait for input
 CONIN_READ:
         IN A, (PORT_CONIN)              ; read a character
         RET
+.else
+CONIN:
+        IN A, (PORT_CONIN_STS)          ; check input
+        OR A
+        JR NZ, CONIN_READ
+        HALT
+        JR CONIN
+CONIN_READ:
+        IN A, (PORT_CONIN)              ; read a character
+        RET
+.endif
 
 ;******************************************************************
 ;   04: Output a character to CON:
@@ -607,10 +628,10 @@ MISHIT_CACHE:
         ; READ
 RETRY_READ:
         CALL DISK_READ_SUB
-        BIT 1, A
-        JR NZ, READ_ERROR
-        BIT 2, A
-        JR NZ, RETRY_READ       ; retry if rejected
+        CP 4
+        JR Z, RETRY_READ        ; retry if rejected
+        CP 2
+        JR Z, READ_ERROR
 
         ; Copy buffer
         CALL READ_DMA_BUFFER
@@ -666,12 +687,20 @@ DISK_READ_SUB:
         LD (IS_READ_DONE), A    ; reset flag
         OUT (PORT_DSKRD), A     ; read disk
 WAIT_READ_COMPLETE:
+.if 0
         ; Wait for complete interrupt
         LD A, (IS_READ_DONE)
         OR A
         JR Z, WAIT_READ_COMPLETE
         IN A, (PORT_DSKRD)      ; Check read status
         RET
+.else
+        HALT
+        IN A, (PORT_DSKRD)      ; Check read status
+        CP 1
+        JR Z, WAIT_READ_COMPLETE
+        RET
+.endif
 
 ;******************************************************************
 ;   14: Write a record to DISK
@@ -742,6 +771,7 @@ WRITE:
 RETRY_WRITE:
         ; WRITE
         OUT (PORT_DSKWR), A
+.if 0
 WAIT_WRITE_COMPLETE:
         ; Wait for complete interrupt
         LD A, (IS_WRITE_DONE)
@@ -756,6 +786,17 @@ WAIT_WRITE_COMPLETE:
         JR NZ, WRITE_ERROR
         BIT 2, A
         JR NZ, RETRY_WRITE      ; retry if rejected
+.else
+WAIT_WRITE_COMPLETE:
+        HALT
+        IN A, (PORT_DSKWR)
+        CP 1
+        JR Z, WAIT_WRITE_COMPLETE
+        CP 4
+        JR Z, RETRY_WRITE       ; retry if rejected
+        CP 2
+        JR Z, WRITE_ERROR
+.endif
         XOR A
         JR WRITE_EXIT           ; Success A=0
 

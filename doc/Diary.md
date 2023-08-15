@@ -1312,3 +1312,103 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
   - DISK READの割り込みがZ80かからない時がある。
   - DISK READ終了を監視するループでの暴走(実際にはRST7のハンドラが呼ばれてブレイクする)。このループはDISK READ完了割り込みのハンドラ内でメモリにセットするフラグをLD命令で監視するだけのコード。ブレイクアドレスをメモリダンプしても0xffになっていない。
 
+## 2023/8/15
+- Z80側の割り込みをHALTで受けるように変更したら動作が安定した。だがHALTでの待ち合わせはMode2割り込みによる個別処理を否定する実装なので、この変更は不本意。あとで原因を追求したい。
+  - 変更前
+    - [Z80] ステータスレジスタを確認。実行中であれば割り込みフラグがセットされるのをループで待つ。
+    - [AVR] 機能の実行が完了したら、あらかじめ指定された割り込みレベルでZ80に割り込みをかける。
+    - [Z80] 割り込みフラグがセットされたら再度ステータスレジスタを確認してエラーチェックしリターンする。
+  - 変更後
+    - [Z80] ステータスレジスタを確認。実行中であれば**HALTする。**
+    - [AVR] 機能の実行が完了したら、あらかじめ指定された割り込みレベルでZ80に割り込みをかける。
+    - [Z80] **割り込みがかかるとHALTが解除される**。再度ステータスレジスタを確認してエラーチェックしリターンする。
+  - ちなみにステータスレジスタをIN命令でポーリングすることで、機能の実行完了を確認することもできるが、多数の割り込みがかりAVRに異常な負荷がかかる。このため割り込みを待ってからステータスを確認するようにしている。
+- この変更によりREADの途中で暴走する頻度は極端に減った。しかし画面出力の糞詰まりはまだ時々発生する。
+- `^C`によるWBOOTの動きが謎。以下のCCP+BDOSのリロードを何度も繰り返して戻ってこない。SELSDKとREADの両方を読んでいるのが意味不明。
+  ```
+  ###SELSDK: DISK00.IMG
+  DSK_ReadPos=00000000
+  DSK_ReadBuf=dc00
+  DSK_ReadLen=1600
+  READ:0->1
+  >>>READ:000000 : 00
+
+  ###SELSDK: DISK00.IMG
+  DSK_ReadPos=00000000
+  DSK_ReadBuf=dc00
+  DSK_ReadLen=1600
+  READ:0->1
+  >>>READ:000000 : 00
+
+  ...
+  ```
+  - 他のBIOS実装を眺めてみたら、SETDMAでDMAアドレスの初期値を0x80にセットしているので真似してみた。一瞬良くなったようにも見えたがまだダメみたいだ。
+- 気分転換に[Commercial CP/M Software](http://www.retroarchive.org/cpm/)にあるソフトを組み込んだイメージを作成した。ZORK I,II,IIIも入れてみた。
+  ```
+  CP/M-80 Ver2.2 on Z80ATmega128
+  BIOS Copyright (C) 2023 by 46nori
+
+  a>dir
+  A: -CCSCPM  251 : ASM      COM : BIOS     ASM : CBIOS    ASM
+  A: CCBIOS   ASM : CCBOOT   ASM : CCSINIT  COM : CCSYSGEN COM
+  A: CPM24CCS COM : DDT      COM : DEBLOCK  ASM : DISKDEF  LIB
+  A: DUMP     ASM : DUMP     COM : ED       COM : FILE_ID  DIZ
+  A: GENMOD   COM : LOAD     COM : MOVCPM   COM : PIP      COM
+  A: RLOCBIOS COM : STAT     COM : STDBIOS  ASM : SUBMIT   COM
+  A: SYSGEN   COM : XSUB     COM : ZORK1    COM : ZORK1    DAT
+  A: ZORK2    COM : ZORK2    DAT : ZORK3    COM : ZORK3    DAT
+  a>
+  ```
+  ためしにZORK Iを起動してみる。
+  ```
+  a>zork1
+  ZORK I: The Great Underground Empire
+  Copyright (c) 1981, 1982, 1983 Infocom, Inc. All rights
+  reserved.
+  ZORK is a registered trademark of Infocom, Inc.
+  Revision 88 / Serial number 840726
+
+  West of House
+  You are standing in an open field west of a white house, with
+  a boarded front door.
+  There is a small mailbox here.
+
+  >
+  ```
+  うぉおおおおーーー。動いた!!
+
+  ```
+  a>zork1
+  ZORK I: The Great Underground Empire
+  Copyright (c) 1981, 1982, 1983 Infocom, Inc. All rights
+  reserved.
+  ZORK is a registered trademark of Infocom, Inc.
+  Revision 88 / Serial number 840726
+
+  West of House
+  You are standing in an open field west of a white house, with
+  a boarded front door.
+  There is a small mailbox here.
+
+  >take mailbox
+  It is securely anchored.
+
+  >look around
+  West of House
+  You are standing in an open field west of a white house, with
+  a boarded front door.
+  There is a small mailbox here.
+
+  >open door
+  Opening the small mailbox reveals a leaflet.
+
+  >read leaflet
+  How does one read a door?
+
+  >quit
+  Your score is 0 (total of 350 points), in 5 moves.
+  This gives you the rank of Beginner.
+  Do you wish to leave the game? (Y is affirmative): >Y
+  ```
+  終了時にWBOOTが呼び出されるのだが、例のCCP+BDOS reloadの無限ループから戻ってこない。(謎に戻ってくるときもあるのだが...)  
+  でもモチベーションが爆上がりした。

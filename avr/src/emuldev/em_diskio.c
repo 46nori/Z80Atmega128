@@ -18,17 +18,22 @@
 // DISK I/O emulated device
 //=================================================================
 // Disk parameters
-static uint8_t disk_status = 0;
-static uint8_t write_int_level = 128;
-static uint8_t read_int_level  = 128;
+static uint8_t disk_result = 0;
+static uint8_t int_level_write = 128;
+static uint8_t int_level_read  = 128;
 
 enum DISKIO_STATUS {IDLE, REQUESTING, DOING, REJECTED};
-static volatile enum DISKIO_STATUS rd_st = IDLE;
-static volatile enum DISKIO_STATUS wr_st = IDLE;
-static uint8_t tmpbuf[512];
+struct diskio {
+	enum DISKIO_STATUS state;
+	DWORD	position;
+	void	*buffer;
+	UINT	length;
+	FRESULT	result;
+} rd, wr;
 
-static FRESULT read_result;
-static FRESULT write_result;
+static uint8_t tmpbuf[512];
+static FRESULT read_result  = FR_OK;
+static FRESULT write_result = FR_OK;
 FATFS file_system;
 
 static const char* get_filename(int disk_no);
@@ -53,6 +58,9 @@ void init_em_diskio(void)
 
 	// set filename of default disk image
 	get_filename(0);
+
+	rd.state = IDLE;
+	wr.state = IDLE;
 }
 
 static const char* get_filename(int disk_no)
@@ -73,15 +81,27 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 	// Open file
 	const char *filename = get_filename(data);
 	if (pf_open(filename) != FR_OK) {
-		disk_status = 1;		// error
+		disk_result = 1;		// error
 #if DEBUG_PRINT
-		x_printf("%s open error\n");
+		x_printf("%s open error\n", filename);
 #endif
 		return;
 	}	
 	// Set file pointer to beginning of file
-	pf_lseek(0);
-	disk_status = 0;			// success
+	if (pf_lseek(0) != FR_OK) {
+		disk_result = 1;		// error
+#if DEBUG_PRINT
+		x_puts("seek error");
+#endif
+		return;
+	}
+	disk_result = 0;			// success
+
+	rd.state = IDLE;
+	wr.state = IDLE;
+	read_result  = FR_OK;
+	write_result = FR_OK;
+
 #if DEBUG_PRINT
 	x_printf("###SELSDK: %s\n", filename);
 #endif
@@ -89,7 +109,7 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 
 uint8_t IN_0A_DSK_GetDiskStatus()
 {
-	return disk_status;
+	return disk_result;
 }
 
 //
@@ -107,21 +127,21 @@ uint8_t IN_##INTNUM##_##FUNC(void)\
 void OUT_##INTNUM##_##FUNC(uint8_t data)\
 {\
 	switch (st_##FUNC) {\
-		case 0:\
+	case 0:\
 		dt_##FUNC = (uint32_t)data << 24;\
 		st_##FUNC = 1;\
 		break;\
-		case 1:\
+	case 1:\
 		dt_##FUNC |= (uint32_t)data << 16;\
 		st_##FUNC = 2;\
 		break;\
-		case 2:\
+	case 2:\
 		dt_##FUNC |= (uint32_t)data << 8;\
 		st_##FUNC = 3;\
 		break;\
-		case 3:\
+	case 3:\
 		dt_##FUNC |= data;\
-		default:\
+	default:\
 		st_##FUNC = 0;\
 		x_printf("%s=%08x\n", QSTRING(FUNC), dt_##FUNC); \
 		break;\
@@ -139,13 +159,13 @@ uint8_t IN_##INTNUM##_##FUNC(void)\
 void OUT_##INTNUM##_##FUNC(uint8_t data)\
 {\
 	switch (st_##FUNC) {\
-		case 0:\
-		dt_##FUNC |= (uint32_t)data << 8;\
+	case 0:\
+		dt_##FUNC = (uint16_t)data << 8;\
 		st_##FUNC = 1;\
 		break;\
-		case 1:\
+	case 1:\
 		dt_##FUNC |= data;\
-		default:\
+	default:\
 		st_##FUNC = 0;\
 		x_printf("%s=%04x\n", QSTRING(FUNC), dt_##FUNC); \
 		break;\
@@ -165,27 +185,30 @@ TEMPLATE_IN_OUT_2BYTES(12,DSK_ReadLen)
 void OUT_0E_DSK_Write(uint8_t data)
 {
 #if DEBUG_PRINT
-	x_printf("WRITE:%d->", wr_st);
+	x_printf("WRITE:%d->", wr.state);
 #endif
 	// Reject if READ is on going
-	if (rd_st == DOING || rd_st == REQUESTING) {
-		wr_st = REJECTED;
-		return;
-	}
-	switch (wr_st) {
-	case IDLE:
-	case REJECTED:
-		wr_st = REQUESTING;
-		break;
-	case REQUESTING:
-	case DOING:
-		wr_st = REJECTED;
-		break;
-	default:
-		break;
+	if (rd.state == DOING || rd.state == REQUESTING) {
+		wr.state = REJECTED;
+	} else {
+		switch (wr.state) {
+		case IDLE:
+		case REJECTED:
+			wr.buffer   = (void *)dt_DSK_WriteBuf;
+			wr.length   = dt_DSK_WriteLen;
+			wr.position = dt_DSK_WritePos;
+			wr.state    = REQUESTING;
+			break;
+		case REQUESTING:
+		case DOING:
+			wr.state = REJECTED;
+			break;
+		default:
+			break;
+		}
 	}
 #if DEBUG_PRINT
-	x_printf("%d\n", wr_st);
+	x_printf("%d\n", wr.state);
 #endif
 }
 
@@ -194,9 +217,9 @@ uint8_t IN_0E_DSK_WriteStatus()
 	// CAUTION: don't consume long time
 	cli();
 	uint8_t st = 0x00;
-	switch (wr_st) {
+	switch (wr.state) {
 	case IDLE:
-		if (read_result != FR_OK) {
+		if (write_result != FR_OK) {
 			st = 0x02;		// error
 		}
 		break;
@@ -214,29 +237,32 @@ uint8_t IN_0E_DSK_WriteStatus()
 
 void OUT_0F_DSK_WriteIntLevel(uint8_t data)
 {
-	write_int_level = data;
+	int_level_write = data;
 }
 
 uint8_t IN_0F_DSK_WriteIntlevel(void)
 {
-	return write_int_level;
+	return int_level_write;
 }
 
 void em_disk_write(void)
 {
-	if (wr_st != REQUESTING) {
+	if (wr.state != REQUESTING) {
 		return;
 	}
-	if (rd_st == DOING || rd_st == REQUESTING) {
-		wr_st = REJECTED;
+	if (rd.state == DOING || rd.state == REQUESTING) {
+		wr.state = REJECTED;
 		return;
 	}
-	wr_st = DOING;
+	wr.state = DOING;
 
-	pf_lseek(dt_DSK_WritePos);
+	write_result = pf_lseek(wr.position);
+	if (write_result != FR_OK) {
+		goto error_skip;
+	}
 
-	void *buf = (void *)dt_DSK_ReadBuf;
-	UINT len = dt_DSK_WriteLen;
+	void *buf = wr.buffer;
+	UINT len = wr.length;
 	UINT bw;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
@@ -262,51 +288,23 @@ void em_disk_write(void)
 
 error_skip:
 #if DEBUG_PRINT
-	x_printf(">>>WRITE:%06lx : %02x\n\n", dt_DSK_WritePos, write_result);
+	x_printf(">>>WRITE:%06lx : %02x\n\n", wr.position, write_result);
 #endif
-	if (write_int_level < 128) {
+	if (int_level_write < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(write_int_level << 1);
+		Z80_EXTINT_low(int_level_write << 1);
 	}
-	wr_st = IDLE;
+	wr.state = IDLE;
 }
 
 ///////////////////////////////////////////////////////////////////
 // DISK READ
 ///////////////////////////////////////////////////////////////////
-void OUT_13_DSK_Read(uint8_t data)
-{
-#if DEBUG_PRINT
-	x_printf("READ:%d->", rd_st);
-#endif
-	// Reject if WRITE is on going
-	if (wr_st == DOING || wr_st == REQUESTING) {
-		rd_st = REJECTED;
-	} else {
-		switch (rd_st) {
-		case IDLE:
-		case REJECTED:
-			rd_st = REQUESTING;
-			break;
-		case REQUESTING:
-		case DOING:
-			rd_st = REJECTED;
-			break;
-		default:
-			break;
-		}
-	}
-#if DEBUG_PRINT
-	x_printf("%d\n", rd_st);
-#endif
-}
-
 uint8_t IN_13_DSK_ReadStatus()
 {
 	// CAUTION: don't consume long time
-	cli();
 	uint8_t st = 0x00;
-	switch (rd_st) {
+	switch (rd.state) {
 	case IDLE:
 		if (read_result != FR_OK) {
 			st = 0x02;		// error
@@ -320,38 +318,68 @@ uint8_t IN_13_DSK_ReadStatus()
 		st = 0x04;			// rejected
 		break;
 	}
-	sei();
 	return st;
 }
 
-void OUT_14_DSK_ReadIntLevel(uint8_t data)
+void OUT_13_DSK_Read(uint8_t data)
 {
-	read_int_level = data;
+#if DEBUG_PRINT
+	x_printf("READ:%d->", rd.state);
+#endif
+	// Reject if WRITE is on going
+	if (wr.state == DOING || wr.state == REQUESTING) {
+		rd.state = REJECTED;
+	} else {
+		switch (rd.state) {
+		case IDLE:						// 0
+		case REJECTED:					// 3
+			rd.buffer   = (void *)dt_DSK_ReadBuf;
+			rd.length   = dt_DSK_ReadLen;
+			rd.position = dt_DSK_ReadPos;
+			rd.state    = REQUESTING;	// 1
+			break;
+		case REQUESTING:				// 1
+		case DOING:						// 2
+			rd.state = REJECTED;		// 3
+			break;
+		default:
+			break;
+		}
+	}
+#if DEBUG_PRINT
+	x_printf("%d\n", rd.state);
+#endif
 }
 
 uint8_t IN_14_DSK_ReadIntLevel(void)
 {
-	return read_int_level;	
+	return int_level_read;
+}
+
+void OUT_14_DSK_ReadIntLevel(uint8_t data)
+{
+	int_level_read = data;
 }
 
 void em_disk_read(void)
 {
-	if (rd_st != REQUESTING) {
-		goto error_exit;
+	if (rd.state != REQUESTING) {
 		return;
 	}
-	if (wr_st == DOING || wr_st == REQUESTING) {
-		goto error_exit;
-		rd_st = REJECTED;
+	if (wr.state == DOING || wr.state == REQUESTING) {
+		rd.state = REJECTED;
 		return;
 	}
-	rd_st = DOING;
+	rd.state = DOING;
 
 	// CAUTION: don't consume long time
-	pf_lseek(dt_DSK_ReadPos);
+	read_result = pf_lseek(rd.position);
+	if (read_result != FR_OK) {
+		goto error_skip;
+	}
 
-	void *buf = (void *)dt_DSK_ReadBuf;
-	UINT len = dt_DSK_ReadLen;
+	void *buf = (void *)rd.buffer;
+	UINT len = rd.length;
 	UINT br;
 
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
@@ -380,12 +408,11 @@ void em_disk_read(void)
 	
 error_skip:
 #if DEBUG_PRINT
-	x_printf(">>>READ:%06lx : %02x\n\n", dt_DSK_ReadPos, read_result);
+	x_printf(">>>READ:%06lx : %02x\n\n", rd.position, read_result);
 #endif
-error_exit:
-	if (read_int_level < 128) {
+	if (int_level_read < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(read_int_level << 1);
+		Z80_EXTINT_low(int_level_read << 1);
 	}
-	rd_st = IDLE;
+	rd.state = IDLE;
 }

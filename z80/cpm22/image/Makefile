@@ -24,4 +24,4 @@ dump:
 	hexdump -C -v $(IMAGE)
 
 clean:
-	rm $(IMAGE)
+	rm -f $(IMAGE)
