@@ -20,6 +20,7 @@ PORT_CONIN_STS  .equ    0x01    ; Check CONIN status
 PORT_CONIN_INT  .equ    0x03    ; Interrupt setting of CONIN
 PORT_CONOUT     .equ    0x05    ; Send a character to CONOUT
 PORT_CONOUT_STS .equ    0x06    ; Check CONOUT status
+PORT_CONOUT_BUF .equ    0x07    ; Get Buffer size / Flush CONOUT
 PORT_CONOUT_INT .equ    0x08    ; Interrupt setting of CONOUT
 PORT_SELDSK     .equ    0x0A    ; Select DISK
 PORT_DSKSTS     .equ    0x0A    ; Check selected DISK status
@@ -189,13 +190,13 @@ IS_WRITE_DONE:
 ;
 ISR_02:
         PUSH HL
-        LD HL, IS_CONOUT_DONE
+        LD HL, IS_CONOUT_FULL
         LD (HL), 1
         POP HL
         EI
         RETI
-IS_CONOUT_DONE:
-        .db     0               ; 0: doing / 1: complete
+IS_CONOUT_FULL:
+        .db     0               ; 0: free / 1: full
 
 ;
 ;       CONSOLE IN data queuing
@@ -242,6 +243,7 @@ BOOT:
         EI
 
         ; Boot message
+        OUT (PORT_CONOUT_BUF), A        ; Flush CONOUT
         LD HL, BOOT_MSG
         CALL PRINT_STR
 
@@ -421,17 +423,45 @@ CONIN_READ:
 ;       OUT: None
 ;******************************************************************
 CONOUT:
+.if 0
         PUSH AF
         LD A, C
         OUT (PORT_CONOUT), A
 WAIT_CONOUT:
-        LD A, (IS_CONOUT_DONE)
+        .db 0,0,0,0,0,0,0,0,0,0 ; NOP x 10
+        LD A, (IS_CONOUT_FULL)
         OR A
         JR Z, WAIT_CONOUT
         XOR A
-        LD (IS_CONOUT_DONE), A
+        LD (IS_CONOUT_FULL), A
         POP AF
         RET
+.else
+        PUSH AF
+        LD A, (IS_CONOUT_FULL)
+        OR A
+        CALL NZ, WAIT_CONOUT    ; wait if no space in buffer
+        LD A, C
+        OUT (PORT_CONOUT), A
+        POP AF
+        RET
+
+WAIT_CONOUT:
+        PUSH BC
+        IN A, (PORT_CONOUT_BUF)
+        SRA A
+        LD B, A                 ; B = Buffer size / 2
+WAIT_CONOUT2:                   ; wait until enough space in buffer
+        IN A, (PORT_CONOUT_STS)
+        CP B
+        JR C, WAIT_CONOUT3
+        JR WAIT_CONOUT2
+WAIT_CONOUT3:
+        XOR A                   ; clear buffer full flag
+        LD (IS_CONOUT_FULL), A
+        POP BC
+        RET
+.endif
 
 ;******************************************************************
 ;   05: Output a character to LST: (Not implemented)
@@ -456,6 +486,10 @@ READER:
 ;   08: Return selected DISK to home position
 ;******************************************************************
 HOME:
+        PUSH BC
+        LD BC, 0
+        CALL SETTRK
+        POP BC
         RET
 
 ;******************************************************************

@@ -22,7 +22,7 @@ typedef struct {
 
 extern void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size);
 extern void x_flush(ConsoleBuffer* cb);
-extern bool x_enqueue(ConsoleBuffer* cb, char data);
+extern int x_enqueue(ConsoleBuffer* cb, char data);
 extern char x_dequeue(ConsoleBuffer* cb);
 
 extern int x_printf(const char *format, ...);

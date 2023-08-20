@@ -70,6 +70,7 @@
     <custom>
       <ToolOptions>
         <InterfaceProperties>
+          <IspClock>125000</IspClock>
         </InterfaceProperties>
         <InterfaceName>
         </InterfaceName>

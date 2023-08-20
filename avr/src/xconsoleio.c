@@ -132,9 +132,9 @@ void x_flush(ConsoleBuffer* cb)
 	sei();
 }
 
-bool x_enqueue(ConsoleBuffer* cb, char data) {
+int x_enqueue(ConsoleBuffer* cb, char data) {
 	if (cb->count == cb->size) {
-		return false;  // Buffer is full. Cannot enqueue.
+		return 1;	// Buffer is already full. Cannot enqueue.
 	}
 
 	cli();
@@ -142,7 +142,10 @@ bool x_enqueue(ConsoleBuffer* cb, char data) {
 	cb->tail = (cb->tail + 1) % cb->size;
 	cb->count++;
 	sei();
-	return true;
+	if (cb->count == cb->size) {
+		return 2;	// Buffer is full. Cannot enqueue in the next.
+	}
+	return 0;		// Buffer is still enough available.
 }
 
 char x_dequeue(ConsoleBuffer* cb) {
