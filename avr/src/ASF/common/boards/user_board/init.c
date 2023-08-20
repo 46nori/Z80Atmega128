@@ -39,14 +39,14 @@ void board_init(void)
 	SET_BYTE(PORTD, 0b10011111);	// /BUSREQ=L, /CLRWAIT=L, /XINT=H
 	SET_BYTE(DDRD,  0b01110000);
 	// Port E
-	SET_BYTE(PORTE, 0xff);			// DEBUG: LED OFF
-	SET_BYTE(DDRE,  0xe0);			// DEBUG: PE7,6,5 are output, else as input
+	SET_BYTE(PORTE, 0xff);			// LED OFF(PE7,6,5)
+	SET_BYTE(DDRE,  0xe0);			// PE7,6,5 for output, PE3,2 for input
 	// Port F
 	SET_BYTE(PORTF, 0xff);			// Set Hi-Z
 	SET_BYTE(DDRF,  0x00);			// Set as input
 	// Port G
 	SET_BYTE(PORTG, 0b00000011);	// /WR,/RD=High, ALE=Low
-	SET_BYTE(DDRG,  0b00011111);	// Set as output / XMEM(PG0,1,2)
+	SET_BYTE(DDRG,  0b00000111);	// PG0,1,2 for output/XMEM, PG3,4 for input
 
 	// HALT Z80
 	ExtMem_Init();
@@ -54,7 +54,7 @@ void board_init(void)
 
 	// The process up to here  must be completed within 250 ms from reset.
 	//=====================================================================
-	SET_BYTE(PORTE, 0xff);			// DEBUG: All LED OFF PE7,6,5
+	SET_BYTE(PORTE, 0xff);			// LED OFF PE7,6,5
 
 	Z80_CLRWAIT();					// Reset WAIT circuit
 	Z80_BUSREQ(0);					// /BUSREQ=H
