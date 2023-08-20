@@ -506,6 +506,10 @@
     [
       "07de70fd-23a2-48ea-a888-9c9311d1e8a8",
       "SD_Card_Interface"
+    ],
+    [
+      "ae537df1-e345-44d5-8641-c1558080fa87",
+      "ExtIO"
     ]
   ],
   "text_variables": {}
