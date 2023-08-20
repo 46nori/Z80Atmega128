@@ -1422,3 +1422,99 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
   (SP+2)=$2200
   (SP+4)=$2155
   ```
+
+### 2023/8/16
+- CONOUTの糞詰まり問題を片づけることにした。
+  - AVR側のTX1への出力は9600bpsなので1文字出力には時間は0.83msかかる。そこで1msの周期割り込みハンドラでリングバッファからデキューして出力することとした。つまり1ms毎に出力される。
+  - Z80側からのオーバーランを防ぐため、出力リングバッファがfullになったときにZ80に割り込みをかける。Z80は割り込みがかかったらフラグをセットする。1文字出力ルーチンでは、初めにフラグをチェックし、セットされていればバッファに空きが出るまでループ後、1文字出力を行う。
+- 突然AVR側が以下のエラーでリプログラムができなくなった。  
+  Error
+  ```
+  Failed to enter programming mode. ispEnterProgMode: Error status received: Got 0xc0, expected 0x00 (Command has failed to execute on the tool)
+
+  Unable to enter programming mode. Verify device selection, interface settings, target power, security bit, and connections to the target device.
+  ```
+  Details
+  ```
+  Timestamp:	2023-08-16 17:09:06.826
+  Severity:		ERROR
+  ComponentId:	20100
+  StatusCode:	1
+  ModuleName:	TCF (TCF command: Device:startSession failed.)
+
+  Failed to enter programming mode. ispEnterProgMode: Error status received: Got 0xc0, expected 0x00 (Command has failed to execute on the tool)
+  ```
+## 2023/8/18
+- エラーの原因がさっぱりわからん。ライターの故障を疑って別のライターで試してみたが、基本、状況は変わらなかった。以下のエラーになることもあった。
+  ```
+  Unable to enter programming mode. The read device ID does not match the selected device or any other supported devices.
+
+  Please verify device selection, interface settings, target power and connections to the target device.
+  ```
+  Details
+  ```
+  Timestamp:	2023-08-18 21:25:25.701
+  Severity:		ERROR
+  ComponentId:	20100
+  StatusCode:	131101
+  ModuleName:	TCF (TCF command: Device:startSession failed.)
+
+  Unexpected signature 0x00000102 (expected 0x001e9702).
+  ```
+  - ちなみにAVRISPmkIIの純正品は2016年にディスコンになっていた。純正の代替品は[ATMEL-ICE](https://www.microchip.com/en-us/development-tool/atatmel-ice)しかないようだ。しかし機能も価格もオーバースペックなので、ちょっと怪しいが[互換品(2699円)](https://www.amazon.co.jp/gp/product/B07L3DT86R/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&psc=1)をAmazonで購入した。
+
+- AVRのGPIOの空きに、以下を割り当てた。
+  - PE5,6,7を出力に設定し、74HC32のORをバッファにしてLED1,2,3を接続。
+  - PG3,4/PE2,3を入力に設定し、DIP SW1,2,3,4を接続。(プロトタイプは基板に4連DIP SWを乗せるスペースが取れなかったので、スライドSWを4つ接続した。)
+- Z80のHALTを74HC125のバッファを介してLEDを接続。
+
+## 2023/8/19
+- ISP周りに接続されているICの故障も疑い、関係する74HC125, 74HC04を交換したが状況は変わらず。
+- FUSE bitの変更で治ったという[StackOverflowの記事](https://stackoverflow.com/questions/54942770/avr-studio-error-got-0xc0-expected-0x00)を見つけた。
+   - セラロックの配線を外し、ブレッドボードで4MHzクロックから1MHzを生成してXTAL1に供給してみたが、ISP接続は改善されなかった。
+   - たまたま認識したタイミングを使って以下のFUSE設定(0xf7)に変更したが、かえって状況が悪化してしまった。
+  
+    |          | bit |現在値(0xcf)|推奨値(0x7f)|
+    |----------|-----|------|-----|
+    | BODLEVEL |  7  | 1    | 1   |
+    | BODEN    |  6  | 1    | 1   |
+    | SUT1-0   | 5-4 | 00   | 11  |
+    | CKSEL3-1 | 3-1 | 111  | 011 |
+    | CKSEL0   |  0  | 1    | 1   |
+
+## 2023/8/20
+- 最後の手段でATmega128の交換を実施。  
+  が、認識されない。Microchip Studioの再インストールも関係なし。MOSIの接続も確認済み。  
+  詰んだなぁ... ハードもAVRのFuse設定も変えていなかったのに、なぜ突然こんな状況になってしまったのだろう。8/16までは非常に安定して認識やリプログラムができていたのに。
+  ```
+  Failed to enter programming mode. Error received from tool: 
+  Connection failed on the data line (MOSI) 
+
+  Unable to enter programming mode. Verify device selection, interface settings, target power, security bit, and connections to the target device.
+  ```
+  Details:
+  ```
+  Timestamp:	2023-08-20 22:14:56.550
+  Severity:		ERROR
+  ComponentId:	20100
+  StatusCode:	1
+  ModuleName:	TCF (TCF command: Device:startSession failed.)
+
+  Failed to enter programming mode. Error received from tool: 
+  Connection failed on the data line (MOSI) 
+  ```
+  Microchip StudioのOutput:
+  ```
+  22:14:56: [ERROR] Failed to enter programming mode. Error received from tool: 
+  Connection failed on the data line (MOSI) 
+  , ModuleName: TCF (TCF command: Device:startSession failed.)
+  22:14:56: [ERROR] Failed to enter programming mode. Error received from tool: 
+  Connection failed on the data line (MOSI) 
+  , ModuleName: TCF (TCF command: Device:startSession failed.)
+  22:14:56: [ERROR] Failed to enter programming mode. Error received from tool: 
+  Connection failed on the data line (MOSI) 
+  , ModuleName: TCF (TCF command: Device:startSession failed.)
+  ```
+- 上記のエラーを検索したら、Microchipのknowledge baseで ["Unable to enter programming mode" while using ISP interface](https://microchip.my.site.com/s/article/Unable-to-enter-programming-mode-while-using-ISP-interface) という記事を見つけた。クロックに言及されている。[Using crystals and ceramic resonators](https://microchip.my.site.com/s/article/Using-crystals-and-ceramic-resonators) あたりの記事も確認してヒントを探してみるか。ちなみにセラロックの出力をオシロで確認したが、きれいな16MHzの正弦波が出力されていたので信号自体は問題ないと思われる。
+- あるいは[AVR042: AVR Hardware Design Considerations](https://ww1.microchip.com/downloads/en/Appnotes/atmel-2521-avr-hardware-design-considerations_applicationnote_avr042.pdf)も読んでISPの共存方法を見直してみるか。
+- 高電圧プログラミング([How to perform High Voltage Programming on AVR devices](https://microchip.my.site.com/s/article/How-to-perform-High-Voltage-Programming-on-AVR-devices))というのもあるみたいだが、パラレル書き込みのようなので他の信号との共存が難しそう。そもそもATmega128では使えるのか?
