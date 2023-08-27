@@ -12,7 +12,7 @@
 #define INTERNAL_RAM_SIZE	0x1100
 #define EXTERNAL_RAM_SIZE	0x10000
 
-extern void ExtMem_Init(void);
+extern void ExtMem_Init(int wait);
 extern void ExtMem_attach(void);
 extern void ExtMem_detach(void);
 extern void *ExtMem_map(void);

@@ -10,17 +10,17 @@
 //
 // Initialize external memory settings
 //
-void ExtMem_Init(void) {
+void ExtMem_Init(int wait) {
 	// WAIT setting for external SRAM
-#if 0
-	// SRAM access time < 100ns
-	SET_BIT(MCUCR, SRW10);					// 1wait(SRW10=1)
-	SET_BYTE(XMCRA, _BV(SRW00));			// 1wait(SRW0x=01, SRW11=0)
-#else
-	// SRAM access time >= 100ns
-	CLR_BIT(MCUCR, SRW10);					// 2wait(SRW10=0)
-	SET_BYTE(XMCRA, _BV(SRW01)|_BV(SRW11));	// 2wait(SRW0x=10, SRW11=1)
-#endif
+	if (wait < 2) {
+		// SRAM access time < 100ns
+		SET_BIT(MCUCR, SRW10);					// 1wait(SRW10=1)
+		SET_BYTE(XMCRA, _BV(SRW00));			// 1wait(SRW0x=01, SRW11=0)
+	} else {
+		// SRAM access time >= 100ns
+		CLR_BIT(MCUCR, SRW10);					// 2wait(SRW10=0)
+		SET_BYTE(XMCRA, _BV(SRW01)|_BV(SRW11));	// 2wait(SRW0x=10, SRW11=1)
+	}
 	SET_BYTE(XMCRB, 0x00);		// Disable external memory bus-keeper
 	
 	SET_BYTE(PORTA, 0xff);		// Set PORTA as Hi-Z

@@ -48,8 +48,13 @@ void board_init(void)
 	SET_BYTE(PORTG, 0b00000011);	// /WR,/RD=High, ALE=Low
 	SET_BYTE(DDRG,  0b00000111);	// PG0,1,2 for output/XMEM, PG3,4 for input
 
+	// Configure wait settings of XMEM
+	if (PORTG & 0x08) {
+		ExtMem_Init(2);				// DIPSW1(PG3) OFF : 2wait
+	} else {
+		ExtMem_Init(1);				// DIPSW1(PG3) ON  : 1wait
+	}
 	// HALT Z80
-	ExtMem_Init();
 	Z80_HALT();						// Set HALT instruction at 0x0000
 
 	// The process up to here  must be completed within 250 ms from reset.
