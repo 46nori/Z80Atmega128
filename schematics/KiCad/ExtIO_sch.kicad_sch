@@ -6,7 +6,7 @@
 
   (title_block
     (title "External I/O")
-    (date "2023-08-18")
+    (date "2023-08-27")
     (company "By 46nori")
   )
 
@@ -1684,7 +1684,7 @@
           (reference "R2") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R25") (unit 1)
+          (reference "R26") (unit 1)
         )
       )
     )
@@ -1713,7 +1713,7 @@
           (reference "R17") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R28") (unit 1)
+          (reference "R29") (unit 1)
         )
       )
     )
@@ -1742,7 +1742,7 @@
           (reference "R2") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R23") (unit 1)
+          (reference "R24") (unit 1)
         )
       )
     )
@@ -1812,7 +1812,7 @@
           (reference "R16") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R29") (unit 1)
+          (reference "R30") (unit 1)
         )
       )
     )
@@ -1991,7 +1991,7 @@
           (reference "R2") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R27") (unit 1)
+          (reference "R28") (unit 1)
         )
       )
     )
@@ -2020,7 +2020,7 @@
           (reference "R13") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R31") (unit 1)
+          (reference "R32") (unit 1)
         )
       )
     )
@@ -2143,7 +2143,7 @@
           (reference "R15") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R30") (unit 1)
+          (reference "R31") (unit 1)
         )
       )
     )
@@ -2352,7 +2352,7 @@
           (reference "R2") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R26") (unit 1)
+          (reference "R27") (unit 1)
         )
       )
     )
@@ -2410,7 +2410,7 @@
           (reference "R2") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "R24") (unit 1)
+          (reference "R25") (unit 1)
         )
       )
     )

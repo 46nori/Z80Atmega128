@@ -1427,7 +1427,7 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
 - CONOUTの糞詰まり問題を片づけることにした。
   - AVR側のTX1への出力は9600bpsなので1文字出力には時間は0.83msかかる。そこで1msの周期割り込みハンドラでリングバッファからデキューして出力することとした。つまり1ms毎に出力される。
   - Z80側からのオーバーランを防ぐため、出力リングバッファがfullになったときにZ80に割り込みをかける。Z80は割り込みがかかったらフラグをセットする。1文字出力ルーチンでは、初めにフラグをチェックし、セットされていればバッファに空きが出るまでループ後、1文字出力を行う。
-- 突然AVR側が以下のエラーでリプログラムができなくなった。  
+- **突然AVR側が以下のエラーでリプログラムができなくなった。**  
   Error
   ```
   Failed to enter programming mode. ispEnterProgMode: Error status received: Got 0xc0, expected 0x00 (Command has failed to execute on the tool)
@@ -1518,3 +1518,24 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
 - 上記のエラーを検索したら、Microchipのknowledge baseで ["Unable to enter programming mode" while using ISP interface](https://microchip.my.site.com/s/article/Unable-to-enter-programming-mode-while-using-ISP-interface) という記事を見つけた。クロックに言及されている。[Using crystals and ceramic resonators](https://microchip.my.site.com/s/article/Using-crystals-and-ceramic-resonators) あたりの記事も確認してヒントを探してみるか。ちなみにセラロックの出力をオシロで確認したが、きれいな16MHzの正弦波が出力されていたので信号自体は問題ないと思われる。
 - あるいは[AVR042: AVR Hardware Design Considerations](https://ww1.microchip.com/downloads/en/Appnotes/atmel-2521-avr-hardware-design-considerations_applicationnote_avr042.pdf)も読んでISPの共存方法を見直してみるか。
 - 高電圧プログラミング([How to perform High Voltage Programming on AVR devices](https://microchip.my.site.com/s/article/How-to-perform-High-Voltage-Programming-on-AVR-devices))というのもあるみたいだが、パラレル書き込みのようなので他の信号との共存が難しそう。そもそもATmega128では使えるのか?
+
+### 2023/8/26
+- 以下の実験を行ったが、どれも効果なし。全く改善しない。
+  - AVRISP mkIIを互換品に交換。
+  - Microchip Studioで、Interface setting>ISP ClockでAVRISP mkIIのクロックを下げた。
+  - MISO/MOSI/CLKを3ステートゲートで切り替えているが、[AVR042: AVR Hardware Design Considerations](https://ww1.microchip.com/downloads/en/Appnotes/atmel-2521-avr-hardware-design-considerations_applicationnote_avr042.pdf)の4.1.1に抵抗でMISO/MOSIを共存させる方法が載っていた。5V電源なので510オームで実験した。
+  - Windows11をクリーンインストールし、Microchip Studioを入れ直した。
+
+### 2023/8/27
+- ライターの問題か切り分けるため以下を実施。
+  - 新品のATmega128をTQFP変換基板にマウント。
+  - 電源とISPだけ接続して認識できるか確認する。
+  - 結果、ATMEL純正AVRISP mkIIはNG。**互換機では認識できた。**
+- ISPのCLK出力が74HC125に入力されているが、もしかしてCMOSトレラントでないかもしれないので、10Kの抵抗でプルアップしてみたところ、微妙に間違ったDevice signatureが取れるようになった？
+- そこでISP Clockを64KHz以下に落としてみたところ、何とか認識するようになった。デフォルトの128KHzに戻すとエラーになる。
+- すかさずFUSEを以下に設定。
+  - EXTENDED: 0xFF
+  - HIGH: 0xC1
+  - LOW: 0x7F
+- 約二週間ぶりにリプログラムも成功した。
+- **AVRISP mkII互換機かつISP Clockを64KHz**であれば動くようなので、これでしばらく様子を見ることにしよう。

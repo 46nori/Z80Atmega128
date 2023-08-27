@@ -6,7 +6,7 @@
 
   (title_block
     (title "Reset & Clock")
-    (date "2023-08-18")
+    (date "2023-08-27")
     (company "By 46nori")
   )
 
@@ -1593,7 +1593,7 @@
           (reference "R1") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "R15") (unit 1)
+          (reference "R16") (unit 1)
         )
       )
     )
@@ -1748,7 +1748,7 @@
           (reference "R15") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "R16") (unit 1)
+          (reference "R17") (unit 1)
         )
       )
     )
@@ -1757,7 +1757,7 @@
   (symbol (lib_id "Device:R") (at 104.14 53.34 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 5912af3a-935f-455c-91cf-43e18202ea3e)
-    (property "Reference" "R14" (at 106.68 52.0699 0)
+    (property "Reference" "R15" (at 106.68 52.0699 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10K" (at 106.68 54.6099 0)
@@ -1774,7 +1774,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "R14") (unit 1)
+          (reference "R15") (unit 1)
         )
       )
     )
@@ -2160,7 +2160,7 @@
           (reference "R16") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/d23d98f9-7182-4fd3-8808-8c406ff55552"
-          (reference "R17") (unit 1)
+          (reference "R18") (unit 1)
         )
       )
     )

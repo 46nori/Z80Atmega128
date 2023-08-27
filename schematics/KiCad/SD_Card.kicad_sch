@@ -6,7 +6,7 @@
 
   (title_block
     (title "Micro SD Card interface")
-    (date "2023-08-18")
+    (date "2023-08-27")
     (company "By 46nori")
   )
 
@@ -1286,7 +1286,7 @@
   (symbol (lib_id "Device:R") (at 90.17 49.53 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 60c7cef2-dda1-4321-be82-827529b28d94)
-    (property "Reference" "R19" (at 92.71 48.2599 0)
+    (property "Reference" "R20" (at 92.71 48.2599 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10K" (at 92.71 50.7999 0)
@@ -1303,7 +1303,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/07de70fd-23a2-48ea-a888-9c9311d1e8a8"
-          (reference "R19") (unit 1)
+          (reference "R20") (unit 1)
         )
       )
     )
@@ -1337,7 +1337,7 @@
   (symbol (lib_id "Device:R") (at 157.48 95.25 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 6d214975-b780-4ecb-894c-ff9c21f6769e)
-    (property "Reference" "R21" (at 160.02 93.9799 0)
+    (property "Reference" "R22" (at 160.02 93.9799 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10K" (at 160.02 96.5199 0)
@@ -1354,7 +1354,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/07de70fd-23a2-48ea-a888-9c9311d1e8a8"
-          (reference "R21") (unit 1)
+          (reference "R22") (unit 1)
         )
       )
     )
@@ -1553,7 +1553,7 @@
   (symbol (lib_id "Device:R") (at 146.05 36.83 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a852e5c3-287a-483c-9056-10d0938c87e2)
-    (property "Reference" "R18" (at 148.59 35.5599 0)
+    (property "Reference" "R19" (at 148.59 35.5599 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10K" (at 148.59 38.0999 0)
@@ -1570,7 +1570,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/07de70fd-23a2-48ea-a888-9c9311d1e8a8"
-          (reference "R18") (unit 1)
+          (reference "R19") (unit 1)
         )
       )
     )
@@ -1579,7 +1579,7 @@
   (symbol (lib_id "Device:R") (at 125.73 105.41 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid af0e65b5-f4d5-4233-a9a3-dca029fb06e3)
-    (property "Reference" "R22" (at 125.73 99.06 90)
+    (property "Reference" "R23" (at 125.73 99.06 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1K" (at 125.73 101.6 90)
@@ -1596,7 +1596,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/07de70fd-23a2-48ea-a888-9c9311d1e8a8"
-          (reference "R22") (unit 1)
+          (reference "R23") (unit 1)
         )
       )
     )
@@ -1751,7 +1751,7 @@
   (symbol (lib_id "Device:R") (at 146.05 69.85 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid d3ca7d20-a30c-4b44-8143-30f4a5d22793)
-    (property "Reference" "R20" (at 148.59 68.5799 0)
+    (property "Reference" "R21" (at 148.59 68.5799 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "10K" (at 148.59 71.1199 0)
@@ -1768,7 +1768,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/07de70fd-23a2-48ea-a888-9c9311d1e8a8"
-          (reference "R20") (unit 1)
+          (reference "R21") (unit 1)
         )
       )
     )
