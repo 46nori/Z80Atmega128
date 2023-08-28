@@ -1011,7 +1011,7 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
     - `ORG` → `.org`、さらに`.area`でセグメントの属性の指定。
     - 文字列("...")は`.str`
   - `EQU $`をその位置の示すアドレスラベルで置き換え。
-    - (2023/7/12追記) `$`と同等の表は`#.`であることがわかった。
+    - (2023/7/12追記) `$`と同等の表現は`#.`であることがわかった。
 - 修正したCP/Mのソースコードをリポジトリに取り込むのは、ライセンスのリスクがありそうなので、パッチを作成して管理することにした。ソースをダウンロードしてパッチを当て、アセンブルするMakefileを書いた。
 - ちなみに62K CP/Mの設定になっている。
 
@@ -1423,7 +1423,7 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
   (SP+4)=$2155
   ```
 
-### 2023/8/16
+## 2023/8/16
 - CONOUTの糞詰まり問題を片づけることにした。
   - AVR側のTX1への出力は9600bpsなので1文字出力には時間は0.83msかかる。そこで1msの周期割り込みハンドラでリングバッファからデキューして出力することとした。つまり1ms毎に出力される。
   - Z80側からのオーバーランを防ぐため、出力リングバッファがfullになったときにZ80に割り込みをかける。Z80は割り込みがかかったらフラグをセットする。1文字出力ルーチンでは、初めにフラグをチェックし、セットされていればバッファに空きが出るまでループ後、1文字出力を行う。
@@ -1519,14 +1519,14 @@ VS CodeにDev Containersプラグインをあらかじめインストールし�
 - あるいは[AVR042: AVR Hardware Design Considerations](https://ww1.microchip.com/downloads/en/Appnotes/atmel-2521-avr-hardware-design-considerations_applicationnote_avr042.pdf)も読んでISPの共存方法を見直してみるか。
 - 高電圧プログラミング([How to perform High Voltage Programming on AVR devices](https://microchip.my.site.com/s/article/How-to-perform-High-Voltage-Programming-on-AVR-devices))というのもあるみたいだが、パラレル書き込みのようなので他の信号との共存が難しそう。そもそもATmega128では使えるのか?
 
-### 2023/8/26
+## 2023/8/26
 - 以下の実験を行ったが、どれも効果なし。全く改善しない。
   - AVRISP mkIIを互換品に交換。
   - Microchip Studioで、Interface setting>ISP ClockでAVRISP mkIIのクロックを下げた。
   - MISO/MOSI/CLKを3ステートゲートで切り替えているが、[AVR042: AVR Hardware Design Considerations](https://ww1.microchip.com/downloads/en/Appnotes/atmel-2521-avr-hardware-design-considerations_applicationnote_avr042.pdf)の4.1.1に抵抗でMISO/MOSIを共存させる方法が載っていた。5V電源なので510オームで実験した。
   - Windows11をクリーンインストールし、Microchip Studioを入れ直した。
 
-### 2023/8/27
+## 2023/8/27
 - ライターの問題か切り分けるため以下を実施。
   - 新品のATmega128をTQFP変換基板にマウント。
   - 電源とISPだけ接続して認識できるか確認する。
