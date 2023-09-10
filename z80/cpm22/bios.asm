@@ -17,6 +17,7 @@ MAX_DISK_NUM    .equ    0
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00    ; Get a character from CONIN
 PORT_CONIN_STS  .equ    0x01    ; Check CONIN status
+PORT_CONIN_BUF  .equ    0x02    ; Get Buffer size / Flush CONOUT
 PORT_CONIN_INT  .equ    0x03    ; Interrupt setting of CONIN
 PORT_CONOUT     .equ    0x05    ; Send a character to CONOUT
 PORT_CONOUT_STS .equ    0x06    ; Check CONOUT status
@@ -190,13 +191,13 @@ IS_WRITE_DONE:
 ;
 ISR_02:
         PUSH HL
-        LD HL, IS_CONOUT_FULL
+        LD HL, IS_CONOUT_FREE
         LD (HL), 1
         POP HL
         EI
         RETI
-IS_CONOUT_FULL:
-        .db     0               ; 0: free / 1: full
+IS_CONOUT_FREE:
+        .db     0               ; 0: full / 1: free
 
 ;
 ;       CONSOLE IN data queuing
@@ -242,8 +243,12 @@ BOOT:
         OUT (PORT_DBG_INT), A           ; INT 4
         EI
 
-        ; Boot message
+        LD A, 0xff
+        OUT (PORT_LED), A
+        OUT (PORT_CONIN_BUF), A         ; Flush CONIN
         OUT (PORT_CONOUT_BUF), A        ; Flush CONOUT
+
+        ; Boot message
         LD HL, BOOT_MSG
         CALL PRINT_STR
 
@@ -352,6 +357,7 @@ WBOOT:
 
         ; System boot error
 BOOT_ERROR:
+        OUT (PORT_CONOUT_BUF), A        ; Flush CONOUT
         LD HL, BOOT_ERROR_MSG
 BOOT_ERROR_PRINT:
         LD A, (HL)
@@ -389,7 +395,6 @@ CONST:
 ;       IN : None
 ;       OUT: A = Received character
 ;******************************************************************
-.if 0
 CONIN:
         XOR A
         DI
@@ -397,25 +402,14 @@ CONIN:
         IN A, (PORT_CONIN_STS)          ; check input
         EI
         OR A
-        JR NZ, CONIN_READ
-CONIN_LOOP:                             ; wait for input
+        JR NZ, CONIN2
+CONIN1:                                 ; wait for input
         LD A, (IS_CONIN_QUEUING)
         OR A
-        JR Z, CONIN_LOOP
-CONIN_READ:
+        JR Z, CONIN1
+CONIN2:
         IN A, (PORT_CONIN)              ; read a character
         RET
-.else
-CONIN:
-        IN A, (PORT_CONIN_STS)          ; check input
-        OR A
-        JR NZ, CONIN_READ
-        HALT
-        JR CONIN
-CONIN_READ:
-        IN A, (PORT_CONIN)              ; read a character
-        RET
-.endif
 
 ;******************************************************************
 ;   04: Output a character to CON:
@@ -423,45 +417,25 @@ CONIN_READ:
 ;       OUT: None
 ;******************************************************************
 CONOUT:
-.if 0
         PUSH AF
-        LD A, C
-        OUT (PORT_CONOUT), A
-WAIT_CONOUT:
-        .db 0,0,0,0,0,0,0,0,0,0 ; NOP x 10
-        LD A, (IS_CONOUT_FULL)
-        OR A
-        JR Z, WAIT_CONOUT
-        XOR A
-        LD (IS_CONOUT_FULL), A
-        POP AF
-        RET
-.else
-        PUSH AF
-        LD A, (IS_CONOUT_FULL)
-        OR A
-        CALL NZ, WAIT_CONOUT    ; wait if no space in buffer
-        LD A, C
-        OUT (PORT_CONOUT), A
-        POP AF
-        RET
-
-WAIT_CONOUT:
-        PUSH BC
-        IN A, (PORT_CONOUT_BUF)
-        SRA A
-        LD B, A                 ; B = Buffer size / 2
-WAIT_CONOUT2:                   ; wait until enough space in buffer
+        DI
         IN A, (PORT_CONOUT_STS)
-        CP B
-        JR C, WAIT_CONOUT3
-        JR WAIT_CONOUT2
-WAIT_CONOUT3:
-        XOR A                   ; clear buffer full flag
-        LD (IS_CONOUT_FULL), A
-        POP BC
+        CP 64
+        JR C, CONOUT2
+        ; wait until buffer is free enough
+        XOR A
+        LD (IS_CONOUT_FREE), A          ; clear int flag
+        EI
+CONOUT1:
+        LD A, (IS_CONOUT_FREE)
+        OR A
+        JR Z, CONOUT1
+CONOUT2:
+        EI
+        LD A, C
+        OUT (PORT_CONOUT), A
+        POP AF
         RET
-.endif
 
 ;******************************************************************
 ;   05: Output a character to LST: (Not implemented)
@@ -721,7 +695,7 @@ DISK_READ_SUB:
         LD (IS_READ_DONE), A    ; reset flag
         OUT (PORT_DSKRD), A     ; read disk
 WAIT_READ_COMPLETE:
-.if 0
+.if 1
         ; Wait for complete interrupt
         LD A, (IS_READ_DONE)
         OR A
@@ -805,7 +779,7 @@ WRITE:
 RETRY_WRITE:
         ; WRITE
         OUT (PORT_DSKWR), A
-.if 0
+.if 1
 WAIT_WRITE_COMPLETE:
         ; Wait for complete interrupt
         LD A, (IS_WRITE_DONE)

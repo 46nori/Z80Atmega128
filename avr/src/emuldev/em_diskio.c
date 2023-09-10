@@ -12,7 +12,7 @@
 #include "xconsoleio.h"
 #include "z80io.h"
 
-#define DEBUG_PRINT 1
+#define DEBUG_PRINT 0
 
 //=================================================================
 // DISK I/O emulated device
@@ -143,7 +143,7 @@ void OUT_##INTNUM##_##FUNC(uint8_t data)\
 		dt_##FUNC |= data;\
 	default:\
 		st_##FUNC = 0;\
-		x_printf("%s=%08x\n", QSTRING(FUNC), dt_##FUNC); \
+		/*x_printf("%s=%08x\n", QSTRING(FUNC), dt_##FUNC);*/ \
 		break;\
 	}\
 }
@@ -167,7 +167,7 @@ void OUT_##INTNUM##_##FUNC(uint8_t data)\
 		dt_##FUNC |= data;\
 	default:\
 		st_##FUNC = 0;\
-		x_printf("%s=%04x\n", QSTRING(FUNC), dt_##FUNC); \
+		/*x_printf("%s=%04x\n", QSTRING(FUNC), dt_##FUNC);*/ \
 		break;\
 	}\
 }
@@ -303,6 +303,7 @@ error_skip:
 uint8_t IN_13_DSK_ReadStatus()
 {
 	// CAUTION: don't consume long time
+	cli();
 	uint8_t st = 0x00;
 	switch (rd.state) {
 	case IDLE:
@@ -318,6 +319,7 @@ uint8_t IN_13_DSK_ReadStatus()
 		st = 0x04;			// rejected
 		break;
 	}
+	sei();
 	return st;
 }
 

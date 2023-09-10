@@ -8,8 +8,6 @@
 #include "xconsoleio.h"
 #include "z80io.h"
 
-#define NEW_CONOUT	1
-
 //=================================================================
 // Console I/O emulated device
 //=================================================================
@@ -43,12 +41,11 @@ void init_em_console(void)
 void Enqueue_RX1_Buf()
 {
 	while (UCSR1A & _BV(RXC1)) {
-		if (x_enqueue(&cb_rx1, UDR1) != 1) {
-			// Notify Z80 if interrupt setting is enable
-			if (z80_int_num_rx1 < 128) {
-				// CAUTION: vector is NOT interrupt number(0-127)
-				Z80_EXTINT_low(z80_int_num_rx1 << 1);
-			}
+		x_enqueue(&cb_rx1, UDR1);
+		// Notify Z80 if interrupt setting is enable
+		if (z80_int_num_rx1 < 128) {
+			// CAUTION: vector is NOT interrupt number(0-127)
+			Z80_EXTINT_low(z80_int_num_rx1 << 1);
 		}
 	}
 }
@@ -59,24 +56,16 @@ void Enqueue_RX1_Buf()
 ///////////////////////////////////////////////////////////////////
 void Transmit_TX1_Buf(void)
 {
-#if NEW_CONOUT
 	char data = x_dequeue(&cb_tx1);
 	if (data != '\0') {
 		USART1_Transmit(data);
+//		x_printf("%d %d %d\n", cb_tx1.count, cb_tx1.head, cb_tx1.tail);
+		if (cb_tx1.count == 0 ||
+		    cb_tx1.count == cb_tx1.size / 4 ||
+		    cb_tx1.count == cb_tx1.size / 2) {
+			Z80_EXTINT_low(z80_int_num_tx1 << 1);			
+		}
 	}
-#else
-	bool is_sent = false;
-	char data;
-	while ((data = x_dequeue(&cb_tx1)) != '\0') {
-		USART1_Transmit(data);
-		is_sent = true;
-	}
-	if (is_sent && z80_int_num_tx1 < 128) {
-		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(z80_int_num_tx1 << 1);
-		is_sent = false;
-	}
-#endif
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -108,6 +97,7 @@ uint8_t IN_02_CONIN_GetBufferSize()
 	// Get RX1 buffer size
 	return RX1_BUF_SIZE;
 }
+
 void OUT_02_CONIN_Flush(uint8_t data)
 {
 	x_flush(&cb_rx1);
@@ -128,16 +118,7 @@ uint8_t IN_03_CONIN_GetIntLevel()
 ///////////////////////////////////////////////////////////////////
 void OUT_05_CONOUT(uint8_t data)
 {
-#if NEW_CONOUT
-	// set character TX1 console buffer
-	if (x_enqueue(&cb_tx1, data) != 0) {
-		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(z80_int_num_tx1 << 1);
-	}
-#else
-	// set character TX1 console buffer
 	x_enqueue(&cb_tx1, data);
-#endif
 }
 
 uint8_t	IN_06_CONOUT_GetStatus()
