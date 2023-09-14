@@ -1636,7 +1636,7 @@
   (symbol (lib_id "power:VCC") (at 97.79 134.62 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 00be2ffe-0b9e-4b4e-827d-9f4ec39deabc)
-    (property "Reference" "#PWR02" (at 97.79 138.43 0)
+    (property "Reference" "#PWR?" (at 97.79 138.43 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "VCC" (at 97.79 129.54 0)
@@ -1652,10 +1652,10 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "#PWR02") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "#PWR081") (unit 1)
+          (reference "#PWR085") (unit 1)
         )
       )
     )
@@ -1664,7 +1664,7 @@
   (symbol (lib_id "Device:R") (at 193.04 67.31 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 0cac906f-126f-48e3-af22-858d9129abcd)
-    (property "Reference" "R2" (at 193.04 60.96 90)
+    (property "Reference" "R?" (at 193.04 60.96 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1K" (at 193.04 63.5 90)
@@ -1681,7 +1681,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R2") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R26") (unit 1)
@@ -1693,7 +1693,7 @@
   (symbol (lib_id "Device:R") (at 102.87 147.32 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 1af92e68-e6ba-47bf-b68a-5e2933b478f8)
-    (property "Reference" "R17" (at 102.87 129.54 90)
+    (property "Reference" "R?" (at 102.87 129.54 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "10K" (at 102.87 134.62 90)
@@ -1705,12 +1705,12 @@
     (property "Datasheet" "~" (at 102.87 147.32 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 5e614e4b-5adf-4e3a-b1af-1f06f8b8788d))
-    (pin "2" (uuid 612730c4-f3cf-4a47-8166-3f603d65685f))
+    (pin "1" (uuid 46ac7927-d89b-453e-b39f-3c0c7fd2be32))
+    (pin "2" (uuid df57522a-031f-4981-90e5-70d7b05b3461))
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R17") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R29") (unit 1)
@@ -1722,7 +1722,7 @@
   (symbol (lib_id "Device:R") (at 193.04 39.37 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 1b5e4826-a971-47bf-9def-d4c197ad3c66)
-    (property "Reference" "R2" (at 193.04 33.02 90)
+    (property "Reference" "R?" (at 193.04 33.02 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1K" (at 193.04 35.56 90)
@@ -1739,7 +1739,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R2") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R24") (unit 1)
@@ -1751,7 +1751,7 @@
   (symbol (lib_id "74xx:74LS125") (at 220.98 107.95 0) (mirror y) (unit 3)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 1beff0bb-1be4-48cb-9adf-a0c3aa0558a7)
-    (property "Reference" "U1" (at 220.98 100.33 0)
+    (property "Reference" "U?" (at 220.98 100.33 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74HC125" (at 220.98 102.87 0)
@@ -1780,10 +1780,10 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "U1") (unit 3)
+          (reference "U?") (unit 3)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "U1") (unit 3)
+          (reference "U8") (unit 3)
         )
       )
     )
@@ -1792,7 +1792,7 @@
   (symbol (lib_id "Device:R") (at 105.41 147.32 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 284460bf-15e5-4741-94f9-feb2a95de3d3)
-    (property "Reference" "R16" (at 105.41 129.54 90)
+    (property "Reference" "R?" (at 105.41 129.54 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "10K" (at 105.41 134.62 90)
@@ -1804,12 +1804,12 @@
     (property "Datasheet" "~" (at 105.41 147.32 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid dce53e48-0811-4d5e-b7f2-5d1d4c42653e))
-    (pin "2" (uuid cad64baf-f2db-4cc5-a5ee-070a95edbf6c))
+    (pin "1" (uuid 512c965d-41b9-4c8d-ab94-728e120dea03))
+    (pin "2" (uuid c3207496-4de1-4b98-8f1f-632ca00760cc))
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R16") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R30") (unit 1)
@@ -1821,7 +1821,7 @@
   (symbol (lib_id "power:PWR_FLAG") (at 128.27 88.9 270) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2934d7fd-3447-43f5-9295-d7a5475a5955)
-    (property "Reference" "#FLG01" (at 130.175 88.9 0)
+    (property "Reference" "#FLG?" (at 130.175 88.9 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "PWR_FLAG" (at 129.54 91.44 90)
@@ -1837,7 +1837,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "#FLG01") (unit 1)
+          (reference "#FLG?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "#FLG03") (unit 1)
@@ -1849,7 +1849,7 @@
   (symbol (lib_id "Device:LED") (at 204.47 53.34 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2c38806d-90a7-4fdf-8953-bed0b549b72c)
-    (property "Reference" "D1" (at 205.74 46.99 0)
+    (property "Reference" "D?" (at 205.74 46.99 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "LED2" (at 204.47 49.53 0)
@@ -1866,7 +1866,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "D1") (unit 1)
+          (reference "D?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "D4") (unit 1)
@@ -1878,7 +1878,7 @@
   (symbol (lib_id "Switch:SW_DIP_x04") (at 105.41 173.99 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2d431264-0b4e-4947-8cd2-65bc7bfab710)
-    (property "Reference" "SW2" (at 118.11 175.26 90)
+    (property "Reference" "SW?" (at 118.11 175.26 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "SW_DIP_x04" (at 119.38 172.72 90)
@@ -1901,7 +1901,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "SW2") (unit 1)
+          (reference "SW?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "SW3") (unit 1)
@@ -1913,7 +1913,7 @@
   (symbol (lib_id "Device:LED") (at 204.47 107.95 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 32457144-407d-416f-b59e-736700c2966c)
-    (property "Reference" "D1" (at 205.74 99.06 0)
+    (property "Reference" "D?" (at 205.74 99.06 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "HALT" (at 204.47 101.6 0)
@@ -1930,7 +1930,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "D1") (unit 1)
+          (reference "D?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "D7") (unit 1)
@@ -1942,7 +1942,7 @@
   (symbol (lib_id "Device:LED") (at 204.47 67.31 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 3687d088-5402-4e68-ba3e-aa1a72a459f1)
-    (property "Reference" "D1" (at 205.74 60.96 0)
+    (property "Reference" "D?" (at 205.74 60.96 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "LED3" (at 204.47 63.5 0)
@@ -1959,7 +1959,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "D1") (unit 1)
+          (reference "D?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "D5") (unit 1)
@@ -1968,10 +1968,10 @@
     )
   )
 
-  (symbol (lib_id "Device:R") (at 193.04 107.95 270) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+  (symbol (lib_id "Device:R") (at 193.04 107.95 90) (mirror x) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
     (uuid 47588bb9-d001-4b3d-8b00-7da62b24096c)
-    (property "Reference" "R2" (at 193.04 101.6 90)
+    (property "Reference" "R?" (at 193.04 101.6 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1K" (at 193.04 104.14 90)
@@ -1988,7 +1988,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R2") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R28") (unit 1)
@@ -2000,7 +2000,7 @@
   (symbol (lib_id "Device:R") (at 110.49 147.32 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 4c7a53bd-03a6-4c68-8f11-7209ebfa7b22)
-    (property "Reference" "R13" (at 110.49 129.54 90)
+    (property "Reference" "R?" (at 110.49 129.54 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "10K" (at 110.49 134.62 90)
@@ -2012,12 +2012,12 @@
     (property "Datasheet" "~" (at 110.49 147.32 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 4f064b63-a156-4156-b4cb-21dcfffa622f))
-    (pin "2" (uuid 75110af7-898b-47ed-b12b-7ec13213581c))
+    (pin "1" (uuid 0625a6e8-dfc0-4022-a20d-592134bc5a7d))
+    (pin "2" (uuid 53114b02-b090-4fc3-96bf-198682775a59))
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R13") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R32") (unit 1)
@@ -2029,7 +2029,7 @@
   (symbol (lib_id "power:VCC") (at 184.15 30.48 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 4ebe3399-540b-41ff-97fb-981c3a19aa10)
-    (property "Reference" "#PWR02" (at 184.15 34.29 0)
+    (property "Reference" "#PWR?" (at 184.15 34.29 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "VCC" (at 184.15 25.4 0)
@@ -2045,10 +2045,10 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "#PWR02") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "#PWR078") (unit 1)
+          (reference "#PWR082") (unit 1)
         )
       )
     )
@@ -2057,10 +2057,10 @@
   (symbol (lib_id "46nori_Library:AE-CH340E-TYPEC") (at 105.41 73.66 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 689dcc7e-5560-48f2-8b54-fb91a5de441c)
-    (property "Reference" "U10" (at 104.775 71.12 0)
+    (property "Reference" "U?" (at 104.775 69.85 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "AE-CH340E-TYPEC" (at 104.775 73.66 0)
+    (property "Value" "AE-CH340E-TYPECH (CH1)" (at 104.775 72.39 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical" (at 105.41 73.66 0)
@@ -2078,7 +2078,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "U10") (unit 1)
+          (reference "U?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "U19") (unit 1)
@@ -2090,10 +2090,10 @@
   (symbol (lib_name "AE-CH340E-TYPEC_1") (lib_id "46nori_Library:AE-CH340E-TYPEC") (at 105.41 25.4 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 81127392-0099-4216-9af0-edf116663c29)
-    (property "Reference" "U5" (at 104.775 22.86 0)
+    (property "Reference" "U?" (at 104.775 21.59 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "AE-CH340E-TYPEC" (at 104.775 25.4 0)
+    (property "Value" "AE-CH340E-TYPEC (CH0)" (at 104.775 24.13 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical" (at 105.41 25.4 0)
@@ -2111,7 +2111,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "U5") (unit 1)
+          (reference "U?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "U18") (unit 1)
@@ -2123,7 +2123,7 @@
   (symbol (lib_id "Device:R") (at 107.95 147.32 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 897d2a66-a4c8-478c-9e4d-61bbe4124b79)
-    (property "Reference" "R15" (at 107.95 129.54 90)
+    (property "Reference" "R?" (at 107.95 129.54 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "10K" (at 107.95 134.62 90)
@@ -2135,12 +2135,12 @@
     (property "Datasheet" "~" (at 107.95 147.32 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid d881e143-85f0-48d7-9c15-4a813219aeae))
-    (pin "2" (uuid 43449bc6-8f88-4026-a68e-4caaded04c01))
+    (pin "1" (uuid e34d2ea5-c361-4104-9c04-6adb9a62618a))
+    (pin "2" (uuid 2ebafd07-93d9-42a5-9ba9-7eead134eb7f))
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R15") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R31") (unit 1)
@@ -2152,7 +2152,7 @@
   (symbol (lib_id "74xx:74HC04") (at 220.98 91.44 0) (mirror y) (unit 6)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 8c7244f6-1b96-4db4-8342-4611d6f036c8)
-    (property "Reference" "U2" (at 222.25 83.82 0)
+    (property "Reference" "U?" (at 222.25 83.82 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74HC04" (at 220.98 86.36 0)
@@ -2181,7 +2181,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "U2") (unit 6)
+          (reference "U?") (unit 6)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "U4") (unit 6)
@@ -2193,7 +2193,7 @@
   (symbol (lib_id "Device:LED") (at 204.47 91.44 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 99c1ae03-8931-4c0e-a64c-22b2406641d9)
-    (property "Reference" "D1" (at 205.74 82.55 0)
+    (property "Reference" "D?" (at 205.74 82.55 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "BUSACK" (at 204.47 85.09 0)
@@ -2210,7 +2210,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "D1") (unit 1)
+          (reference "D?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "D6") (unit 1)
@@ -2222,7 +2222,7 @@
   (symbol (lib_id "74xx:74LS32") (at 220.98 67.31 0) (mirror y) (unit 4)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid b0e908a5-cfa5-40ca-bc83-5fe3952d3b28)
-    (property "Reference" "U14" (at 220.98 59.69 0)
+    (property "Reference" "U?" (at 220.98 59.69 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74HC32" (at 220.98 62.23 0)
@@ -2251,7 +2251,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "U14") (unit 4)
+          (reference "U?") (unit 4)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "U13") (unit 4)
@@ -2263,7 +2263,7 @@
   (symbol (lib_id "74xx:74LS32") (at 220.98 53.34 0) (mirror y) (unit 2)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid bbd0f604-e952-426d-b7ee-409e997ca476)
-    (property "Reference" "U14" (at 220.98 45.72 0)
+    (property "Reference" "U?" (at 220.98 45.72 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74HC32" (at 220.98 48.26 0)
@@ -2292,7 +2292,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "U14") (unit 2)
+          (reference "U?") (unit 2)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "U13") (unit 2)
@@ -2304,7 +2304,7 @@
   (symbol (lib_id "power:GND") (at 97.79 186.69 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid be1233ba-62a8-488d-84e2-c0d68ea5689b)
-    (property "Reference" "#PWR035" (at 97.79 193.04 0)
+    (property "Reference" "#PWR?" (at 97.79 193.04 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 97.79 191.77 0)
@@ -2320,10 +2320,10 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "#PWR035") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "#PWR082") (unit 1)
+          (reference "#PWR086") (unit 1)
         )
       )
     )
@@ -2332,7 +2332,7 @@
   (symbol (lib_id "Device:R") (at 193.04 91.44 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid cfdcb869-4773-40cb-87ca-e3a451c1f82e)
-    (property "Reference" "R2" (at 193.04 85.09 90)
+    (property "Reference" "R?" (at 193.04 85.09 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1K" (at 193.04 87.63 90)
@@ -2349,7 +2349,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R2") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R27") (unit 1)
@@ -2361,7 +2361,7 @@
   (symbol (lib_id "Device:LED") (at 204.47 39.37 180) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid ddf1e3d9-b700-4168-954c-8dac7d51f507)
-    (property "Reference" "D1" (at 205.74 33.02 0)
+    (property "Reference" "D?" (at 205.74 33.02 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "LED1" (at 204.47 35.56 0)
@@ -2378,7 +2378,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "D1") (unit 1)
+          (reference "D?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "D3") (unit 1)
@@ -2390,7 +2390,7 @@
   (symbol (lib_id "Device:R") (at 193.04 53.34 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid def47955-faa5-40f6-a914-21e96309c7b1)
-    (property "Reference" "R2" (at 193.04 46.99 90)
+    (property "Reference" "R?" (at 193.04 46.99 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "1K" (at 193.04 49.53 90)
@@ -2407,7 +2407,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "R2") (unit 1)
+          (reference "R?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "R25") (unit 1)
@@ -2419,7 +2419,7 @@
   (symbol (lib_id "power:GND") (at 220.98 118.11 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid ec429ce9-9d6a-4a9a-92ba-2d2b4afd040f)
-    (property "Reference" "#PWR042" (at 220.98 124.46 0)
+    (property "Reference" "#PWR?" (at 220.98 124.46 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 220.98 123.19 0)
@@ -2435,10 +2435,10 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "#PWR042") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "#PWR080") (unit 1)
+          (reference "#PWR084") (unit 1)
         )
       )
     )
@@ -2447,7 +2447,7 @@
   (symbol (lib_id "power:GND") (at 123.19 105.41 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid f22a5d56-0fbd-418f-ae79-c91b14a7dac3)
-    (property "Reference" "#PWR035" (at 123.19 111.76 0)
+    (property "Reference" "#PWR?" (at 123.19 111.76 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 123.19 110.49 0)
@@ -2463,10 +2463,10 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "#PWR035") (unit 1)
+          (reference "#PWR?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
-          (reference "#PWR079") (unit 1)
+          (reference "#PWR083") (unit 1)
         )
       )
     )
@@ -2475,7 +2475,7 @@
   (symbol (lib_id "74xx:74LS32") (at 220.98 39.37 0) (mirror y) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid f4b467ef-c35e-43bf-a4ed-ec0862e0ff6a)
-    (property "Reference" "U14" (at 220.98 31.75 0)
+    (property "Reference" "U?" (at 220.98 31.75 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "74HC32" (at 220.98 34.29 0)
@@ -2504,7 +2504,7 @@
     (instances
       (project "Z80ATmega128"
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "U14") (unit 1)
+          (reference "U?") (unit 1)
         )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/ae537df1-e345-44d5-8641-c1558080fa87"
           (reference "U13") (unit 1)

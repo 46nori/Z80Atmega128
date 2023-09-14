@@ -42,6 +42,7 @@ Hence, I've devised the following design principles:
 ![](schematics/KiCad/SVG/Z80ATmega128.svg)
 ![](schematics/KiCad/SVG/Z80ATmega128-Reset.svg)
 ![](schematics/KiCad/SVG/Z80ATmega128-SD_Card_Interface.svg)
+![](schematics/KiCad/SVG/Z80ATmega128-ExtIO.svg)
 
 ## License
 GPLv3
