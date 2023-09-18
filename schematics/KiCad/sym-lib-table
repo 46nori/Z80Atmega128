@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "MCU_Microchip_ATmega1")(type "KiCad")(uri "${KIPRJMOD}/symbol/MCU_Microchip_ATmega.kicad_sym")(options "")(descr ""))
+)
