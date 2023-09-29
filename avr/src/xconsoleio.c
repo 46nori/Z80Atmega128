@@ -67,11 +67,12 @@ char *x_gets_s(char *buffer, size_t size) {
 			is_done = 1;
 			break;
 		case '\b': // BS
+		case 0x7f: // DEL
 			if (p != buffer) {
 				--p;
-				x_putchar(c);
+				x_putchar('\b');
 				x_putchar(' ');
-				x_putchar(c);
+				x_putchar('\b');
 			}
 			*p = '\0';
 			break;;
