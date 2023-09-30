@@ -202,7 +202,7 @@ static const char help_str[] PROGMEM =	\
 	"sts             : show Z80 status\n"\
 	"brk [adr]       : set breakpoint, show list if no adr\n"\
 	"del <adr>       : delete n\n"\
-	"con             : continue from breakpoint\n"\
+	"cont            : continue from breakpoint\n"\
 	"";
 
 #if 1	

@@ -305,6 +305,13 @@ WBOOT:
         ;
         ; Reload CCP and BDOS
         ;
+        ; Load CPP+BDOS
+        CALL DISK_READ_SUB
+        OR A
+        JR NZ, BOOT_ERROR
+        LD HL, RELOAD_MSG
+        CALL PRINT_STR
+
         ; Open DISK
         LD C, 0
         CALL SELDSK
@@ -321,28 +328,20 @@ WBOOT:
         OUT (PORT_DSKRDPOS), A
 
         ; Set load address
-        IN A, (PORT_DSKRDBUF)   ; Reset sequencer
+        LD C, PORT_DSKRDBUF
+        IN A, (C)               ; Reset sequencer
         LD HL, CCP_ENTRY
-        LD A, H
-        OUT (PORT_DSKRDBUF), A
-        LD A, L
-        OUT (PORT_DSKRDBUF), A
+        OUT (C), H
+        OUT (C), L
 
         ; Set DISK read length (size of CPP+BDOS)
-        IN A, (PORT_DSKRDLEN)   ; Reset sequencer
+        LD C, PORT_DSKRDLEN
+        IN A, (C)               ; Reset sequencer
         LD HL, CCP_BDOS_LENGTH
-        LD A, H
-        OUT (PORT_DSKRDLEN), A
-        LD A, L
-        OUT (PORT_DSKRDLEN), A
+        OUT (C), H
+        OUT (C), L
 
-        ; Load CPP+BDOS
-        CALL DISK_READ_SUB
-        OR A
-        JR NZ, BOOT_ERROR
-        LD HL, RELOAD_MSG
-        CALL PRINT_STR
-
+        ;
         CALL INIT_SYSTEM_AREA
 
         ; Set current DISK
@@ -369,12 +368,13 @@ BOOT_ERROR_PRINT:
         JR BOOT_ERROR_PRINT
 BOOT_ERROR_HALT:
         HALT
+        JR BOOT_ERROR_HALT
 
 BOOT_ERROR_MSG:
         .str    "System HALT due to CCP+BDOS load error.\r\n"
         .db     0
 RELOAD_MSG:
-        .str    "\r\nCCP+BDOS reloaded.\r\n"
+        .str    "\r\nReload CCP+BDOS.\r\n"
         .db     0
 
 ;******************************************************************
@@ -689,6 +689,7 @@ READ_DMA_BUFFER:
 ;================================================
 ; DISK READ
 ;  OUT: A = disk status
+;           0: Success / 2: Error
 ;================================================
 DISK_READ_SUB:
         XOR A
