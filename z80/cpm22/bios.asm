@@ -491,6 +491,12 @@ SELDSK:
         RET
         ; Error
 DISK_ERROR:
+        ; Force the default drive to A:.
+        XOR A
+        LD (CURRENT_DISK), A
+        LD C, A
+        OUT (PORT_SELDSK), A    ; Open DISK A:
+
         LD HL, 0                ; Return HL = 0
         POP AF
         RET
