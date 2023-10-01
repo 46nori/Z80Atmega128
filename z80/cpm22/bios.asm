@@ -371,7 +371,7 @@ BOOT_ERROR_HALT:
         JR BOOT_ERROR_HALT
 
 BOOT_ERROR_MSG:
-        .str    "System HALT due to CCP+BDOS load error.\r\n"
+        .str    "\r\nSystem HALT due to CCP+BDOS load error.\r\n"
         .db     0
 RELOAD_MSG:
         .str    "\r\nReload CCP+BDOS.\r\n"
@@ -689,7 +689,10 @@ READ_DMA_BUFFER:
 ;================================================
 ; DISK READ
 ;  OUT: A = disk status
-;           0: Success / 2: Error
+;           0: Success
+;           1: Reading
+;           2: Error
+;           4: Rejected
 ;================================================
 DISK_READ_SUB:
         XOR A
@@ -737,19 +740,18 @@ WRITE:
         LDIR
 
         ; Set destination buffer address
-        IN A, (PORT_DSKWRBUF)   ; Reset sequencer
+        LD C, PORT_DSKWRBUF
+        IN A, (C)               ; Reset sequencer
         LD HL, DMABUF
-        LD A, H
-        OUT (PORT_DSKWRBUF), A
-        LD A, L
-        OUT (PORT_DSKWRBUF), A
+        OUT (C), H
+        OUT (C), L
 
         ; Set write length (128byte)
-        IN A, (PORT_DSKWRLEN)   ; Reset sequencer
-        XOR A
-        OUT (PORT_DSKWRLEN), A
-        LD A, 128
-        OUT (PORT_DSKWRLEN), A
+        LD C, PORT_DSKWRLEN
+        IN A, (C)               ; Reset sequencer
+        LD HL, 128
+        OUT (C), H
+        OUT (C), L
 
         ; DE,HL = TRACK * SPT + SECTOR
         LD HL, (CURRENT_TRACK_NO)
@@ -779,33 +781,11 @@ WRITE:
         ; Write a SD card sector (512bytes)
 RETRY_WRITE:
         ; WRITE
-        OUT (PORT_DSKWR), A
-.if 1
-WAIT_WRITE_COMPLETE:
-        ; Wait for complete interrupt
-        LD A, (IS_WRITE_DONE)
-        OR A
-        JR Z, WAIT_WRITE_COMPLETE
-        XOR A
-        LD (IS_WRITE_DONE), A   ; reset flag
-
-        ; check write status
-        IN A, (PORT_DSKWR)
-        BIT 1, A
-        JR NZ, WRITE_ERROR
-        BIT 2, A
-        JR NZ, RETRY_WRITE      ; retry if rejected
-.else
-WAIT_WRITE_COMPLETE:
-        HALT
-        IN A, (PORT_DSKWR)
-        CP 1
-        JR Z, WAIT_WRITE_COMPLETE
+        CALL DISK_WRITE_SUB
         CP 4
         JR Z, RETRY_WRITE       ; retry if rejected
         CP 2
         JR Z, WRITE_ERROR
-.endif
         XOR A
         JR WRITE_EXIT           ; Success A=0
 
@@ -816,6 +796,27 @@ WRITE_EXIT:
         POP HL
         POP DE
         POP BC
+        RET
+
+;================================================
+; DISK WRITE
+;  OUT: A = disk status
+;           0: Success
+;           1: Writing
+;           2: Error
+;           4: Rejected
+;================================================
+DISK_WRITE_SUB:
+        XOR A
+        LD (IS_WRITE_DONE), A   ; reset flag
+        OUT (PORT_DSKWR), A
+
+        ; Wait for complete interrupt
+WAIT_WRITE_COMPLETE:
+        LD A, (IS_WRITE_DONE)
+        OR A
+        JR Z, WAIT_WRITE_COMPLETE
+        IN A, (PORT_DSKWR)
         RET
 
 ;******************************************************************
