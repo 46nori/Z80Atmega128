@@ -1,0 +1,4 @@
+- [Z80ATmega128 Board Hardware Specification](../schematics/Design.md)
+- [Emulated external I/O device specification](EmulatedDeviceSpec.md)
+- [KiCadによるPCBの製作](KiCad-PCB.md)
+- [CP/M DISK Parameters](DiskParameters.md)

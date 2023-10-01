@@ -1,8 +1,8 @@
 # Z80-ATmega128 Board
 ## ハードウェア
-- Z80A 4MHz (以下Z80と呼称)
+- Z80A 4MHz (以下Z80)
 - 共有メモリ 64KB (256Kbit SRAM x 2)
-- AVR ATmega128 16MHz (以下AVRと呼称)
+- AVR ATmega128-16AU 16MHz (以下AVR)
    - Z80のI/Oサブシステムとして使用
    - 2CH シリアルインターフェース
    - SPI接続のmicroSD Cardインターフェース

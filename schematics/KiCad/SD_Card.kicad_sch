@@ -1185,12 +1185,12 @@
   )
 
   (symbol (lib_id "Device:C") (at 34.29 163.83 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
-    (uuid 53493468-2ae3-4ed2-9d7c-4c084ddc3d2a)
-    (property "Reference" "C?" (at 38.1 162.5599 0)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid 5199c7cc-8d99-4d58-9d55-ed4d63bd425c)
+    (property "Reference" "C23" (at 38.1 162.5599 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "1u" (at 38.1 165.0999 0)
+    (property "Value" "0.1u" (at 38.1 165.0999 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Capacitor_THT:C_Disc_D3.8mm_W2.6mm_P2.50mm" (at 35.2552 167.64 0)
@@ -1202,16 +1202,13 @@
     (property "購入先(参考)" "" (at 34.29 163.83 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "部品名" "1uF/50V 積層セラミックコンデンサ" (at 34.29 163.83 0)
+    (property "部品名" "0.1uF/50V 積層セラミックコンデンサ" (at 34.29 163.83 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 0f46429a-fad3-4bca-8cbe-0b229fa50890))
-    (pin "2" (uuid 6c36c9c1-5fa4-4233-bdbf-3ac06fbec30e))
+    (pin "1" (uuid d8c0a25c-9a0f-46d5-842d-7cdd3ad70761))
+    (pin "2" (uuid 685ec68f-4b6c-4893-9ba0-05aed1119966))
     (instances
       (project "Z80ATmega128"
-        (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88"
-          (reference "C?") (unit 1)
-        )
         (path "/8c0ff608-9e5b-458c-8fa7-b9973ff97e88/07de70fd-23a2-48ea-a888-9c9311d1e8a8"
           (reference "C23") (unit 1)
         )

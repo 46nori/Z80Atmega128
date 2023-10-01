@@ -37,8 +37,8 @@
 | 0x0f | OUT       | Set DISK WRITE interrupt level        | 0-127: Mode2 INT level<br>Other: No interrupt |
 | 0x10 | IN        | Get DISK WRITE Position               | Physical READ position and reset sequencer |
 | 0x10 | OUT       | Set DISK WRITE Position               | Physical READ position               |
-| 0x11 | IN        | Get DISK READ Buffer address          | Buffer addree and reset sequencer    |
-| 0x11 | OUT       | Set DISK READ Buffer address          | Buffer addree                        |
+| 0x11 | IN        | Get DISK READ Buffer address          | Buffer addreess and reset sequencer  |
+| 0x11 | OUT       | Set DISK READ Buffer address          | Buffer addreess                      |
 | 0x12 | IN        | Get DISK READ Buffer length           | Data length and reset sequencer      |
 | 0x12 | OUT       | Set DISK READ Buffer length           | Data length                          |
 | 0x13 | IN        | Get DISK READ status                  | Bit 0: Completed(0) / Reading(1)<br>Bit 1: Success(0) / Error(1) |
@@ -188,7 +188,7 @@ AVRはUART1の入力をリングバッファに値を保存しており、Z80か
 - PORT 0x0e
   - **[OUT]** DISKライト実行
   - **[IN]** DISKライト状態を返す。
-    - Bit0: 完了(0) / リード中(1)
+    - Bit0: 完了(0) / 実行中(1)
     - Bit1: 成功(0) / エラー(1)
 - PORT 0x0f　DISKライト完了割り込み設定
   - **[OUT]** DISKライト完了時にZ80にMode2割り込みをかけることができる。0-127を設定するとそのレベルでの割り込みが発生する。128-255に設定すると割り込みは発生しない。デフォルト値は128。
@@ -205,7 +205,7 @@ AVRはUART1の入力をリングバッファに値を保存しており、Z80か
 - PORT 0x13
   - **[OUT]** DISKリード実行
   - **[IN]** DISKリード状態を返す。
-    - Bit0: 完了(0) / リード中(1)
+    - Bit0: 完了(0) / 実行中(1)
     - Bit1: 成功(0) / エラー(1)
 - PORT 0x14 DISKリード完了割り込み設定
   - **[OUT]** DISKリード完了時にZ80にMode2割り込みをかけることができる。0-127を設定するとそのレベルでの割り込みが発生する。128-255に設定すると割り込みは発生しない。デフォルト値は128。
