@@ -286,26 +286,42 @@ void em_disk_write(void)
 	void *buf = wr.buffer;
 	UINT len = wr.length;
 
-	// first block
-	if (offset >0) {
+	// move to the first sector
+	if (offset > 0) {
 		write_result = pf_lseek(wr.position - offset);	// seek previous block boundary
+	} else {
+		write_result = pf_lseek(wr.position);
+	}	
+	if (write_result != FR_OK) {
+		goto error_skip;
+	}
+	
+	// process the first sector
+	if (offset > 0) {
+		// read
+		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
-		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
+		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf)); // rewind
+		if (write_result != FR_OK) {
+			goto error_skip;
+		}
+		// modify
 		cli();
 		ExtMem_attach();
 		memcpy(&tmpbuf[offset], buf, sizeof(tmpbuf) - offset);
 		ExtMem_detach();
 		sei();
+		// write
 		if ((write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
-		buf = (uint8_t*)buf + offset;
+		buf = (uint8_t*)buf + (sizeof(tmpbuf) - offset);
 		len = len - offset;
 	}
 
-	// middle blocks
+	// process middle sectors
 	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
 		cli();
 		ExtMem_attach();
@@ -319,17 +335,24 @@ void em_disk_write(void)
 	}
 	len = len % sizeof(tmpbuf);
 
-	// last block
+	// process the last sector
 	if (len > 0) {
+		// read
 		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
+		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf)); // rewind
+		if (write_result != FR_OK) {
+			goto error_skip;
+		}
+		// modify
 		cli();
 		ExtMem_attach();
 		memcpy(tmpbuf, buf, len);
 		ExtMem_detach();
 		sei();
+		// write
 		write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes);
 	}
 
