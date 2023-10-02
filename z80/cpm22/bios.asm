@@ -302,19 +302,18 @@ INIT_SYSTEM_AREA:
 ;       OUT: C = default DISK number
 ;******************************************************************
 WBOOT:
+        LD SP, CCP_ENTRY        ; Init SP
+
         ;
         ; Reload CCP and BDOS
         ;
-        ; Load CPP+BDOS
-        CALL DISK_READ_SUB
-        OR A
-        JR NZ, BOOT_ERROR
         LD HL, RELOAD_MSG
         CALL PRINT_STR
 
         ; Open DISK
         LD C, 0
         CALL SELDSK
+
         ; Set DMA address
         LD BC, 0x0080
         CALL SETDMA
@@ -340,6 +339,11 @@ WBOOT:
         LD HL, CCP_BDOS_LENGTH
         OUT (C), H
         OUT (C), L
+
+        ; Load CPP+BDOS
+        CALL DISK_READ_SUB
+        OR A
+        JR NZ, BOOT_ERROR
 
         ;
         CALL INIT_SYSTEM_AREA
