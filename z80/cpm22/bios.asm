@@ -158,7 +158,7 @@ DEBUG_INFO_END:
         .dw     ISR_04          ; INT 4 : Debugger
  
 ;******************************************************************
-;   Interrupt handler
+;   Interrupt handler (Must be 256 bytes alignment)
 ;******************************************************************
 ;
 ;       DISK READ complete
@@ -243,8 +243,6 @@ BOOT:
         OUT (PORT_DBG_INT), A           ; INT 4
         EI
 
-        LD A, 0xff
-        OUT (PORT_LED), A
         OUT (PORT_CONIN_BUF), A         ; Flush CONIN
         OUT (PORT_CONOUT_BUF), A        ; Flush CONOUT
 
@@ -276,20 +274,19 @@ BOOT_MSG:
         .db     0
 
 INIT_SYSTEM_AREA:
-        ; Set 'JP _WBOOT' at 0x0000
         LD A, 0xC3
+
+        ; Set 'JP _WBOOT' at 0x0000
         LD (0x0000), A
         LD HL, _WBOOT
         LD (0x0001), HL
 
         ; Set 'JP BDOS_ENTRY + 6' at 0x0005
-        LD A, 0xC3
         LD (0x0005), A
         LD HL, BDOS_ENTRY + 6 
         LD (0x0006), HL
 
         ; Set 'JP DEBUG_ENTRY' at 0x0038 for debugger
-        LD A, 0xC3
         LD (0x0038), A
         LD HL, DEBUGGER
         LD (0x0039), HL
@@ -302,7 +299,7 @@ INIT_SYSTEM_AREA:
 ;       OUT: C = default DISK number
 ;******************************************************************
 WBOOT:
-        LD SP, CCP_ENTRY        ; Init SP
+        LD SP, CCP_ENTRY        ; Init SP to ensure reload
 
         ;
         ; Reload CCP and BDOS
@@ -310,7 +307,7 @@ WBOOT:
         LD HL, RELOAD_MSG
         CALL PRINT_STR
 
-        ; Open DISK
+        ; Open DISK A:
         LD C, 0
         CALL SELDSK
 
@@ -318,20 +315,21 @@ WBOOT:
         LD BC, 0x0080
         CALL SETDMA
 
-        ; Set DISK read position
-        IN A, (PORT_DSKRDPOS)   ; Reset sequencer
-        XOR A
-        OUT (PORT_DSKRDPOS), A
-        OUT (PORT_DSKRDPOS), A
-        OUT (PORT_DSKRDPOS), A
-        OUT (PORT_DSKRDPOS), A
-
         ; Set load address
         LD C, PORT_DSKRDBUF
         IN A, (C)               ; Reset sequencer
         LD HL, CCP_ENTRY
         OUT (C), H
         OUT (C), L
+
+        ; Set DISK read position
+        LD C, PORT_DSKRDPOS
+        IN A, (C)               ; Reset sequencer
+        XOR A
+        OUT (C), A
+        OUT (C), A
+        OUT (C), A
+        OUT (C), A
 
         ; Set DISK read length (size of CPP+BDOS)
         LD C, PORT_DSKRDLEN
@@ -493,6 +491,7 @@ SELDSK:
         LD HL, DPH00            ; Return HL = DPH
         POP AF
         RET
+
         ; Error
 DISK_ERROR:
         ; Force the default drive to A:.
@@ -706,23 +705,17 @@ READ_DMA_BUFFER:
 ;================================================
 DISK_READ_SUB:
         XOR A
+        DI
         LD (IS_READ_DONE), A    ; reset flag
         OUT (PORT_DSKRD), A     ; read disk
+        EI
+
 WAIT_READ_COMPLETE:
-.if 1
-        ; Wait for complete interrupt
         LD A, (IS_READ_DONE)
         OR A
         JR Z, WAIT_READ_COMPLETE
         IN A, (PORT_DSKRD)      ; Check read status
         RET
-.else
-        HALT
-        IN A, (PORT_DSKRD)      ; Check read status
-        CP 1
-        JR Z, WAIT_READ_COMPLETE
-        RET
-.endif
 
 ;******************************************************************
 ;   14: Write a record to DISK
@@ -818,10 +811,11 @@ WRITE_EXIT:
 ;================================================
 DISK_WRITE_SUB:
         XOR A
+        DI
         LD (IS_WRITE_DONE), A   ; reset flag
         OUT (PORT_DSKWR), A
+        EI
 
-        ; Wait for complete interrupt
 WAIT_WRITE_COMPLETE:
         LD A, (IS_WRITE_DONE)
         OR A

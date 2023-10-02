@@ -92,7 +92,8 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 #endif
 		PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
 		return;
-	}	
+	}
+#if 0
 	// Set file pointer to beginning of file
 	if (pf_lseek(0) != FR_OK) {
 		disk_result = 1;		// error
@@ -102,6 +103,7 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 		PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
 		return;
 	}
+#endif
 	disk_result = 0;			// success
 
 	rd.state = IDLE;
@@ -286,16 +288,17 @@ void em_disk_write(void)
 	void *buf = wr.buffer;
 	UINT len = wr.length;
 
-	// move to the first sector
+	// move to the first sector to write if necessary
+	DWORD pos = wr.position;
 	if (offset > 0) {
-		write_result = pf_lseek(wr.position - offset);	// seek previous block boundary
-	} else {
-		write_result = pf_lseek(wr.position);
-	}	
-	if (write_result != FR_OK) {
-		goto error_skip;
+		pos -= offset;			// set previous block boundary
 	}
-	
+	if (pos != file_system.fptr) {
+		if ((write_result = pf_lseek(pos)) != FR_OK) {
+			goto error_skip;
+		}		
+	}
+
 	// process the first sector
 	if (offset > 0) {
 		// read
@@ -448,10 +451,12 @@ void em_disk_read(void)
 	}
 	rd.state = DOING;
 
-	// CAUTION: don't consume long time
-	read_result = pf_lseek(rd.position);
-	if (read_result != FR_OK) {
-		goto error_skip;
+	// move to the first sector to read if necessary
+	if (file_system.fptr != rd.position) {
+		read_result = pf_lseek(rd.position);
+		if (read_result != FR_OK) {
+			goto error_skip;
+		}
 	}
 
 	void *buf = rd.buffer;
