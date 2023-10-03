@@ -742,20 +742,6 @@ WRITE:
         LD BC, 128
         LDIR
 
-        ; Set destination buffer address
-        LD C, PORT_DSKWRBUF
-        IN A, (C)               ; Reset sequencer
-        LD HL, DMABUF
-        OUT (C), H
-        OUT (C), L
-
-        ; Set write length (128byte)
-        LD C, PORT_DSKWRLEN
-        IN A, (C)               ; Reset sequencer
-        LD HL, 128
-        OUT (C), H
-        OUT (C), L
-
         ; DE,HL = TRACK * SPT + SECTOR
         LD HL, (CURRENT_TRACK_NO)
         LD DE, DPB00_SPT
@@ -780,6 +766,20 @@ WRITE:
         LD A,0
         RRA
         OUT (PORT_DSKWRPOS), A
+
+        ; Set destination buffer address
+        LD C, PORT_DSKWRBUF
+        IN A, (C)               ; Reset sequencer
+        LD HL, DMABUF
+        OUT (C), H
+        OUT (C), L
+
+        ; Set write length (128byte)
+        LD C, PORT_DSKWRLEN
+        IN A, (C)               ; Reset sequencer
+        LD HL, 128
+        OUT (C), H
+        OUT (C), L
 
         ; Write a SD card sector (512bytes)
 RETRY_WRITE:

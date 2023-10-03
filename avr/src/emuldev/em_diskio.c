@@ -6,15 +6,17 @@
  */ 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "em_diskio.h"
 #include "petitfs/pff.h"
 #include "petitfs/diskio.h"
 #include "xconsoleio.h"
 #include "z80io.h"
 
-#define DEBUG_PRINT		0
-#define DEBUG_PRINT_WR	0
-#define DEBUG_PRINT_RD	0
+#define DEBUG_PRINT				1
+#define DEBUG_PRINT_WR			1
+#define DEBUG_PRINT_WR_DATA		1
+#define DEBUG_PRINT_RD			1
 
 //=================================================================
 // DISK I/O emulated device
@@ -153,7 +155,7 @@ void OUT_##INTNUM##_##FUNC(uint8_t data)\
 		dt_##FUNC |= data;\
 	default:\
 		st_##FUNC = 0;\
-		/*x_printf("%s=%08x\n", QSTRING(FUNC), dt_##FUNC);*/ \
+		x_printf("   %s=%08lx\n", QSTRING(FUNC), dt_##FUNC); \
 		break;\
 	}\
 }
@@ -177,7 +179,7 @@ void OUT_##INTNUM##_##FUNC(uint8_t data)\
 		dt_##FUNC |= data;\
 	default:\
 		st_##FUNC = 0;\
-		/*x_printf("%s=%04x\n", QSTRING(FUNC), dt_##FUNC);*/ \
+		x_printf("   %s=%04x\n", QSTRING(FUNC), dt_##FUNC); \
 		break;\
 	}\
 }
@@ -218,7 +220,7 @@ uint8_t IN_0E_DSK_WriteStatus()
 void OUT_0E_DSK_Write(uint8_t data)
 {
 #if DEBUG_PRINT_WR
-	x_printf("WRITE:%d->", wr.state);
+//	x_printf("WRITE:%d->", wr.state);
 #endif
 	// Reject if READ is on going
 	if (rd.state == DOING || rd.state == REQUESTING) {
@@ -241,7 +243,7 @@ void OUT_0E_DSK_Write(uint8_t data)
 		}
 	}
 #if DEBUG_PRINT_WR
-	x_printf("%d\n", wr.state);
+//	x_printf("%d\n", wr.state);
 #endif
 }
 
@@ -299,6 +301,9 @@ void em_disk_write(void)
 		}		
 	}
 
+#ifdef DEBUG_PRINT_WR_DATA
+	x_puts("");//debug
+#endif
 	// process the first sector
 	if (offset > 0) {
 		// read
@@ -322,6 +327,21 @@ void em_disk_write(void)
 		}
 		buf = (uint8_t*)buf + (sizeof(tmpbuf) - offset);
 		len = len - offset;
+#ifdef DEBUG_PRINT_WR_DATA
+		for (int i = offset; i < sizeof(tmpbuf) - offset; i++) {
+			char x = tmpbuf[i];
+			if (!isprint(x)) {
+				x = '.';
+			}
+			x_putchar(x);
+		}
+		x_puts("");
+		for (int i = offset; i < sizeof(tmpbuf) - offset; i++) {
+			x_printf("%02x ", tmpbuf[i]);
+			if (i % 32 == 31) x_puts("");
+		}
+		x_puts("");
+#endif
 	}
 
 	// process middle sectors
@@ -335,8 +355,24 @@ void em_disk_write(void)
 			goto error_skip;
 		}
 		buf = (uint8_t*)buf + sizeof(tmpbuf);
+#ifdef DEBUG_PRINT_WR_DATA
+		for (int i = 0; i < sizeof(tmpbuf); i++) {
+			char x = tmpbuf[i];
+			if (!isprint(x)) {
+				x = '.';
+			}
+			x_putchar(x);
+		}
+		x_puts("");
+		for (int i = 0; i < sizeof(tmpbuf); i++) {
+			x_printf("%02x ", tmpbuf[i]);
+			if (i % 32 == 31) x_puts("");
+		}
+		x_puts("");
+#endif
 	}
 	len = len % sizeof(tmpbuf);
+	pf_write(0, 0, &bytes);
 
 	// process the last sector
 	if (len > 0) {
@@ -357,11 +393,27 @@ void em_disk_write(void)
 		sei();
 		// write
 		write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes);
+		pf_write(0, 0, &bytes);
+#ifdef DEBUG_PRINT_WR_DATA
+		for (int i = 0; i < len; i++) {
+			char x = tmpbuf[i];
+			if (!isprint(x)) {
+				x = '.';
+			}
+			x_putchar(x);
+		}
+		x_puts("");
+		for (int i = 0; i < len; i++) {
+			x_printf("%02x ", tmpbuf[i]);
+			if (i % 32 == 31) x_puts("");
+		}
+		x_puts("");
+#endif
 	}
 
 error_skip:
 	#if DEBUG_PRINT_WR
-	x_printf(">>>WRITE:%06lx : %02x\n\n", wr.position, write_result);
+	x_printf("!!!WRITE:%06lx : %02x\n", wr.position, write_result);
 	#endif
 	if (int_level_write < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
@@ -399,7 +451,7 @@ uint8_t IN_13_DSK_ReadStatus()
 void OUT_13_DSK_Read(uint8_t data)
 {
 #if DEBUG_PRINT_RD
-	x_printf("READ:%d->", rd.state);
+//	x_printf("READ:%d->", rd.state);
 #endif
 	// Reject if WRITE is on going
 	if (wr.state == DOING || wr.state == REQUESTING) {
@@ -422,7 +474,7 @@ void OUT_13_DSK_Read(uint8_t data)
 		}
 	}
 #if DEBUG_PRINT_RD
-	x_printf("%d\n", rd.state);
+//	x_printf("%d\n", rd.state);
 #endif
 }
 
@@ -489,7 +541,7 @@ void em_disk_read(void)
 	
 error_skip:
 #if DEBUG_PRINT_RD
-	x_printf(">>>READ:%06lx : %02x\n\n", rd.position, read_result);
+	x_printf(">>>READ:%06lx : %02x\n", rd.position, read_result);
 #endif
 	if (int_level_read < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
