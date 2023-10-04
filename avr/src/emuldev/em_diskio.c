@@ -13,10 +13,10 @@
 #include "xconsoleio.h"
 #include "z80io.h"
 
-#define DEBUG_PRINT				1
-#define DEBUG_PRINT_WR			1
-#define DEBUG_PRINT_WR_DATA		1
-#define DEBUG_PRINT_RD			1
+#define DEBUG_PRINT				0
+#define DEBUG_PRINT_WR			0
+#define DEBUG_PRINT_WR_DATA		0
+#define DEBUG_PRINT_RD			0
 
 //=================================================================
 // DISK I/O emulated device
@@ -85,6 +85,7 @@ static const char* get_filename(int disk_no)
 
 void OUT_0A_DSK_SelectDisk(uint8_t data)
 {
+		PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
 	// Open file
 	const char *filename = get_filename(data);
 	if (pf_open(filename) != FR_OK) {
@@ -92,20 +93,8 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 #if DEBUG_PRINT
 		x_printf("%s open error\n", filename);
 #endif
-		PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
 		return;
 	}
-#if 0
-	// Set file pointer to beginning of file
-	if (pf_lseek(0) != FR_OK) {
-		disk_result = 1;		// error
-#if DEBUG_PRINT
-		x_puts("seek error");
-#endif
-		PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
-		return;
-	}
-#endif
 	disk_result = 0;			// success
 
 	rd.state = IDLE;
@@ -113,10 +102,10 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 	read_result  = FR_OK;
 	write_result = FR_OK;
 
+	PORTE |=  _BV(PORTE5);			// DEBUG: BLUE LED OFF PE5
 #if DEBUG_PRINT
 	x_printf("###SELSDK: %s\n", filename);
 #endif
-	PORTE |=  _BV(PORTE5);			// DEBUG: BLUE LED OFF PE5
 }
 
 uint8_t IN_0A_DSK_GetDiskStatus()
@@ -155,7 +144,7 @@ void OUT_##INTNUM##_##FUNC(uint8_t data)\
 		dt_##FUNC |= data;\
 	default:\
 		st_##FUNC = 0;\
-		x_printf("   %s=%08lx\n", QSTRING(FUNC), dt_##FUNC); \
+		/*x_printf("   %s=%08lx\n", QSTRING(FUNC), dt_##FUNC);*/ \
 		break;\
 	}\
 }
@@ -179,7 +168,7 @@ void OUT_##INTNUM##_##FUNC(uint8_t data)\
 		dt_##FUNC |= data;\
 	default:\
 		st_##FUNC = 0;\
-		x_printf("   %s=%04x\n", QSTRING(FUNC), dt_##FUNC); \
+		/*x_printf("   %s=%04x\n", QSTRING(FUNC), dt_##FUNC);*/ \
 		break;\
 	}\
 }
@@ -301,42 +290,44 @@ void em_disk_write(void)
 		}		
 	}
 
-#ifdef DEBUG_PRINT_WR_DATA
+#if DEBUG_PRINT_WR_DATA
 	x_puts("");//debug
 #endif
-	// process the first sector
+	// process the first sector which is unaligned
 	if (offset > 0) {
 		// read
 		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
-		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf)); // rewind
+		//rewind
+		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf));
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
 		// modify
+		unsigned int plen = sizeof(tmpbuf) - offset;
 		cli();
 		ExtMem_attach();
-		memcpy(&tmpbuf[offset], buf, sizeof(tmpbuf) - offset);
+		memcpy(&tmpbuf[offset], buf, plen);
 		ExtMem_detach();
 		sei();
 		// write
 		if ((write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
-		buf = (uint8_t*)buf + (sizeof(tmpbuf) - offset);
-		len = len - offset;
-#ifdef DEBUG_PRINT_WR_DATA
-		for (int i = offset; i < sizeof(tmpbuf) - offset; i++) {
-			char x = tmpbuf[i];
-			if (!isprint(x)) {
-				x = '.';
+		buf = (uint8_t*)buf + plen;
+		len -= plen;
+#if DEBUG_PRINT_WR_DATA
+		for (unsigned int i = offset; i < plen; i++) {
+			if (!isprint(tmpbuf[i])) {
+				x_putchar('.');
+			} else {
+				x_putchar(tmpbuf[i]);
 			}
-			x_putchar(x);
 		}
 		x_puts("");
-		for (int i = offset; i < sizeof(tmpbuf) - offset; i++) {
+		for (unsigned int i = offset; i < plen; i++) {
 			x_printf("%02x ", tmpbuf[i]);
 			if (i % 32 == 31) x_puts("");
 		}
@@ -345,7 +336,8 @@ void em_disk_write(void)
 	}
 
 	// process middle sectors
-	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
+	unsigned int n = len / sizeof(tmpbuf);
+	for (unsigned int i = 0; i < n; i++) {
 		cli();
 		ExtMem_attach();
 		memcpy(tmpbuf, buf, sizeof(tmpbuf));
@@ -355,26 +347,29 @@ void em_disk_write(void)
 			goto error_skip;
 		}
 		buf = (uint8_t*)buf + sizeof(tmpbuf);
-#ifdef DEBUG_PRINT_WR_DATA
+		len -= sizeof(tmpbuf);
+#if DEBUG_PRINT_WR_DATA
 		for (int i = 0; i < sizeof(tmpbuf); i++) {
-			char x = tmpbuf[i];
-			if (!isprint(x)) {
-				x = '.';
+			if (!isprint(tmpbuf[i])) {
+				x_putchar('.');
+			} else {
+				x_putchar(tmpbuf[i]);
 			}
-			x_putchar(x);
 		}
 		x_puts("");
-		for (int i = 0; i < sizeof(tmpbuf); i++) {
+		for (unsigned int i = 0; i < sizeof(tmpbuf); i++) {
 			x_printf("%02x ", tmpbuf[i]);
 			if (i % 32 == 31) x_puts("");
 		}
 		x_puts("");
 #endif
 	}
-	len = len % sizeof(tmpbuf);
-	pf_write(0, 0, &bytes);
+	if (offset > 0 || n > 0) {
+		pf_write(0, 0, &bytes);		
+	}
 
 	// process the last sector
+	len %= sizeof(tmpbuf);
 	if (len > 0) {
 		// read
 		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
@@ -394,16 +389,16 @@ void em_disk_write(void)
 		// write
 		write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes);
 		pf_write(0, 0, &bytes);
-#ifdef DEBUG_PRINT_WR_DATA
-		for (int i = 0; i < len; i++) {
-			char x = tmpbuf[i];
-			if (!isprint(x)) {
-				x = '.';
+#if DEBUG_PRINT_WR_DATA
+		for (unsigned int i = 0; i < len; i++) {
+			if (!isprint(tmpbuf[i])) {
+				x_putchar('.');
+			} else {
+				x_putchar(tmpbuf[i]);
 			}
-			x_putchar(x);
 		}
 		x_puts("");
-		for (int i = 0; i < len; i++) {
+		for (unsigned int i = 0; i < len; i++) {
 			x_printf("%02x ", tmpbuf[i]);
 			if (i % 32 == 31) x_puts("");
 		}
