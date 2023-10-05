@@ -8,7 +8,7 @@ You might be wondering why I chose the Z80 today. Well, it happened to be discov
 However, rather than simply replicating a single-board microcontroller system from the 1980s, I've decided to take a different approach. Reproducing such a system lacks novelty and excitement, not to mention the difficulty of sourcing the necessary parts. 
 
 Hence, I've devised the following design principles:
-1. A hybrid configuration utilizing both [Z80A](https://www.zilog.com/docs/z80/um0080.pdf) and [ATmega128](https://www.microchip.com/en-us/product/ATmega128) (AVR) microcontrollers.
+1. A hybrid configuration utilizing both [Z80A](https://www.zilog.com/docs/z80/um0080.pdf) and [ATmega128-16AU](https://www.microchip.com/en-us/product/ATmega128) (AVR) microcontrollers.
 2. I won't use ROM; instead, a 64KB SRAM will be shared between the Z80A and AVR.
 3. The AVR microcontroller will manage the Z80's bootstrap code placement and emulate external I/O.
 4. Design circuits using components that are as easy to procure as possible. (As of 2023, mainly in the Japanese electronic parts market.)
@@ -38,6 +38,10 @@ Hence, I've devised the following design principles:
 ### Prototype board
   ![](doc/Fig/20230506.jpeg)
 
+### PCB
+  ![](doc/Fig/PCB2.jpeg)  
+  ![](doc/Fig/PCB1.jpeg)  
+
 ### Schematic diagram
 ![](schematics/KiCad/SVG/Z80ATmega128.svg)
 ![](schematics/KiCad/SVG/Z80ATmega128-Reset.svg)
@@ -46,4 +50,3 @@ Hence, I've devised the following design principles:
 
 ## License
 GPLv3
-
