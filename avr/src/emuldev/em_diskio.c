@@ -13,7 +13,8 @@
 #include "xconsoleio.h"
 #include "z80io.h"
 
-#define DEBUG_PRINT				0
+#define DEBUG_PRINT_STATE		0
+#define DEBUG_PRINT_OPEN		0
 #define DEBUG_PRINT_WR			0
 #define DEBUG_PRINT_WR_DATA		0
 #define DEBUG_PRINT_RD			0
@@ -85,16 +86,31 @@ static const char* get_filename(int disk_no)
 
 void OUT_0A_DSK_SelectDisk(uint8_t data)
 {
-		PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
+#if DEBUG_PRINT_OPEN
+	x_printf("###SELSDK: %d\n", data);
+#endif
+	static int selected_disk = -1;
+	if (selected_disk == data) {
+		// already opened
+#if DEBUG_PRINT_OPEN
+		x_printf("  Skip\n");
+#endif
+		return;
+	}
+
+	PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
+
 	// Open file
 	const char *filename = get_filename(data);
 	if (pf_open(filename) != FR_OK) {
 		disk_result = 1;		// error
-#if DEBUG_PRINT
+		selected_disk = -1;
+#if DEBUG_PRINT_OPEN
 		x_printf("%s open error\n", filename);
 #endif
 		return;
 	}
+	selected_disk = data;
 	disk_result = 0;			// success
 
 	rd.state = IDLE;
@@ -103,9 +119,6 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 	write_result = FR_OK;
 
 	PORTE |=  _BV(PORTE5);			// DEBUG: BLUE LED OFF PE5
-#if DEBUG_PRINT
-	x_printf("###SELSDK: %s\n", filename);
-#endif
 }
 
 uint8_t IN_0A_DSK_GetDiskStatus()
@@ -208,8 +221,8 @@ uint8_t IN_0E_DSK_WriteStatus()
 
 void OUT_0E_DSK_Write(uint8_t data)
 {
-#if DEBUG_PRINT_WR
-//	x_printf("WRITE:%d->", wr.state);
+#if DEBUG_PRINT_STATE
+	x_printf("WRITE:%d->", wr.state);
 #endif
 	// Reject if READ is on going
 	if (rd.state == DOING || rd.state == REQUESTING) {
@@ -231,8 +244,8 @@ void OUT_0E_DSK_Write(uint8_t data)
 			break;
 		}
 	}
-#if DEBUG_PRINT_WR
-//	x_printf("%d\n", wr.state);
+#if DEBUG_PRINT_STATE
+	x_printf("%d\n", wr.state);
 #endif
 }
 
@@ -407,9 +420,9 @@ void em_disk_write(void)
 	}
 
 error_skip:
-	#if DEBUG_PRINT_WR
+#if DEBUG_PRINT_WR
 	x_printf("!!!WRITE:%06lx : %02x\n", wr.position, write_result);
-	#endif
+#endif
 	if (int_level_write < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
 		Z80_EXTINT_low(int_level_write << 1);
@@ -445,8 +458,8 @@ uint8_t IN_13_DSK_ReadStatus()
 
 void OUT_13_DSK_Read(uint8_t data)
 {
-#if DEBUG_PRINT_RD
-//	x_printf("READ:%d->", rd.state);
+#if DEBUG_PRINT_STATE
+	x_printf("READ:%d->", rd.state);
 #endif
 	// Reject if WRITE is on going
 	if (wr.state == DOING || wr.state == REQUESTING) {
@@ -468,8 +481,8 @@ void OUT_13_DSK_Read(uint8_t data)
 			break;
 		}
 	}
-#if DEBUG_PRINT_RD
-//	x_printf("%d\n", rd.state);
+#if DEBUG_PRINT_STATE
+	x_printf("%d\n", rd.state);
 #endif
 }
 
