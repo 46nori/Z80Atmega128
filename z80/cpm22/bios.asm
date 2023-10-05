@@ -12,7 +12,6 @@ CCP_BDOS_LENGTH .equ    0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
 IOBYTE          .equ    0x0003
 CURRENT_DISK    .equ    0x0004
-MAX_DISK_NUM    .equ    0
 
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00    ; Get a character from CONIN
@@ -480,8 +479,6 @@ SELDSK:
         LD (IS_CACHED), A       ; Clear read cache
 
         LD A, C
-        CP MAX_DISK_NUM
-        JR C, DISK_ERROR
         OUT (PORT_SELDSK), A    ; Open DISK
         IN A, (PORT_DSKSTS)     ; Check DISK status
         OR A
