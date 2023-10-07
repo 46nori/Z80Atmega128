@@ -55,18 +55,18 @@ RUN sudo apt-get install -y sdcc
 #
 #   z88dk (CP/M only)
 #
-ENV Z88DK_PATH="/opt/z88dk"
-
-RUN sudo apt-get install -y m4 bison flex libxml2-dev subversion libtemplate-perl cpanminus
-RUN sudo apt-get install -y ragel re2c dos2unix texinfo texi2html gdb curl cpanminus ccache libboost-all-dev libmodern-perl-perl libyaml-perl liblocal-lib-perl libcapture-tiny-perl libpath-tiny-perl libtest-differences-perl libtext-table-perl libdata-hexdump-perl libregexp-common-perl libclone-perl
-RUN cpanm App::Prove Capture::Tiny::Extended CPU::Z80::Assembler Data::HexDump File::Path List::Uniq Modern::Perl Object::Tiny::RW Test::Cmd Test::Cmd::Common Test::Harness Test::HexDifferences Text::Table YAML::Tiny
-RUN git clone --recursive https://github.com/z88dk/z88dk.git ${Z88DK_PATH}
-RUN cpanm -l $HOME/perl5 --no-wget local::lib Template::Plugin::YAML 
-
-RUN cd ${Z88DK_PATH} \
-	&& eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)" \
-    && chmod 777 build.sh \
-    && BUILD_SDCC=1 BUILD_SDCC_HTTP=1 ./build.sh -p cpm
-
-ENV PATH="${Z88DK_PATH}/bin:${PATH}" \
-    ZCCCFG="${Z88DK_PATH}/lib/config/"
+#ENV Z88DK_PATH="/opt/z88dk"
+#
+#RUN sudo apt-get install -y m4 bison flex libxml2-dev subversion libtemplate-perl cpanminus
+#RUN sudo apt-get install -y ragel re2c dos2unix texinfo texi2html gdb curl cpanminus ccache libboost-all-dev libmodern-perl-perl libyaml-perl liblocal-lib-perl libcapture-tiny-perl libpath-tiny-perl libtest-differences-perl libtext-table-perl libdata-hexdump-perl libregexp-common-perl libclone-perl
+#RUN cpanm App::Prove Capture::Tiny::Extended CPU::Z80::Assembler Data::HexDump File::Path List::Uniq Modern::Perl Object::Tiny::RW Test::Cmd Test::Cmd::Common Test::Harness Test::HexDifferences Text::Table YAML::Tiny
+#RUN git clone --recursive https://github.com/z88dk/z88dk.git ${Z88DK_PATH}
+#RUN cpanm -l $HOME/perl5 --no-wget local::lib Template::Plugin::YAML 
+#
+#RUN cd ${Z88DK_PATH} \
+#	&& eval "$(perl -I$HOME/perl5/lib/perl5 -Mlocal::lib)" \
+#    && chmod 777 build.sh \
+#    && BUILD_SDCC=1 BUILD_SDCC_HTTP=1 ./build.sh -p cpm
+#
+#ENV PATH="${Z88DK_PATH}/bin:${PATH}" \
+#    ZCCCFG="${Z88DK_PATH}/lib/config/"
