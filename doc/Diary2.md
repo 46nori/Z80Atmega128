@@ -715,20 +715,20 @@
   - それ以外のファイルは`cpmcp`コマンドでイメージファイルに埋め込む。
 
 ## 2023/10/07
-- CP/Mの自律起動のサポート
+- CP/Mの自律起動のサポートを行った。仕組みは以下。
   - AVRのEEPROMにCP/M BIOSを置き、起動時にそれをSRAMにロードしてBIOSの`BOOT:`を呼び出す。
   - `BOOT:`は、SD CardからCCP+BDOSを読み込んでCCPを起動する。(`WBOOT:`でやることと同じ。)
 - CP/M BIOSの改造
-  - WBOOTでCCP+BDOSを読み込むようにする。
-- BIOSのINTEL HEX出力
-  - Makefileへのbios.ihxターゲットの追加
-- AVRの簡易モニタの機能追加
+  - `BOOT:`でCCP+BDOSを読み込むようにする。
+- BIOSのINTEL HEXファイル生成
+  - Makefileへの`bios.ihx`ターゲットの追加
+- AVRの簡易モニタへの機能追加
   - EEPROMのダンプ機能(`de`コマンド)
   - SRAMからEEPROMへのSAVE機能(`esave`コマンド)
   - EEPROMからSRAMへのLOAD機能(`eload`コマンド) さらに外から使えるようにする。
 - AVRのシステム起動時に、`eload`相当の関数を呼び出して、メモリにロードし、0x0000に`JP 0xf200`を書き込み、Z80にリセットをかける。
-- 準備
-  1. bios.ihxを生成
+- 準備1 (EEPROMへのBIOS書き込み)
+  1. `z80/cpm22`でmakeして`bios.ihx`を生成。
   2. `xload`コマンドで`bios.ihx`をXMODEM転送。0xf200にロードされる。
   3. `esave`コマンドでBIOSをEEPROMに書き込む。
     ```
@@ -739,4 +739,7 @@
     >esave 0 $f200 2816
     >
     ```
-  4. SD Cardはには、cpm22/imageでmakeして生成されるSIDK00.IMGを
+- 準備2 (SD Card)
+  1. FAT16でフォーマットしたmicroSD Cardを用意。
+  2. `z80/cpm22/image`でmakeして生成され`るDISK00.IMG`を、ルートディレクトリにコピーしておく。(00を01にするとB:ドライブとして認識される。以後、P:ドライブまで追加可能。)
+- SD Cardを入れて、本体をリセットするとCP/Mが起動するようになる。
