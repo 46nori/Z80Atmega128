@@ -701,9 +701,9 @@
 ## 2023/10/06
 - 46nori以外は、Pull Requestなしでmainブランチにpushできないようにした。
   1. .gthub/CODEOWNERSに以下の設定し、mainにpushする。
-    ```
-    * @46nori
-    ```
+     ```
+     * @46nori
+     ```
   2. GitHub settings/branchesでBranch Protection ruleを`main`で作成し、以下にチェックを入れておく。
     - [x] Require a pull request before merging
       - [x] Require approvals
@@ -713,3 +713,30 @@
 - SD Cardに置くイメージファイル(IMAGE00.IMG)を、[cpm22-b.zip](http://www.cpm.z80.de/download/cpm22-b.zip)から生成するように変更した。
   - この中に入っているCPM.SYSは62K CP/Mなので、そのまま使用できる。`mkfs.cpm`コマンドでイメージファイルの予約トラックに書き込む。
   - それ以外のファイルは`cpmcp`コマンドでイメージファイルに埋め込む。
+
+## 2023/10/07
+- CP/Mの自律起動のサポート
+  - AVRのEEPROMにCP/M BIOSを置き、起動時にそれをSRAMにロードしてBIOSの`BOOT:`を呼び出す。
+  - `BOOT:`は、SD CardからCCP+BDOSを読み込んでCCPを起動する。(`WBOOT:`でやることと同じ。)
+- CP/M BIOSの改造
+  - WBOOTでCCP+BDOSを読み込むようにする。
+- BIOSのINTEL HEX出力
+  - Makefileへのbios.ihxターゲットの追加
+- AVRの簡易モニタの機能追加
+  - EEPROMのダンプ機能(`de`コマンド)
+  - SRAMからEEPROMへのSAVE機能(`esave`コマンド)
+  - EEPROMからSRAMへのLOAD機能(`eload`コマンド) さらに外から使えるようにする。
+- AVRのシステム起動時に、`eload`相当の関数を呼び出して、メモリにロードし、0x0000に`JP 0xf200`を書き込み、Z80にリセットをかける。
+- 準備
+  1. bios.ihxを生成
+  2. `xload`コマンドで`bios.ihx`をXMODEM転送。0xf200にロードされる。
+  3. `esave`コマンドでBIOSをEEPROMに書き込む。
+    ```
+    >xload
+    Start XMODEM within 90s...
+    
+    Received 2816 bytes.
+    >esave 0 $f200 2816
+    >
+    ```
+  4. SD Cardはには、cpm22/imageでmakeして生成されるSIDK00.IMGを

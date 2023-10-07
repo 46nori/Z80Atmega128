@@ -26,6 +26,7 @@ extern void Z80_EXTINT_low(uint8_t vector);
 extern void Z80_EXTINT_High(void);
 extern void Z80_CLRWAIT(void);
 extern void Z80_HALT(void);
+extern void Z80_RESET_GO(uint8_t *adr);
 extern int Is_Z80_BUSRQ(void);
 extern int Is_Z80_BUSACK(void);
 extern int Is_Z80_HALT(void);

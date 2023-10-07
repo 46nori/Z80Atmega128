@@ -13,6 +13,9 @@ TMPDIR	= ./tmp
 cpm.ihx: $(TMPDIR)/cpm22.rel ipl.rel bios.rel
 	$(LD) -i $@ ipl.rel $(TMPDIR)/cpm22.rel bios.rel
 
+bios.ihx: bios.rel
+	$(LD) -i $@ $<
+
 %.rel:%.asm
 	$(AS) -l -o $(ASFLAGS) $<
 

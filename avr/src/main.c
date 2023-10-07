@@ -32,7 +32,7 @@
 #include "xconsoleio.h"
 #include "monitor.h"
 #include "emuldev/emuldev.h"
-
+#include "z80io.h"
 
 int main (void)
 {
@@ -43,5 +43,10 @@ int main (void)
 	sei();				// Enable interrupt
 
 	/* Insert application code here, after the board has been initialized. */
+	if (1) {
+		// Load CP/M BIOS from EEPROM
+		load_eeprom_extmem((uint8_t *)0xf200, 0, 2816);
+		Z80_RESET_GO((uint8_t *)0xf200);
+	}
 	monitor();
 }

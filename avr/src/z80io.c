@@ -101,6 +101,22 @@ void Z80_NMI(void) {
 }
 
 //
+// Reset Z80 and go to specified address 
+//   adr is jump address
+//   0x0000-0x0003 is overwritten with 'JP adr'.
+//
+void Z80_RESET_GO(uint8_t *adr) {
+	SET_BIT(MCUCR, SRE);		// Enable XMEM
+	uint8_t *p = (uint8_t *)ExtMem_map();	// 0x0000
+	p[0] = 0xc3;							// JP
+	p[1] = (uint16_t)adr & 0xff;			// Low address
+	p[2] = ((uint16_t)adr >> 8) & 0xff;		// High address
+	ExtMem_unmap();
+	CLR_BIT(MCUCR, SRE);		// Disable XMEM
+	Z80_RESET();
+}
+
+//
 // Invoke /XINT (PD4) for Z80 INT
 //
 // vector should be set as following:

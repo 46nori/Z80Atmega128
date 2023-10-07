@@ -11,7 +11,7 @@ BIOS_ENTRY      .equ    CCP_ENTRY+0x1600
 CCP_BDOS_LENGTH .equ    0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
 IOBYTE          .equ    0x0003
-CURRENT_DISK    .equ    0x0004
+LOGIN_DISK_NO   .equ    0x0004
 
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00    ; Get a character from CONIN
@@ -224,9 +224,10 @@ ISR_04: EI                      ; do nothing. Just release HALT.
 ;******************************************************************
 BOOT:
         DI
-        LD SP, CCP_ENTRY
+        LD SP, CCP_ENTRY                ; Set SP to ensure initialization
 
-        ; Interrupt setting of emulated device
+        ; Init emulated I/O device
+        ; Interrupt setting
         LD A, VECT_TABLE >> 8
         LD I, A
         IM 2
@@ -241,29 +242,33 @@ BOOT:
         INC A
         OUT (PORT_DBG_INT), A           ; INT 4
         EI
-
+        ; 
         OUT (PORT_CONIN_BUF), A         ; Flush CONIN
         OUT (PORT_CONOUT_BUF), A        ; Flush CONOUT
 
-        ; Boot message
-        LD HL, BOOT_MSG
+        LD HL, BOOT_MSG                 ; Boot message
         CALL PRINT_STR
 
-        CALL INIT_SYSTEM_AREA
-
-        ; Init IOBYTE
-        LD A,0x00
-        LD (IOBYTE), A
-
-        ; Set DMA address
-        LD BC, 0x0080
+.if 1
+        CALL LOAD_CCP_BDOS              ; Load CCP + BDOS
+.else
+        LD BC, 0x0080                   ; Set DMA address
         CALL SETDMA
+.endif
+        CALL INIT_SYSTEM_AREA           ; Init system area
 
-        ; Set default drive as A:(0)
+        LD A,0x00
+        LD (IOBYTE), A                  ; Init IOBYTE
+
         XOR A
-        LD (CURRENT_DISK), A
-        LD C, A
-        JP CCP_ENTRY+3          ; Exec CCP
+        LD (IS_CACHED), A               ; Clear disk read cache
+
+        LD (LOGIN_DISK_NO), A
+        LD C, A                         ; Set A:(0) to login disk
+
+        ; Start CP/M
+        LD SP, CCP_ENTRY                ; Init SP
+        JP CCP_ENTRY+3                  ; Exec CCP + 3
 
 BOOT_MSG:
         .str    "\r\n"
@@ -272,40 +277,38 @@ BOOT_MSG:
         .str    "BIOS Copyright (C) 2023 by 46nori\r\n"
         .db     0
 
-INIT_SYSTEM_AREA:
-        LD A, 0xC3
-
-        ; Set 'JP _WBOOT' at 0x0000
-        LD (0x0000), A
-        LD HL, _WBOOT
-        LD (0x0001), HL
-
-        ; Set 'JP BDOS_ENTRY + 6' at 0x0005
-        LD (0x0005), A
-        LD HL, BDOS_ENTRY + 6 
-        LD (0x0006), HL
-
-        ; Set 'JP DEBUG_ENTRY' at 0x0038 for debugger
-        LD (0x0038), A
-        LD HL, DEBUGGER
-        LD (0x0039), HL
-
-        RET
-
 ;******************************************************************
 ;   01: Warm Boot
 ;       IN : None
 ;       OUT: C = default DISK number
 ;******************************************************************
 WBOOT:
-        LD SP, CCP_ENTRY        ; Init SP to ensure reload
+        LD SP, CCP_ENTRY                ; Set SP to ensure reload
 
-        ;
-        ; Reload CCP and BDOS
-        ;
-        LD HL, RELOAD_MSG
+        LD HL, REBOOT_MSG               ; Reboot message
         CALL PRINT_STR
 
+        CALL LOAD_CCP_BDOS              ; Load CCP + BDOS
+        CALL INIT_SYSTEM_AREA           ; Init system area
+
+        XOR A
+        LD (IS_CACHED), A               ; Clear disk read cache
+
+        LD A, (LOGIN_DISK_NO)
+        LD C, A                         ; Restore login disk
+
+        ; Start CP/M
+        LD SP, CCP_ENTRY                ; Init SP
+        JP CCP_ENTRY                    ; Exec CCP
+
+REBOOT_MSG:
+        .str    "\r\nReload CCP+BDOS.\r\n"
+        .db     0
+
+;================================================
+; Load CCP + BDOS from boot disk
+;================================================
+LOAD_CCP_BDOS:
         ; Open DISK A:
         LD C, 0
         CALL SELDSK
@@ -316,14 +319,14 @@ WBOOT:
 
         ; Set load address
         LD C, PORT_DSKRDBUF
-        IN A, (C)               ; Reset sequencer
+        IN A, (C)                       ; Reset sequencer
         LD HL, CCP_ENTRY
         OUT (C), H
         OUT (C), L
 
         ; Set DISK read position
         LD C, PORT_DSKRDPOS
-        IN A, (C)               ; Reset sequencer
+        IN A, (C)                       ; Reset sequencer
         XOR A
         OUT (C), A
         OUT (C), A
@@ -332,7 +335,7 @@ WBOOT:
 
         ; Set DISK read length (size of CPP+BDOS)
         LD C, PORT_DSKRDLEN
-        IN A, (C)               ; Reset sequencer
+        IN A, (C)                       ; Reset sequencer
         LD HL, CCP_BDOS_LENGTH
         OUT (C), H
         OUT (C), L
@@ -340,20 +343,7 @@ WBOOT:
         ; Load CPP+BDOS
         CALL DISK_READ_SUB
         OR A
-        JR NZ, BOOT_ERROR
-
-        ;
-        CALL INIT_SYSTEM_AREA
-
-        ; Set current DISK
-        XOR A
-        LD (IS_CACHED), A       ; Clear read cache
-        LD A, (CURRENT_DISK)
-        LD C, A
-
-        ; Start CP/M
-        LD SP, CCP_ENTRY        ; Init SP
-        JP CCP_ENTRY            ; Exec CCP
+        RET Z
 
         ; System boot error
 BOOT_ERROR:
@@ -374,9 +364,29 @@ BOOT_ERROR_HALT:
 BOOT_ERROR_MSG:
         .str    "\r\nSystem HALT due to CCP+BDOS load error.\r\n"
         .db     0
-RELOAD_MSG:
-        .str    "\r\nReload CCP+BDOS.\r\n"
-        .db     0
+
+;================================================
+; Init jump table of system area
+;================================================
+INIT_SYSTEM_AREA:
+        LD A, 0xC3                      ; 'JP'
+
+        ; Set 'JP _WBOOT' at 0x0000
+        LD (0x0000), A
+        LD HL, _WBOOT
+        LD (0x0001), HL
+
+        ; Set 'JP BDOS_ENTRY + 6' at 0x0005
+        LD (0x0005), A
+        LD HL, BDOS_ENTRY + 6 
+        LD (0x0006), HL
+
+        ; Set 'JP DEBUG_ENTRY' at 0x0038 for debugger
+        LD (0x0038), A
+        LD HL, DEBUGGER
+        LD (0x0039), HL
+        
+        RET
 
 ;******************************************************************
 ;   02: Get status of CON:
@@ -491,9 +501,9 @@ SELDSK:
 
         ; Error
 DISK_ERROR:
-        ; Force the default drive to A:.
+        ; Force the login disk to A:.
         XOR A
-        LD (CURRENT_DISK), A
+        LD (LOGIN_DISK_NO), A
         LD C, A
         OUT (PORT_SELDSK), A    ; Open DISK A:
 

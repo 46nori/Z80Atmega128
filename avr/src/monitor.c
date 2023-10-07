@@ -9,6 +9,7 @@
 #include <string.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 #include "monitor.h"
 #include "xconsoleio.h"
 #include "xmodem.h"
@@ -18,10 +19,11 @@
 #include "emuldev/em_debugger.h"
 
 #define DLIMITER	" "
-#define MAX_TOKENS	3
+#define MAX_TOKENS	4
 #define T_CMD		0
 #define T_PARAM1	1
 #define T_PARAM2	2
+#define T_PARAM3	3
 typedef struct token_list {
 	int n;						// number of tokens
 	char *token[MAX_TOKENS];	// pointer to token
@@ -107,6 +109,7 @@ static int c_help(token_list *t);
 static int c_dump_flashrom(token_list *t);
 static int c_dump_internal_ram(token_list *t);
 static int c_dump_external_ram(token_list *t);
+static int c_dump_eeprom(token_list *t);
 static int c_read_internal_ram(token_list *t);
 static int c_read_external_ram(token_list *t);
 static int c_write_internal_ram(token_list *t);
@@ -115,6 +118,8 @@ static int c_load_ihx_external_ram(token_list *t);
 static int c_load_bin_external_ram(token_list *t);
 static int c_load_bin_internal_ram(token_list *t);
 static int c_save_bin_internal_ram(token_list *t);
+static int c_save_bin_eeprom(token_list *t);
+static int c_load_eeprom_external_ram(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
 static int c_z80_nmi(token_list *t);
@@ -134,6 +139,7 @@ static const struct {
 	{"d",     c_dump_external_ram},
 	{"di",    c_dump_internal_ram},
 	{"df",    c_dump_flashrom},
+	{"de",    c_dump_eeprom},
 	{"r",     c_read_external_ram},
 	{"ri",    c_read_internal_ram},
 	{"w",     c_write_external_ram},
@@ -142,6 +148,8 @@ static const struct {
 	{"bload", c_load_bin_external_ram},
 	{"lx",    c_load_bin_internal_ram},
 	{"sx",    c_save_bin_internal_ram},
+	{"esave", c_save_bin_eeprom},
+	{"eload", c_load_eeprom_external_ram},
 	{"mem",   c_mem},
 	{"reset", c_z80_reset},
 	{"nmi",   c_z80_nmi},
@@ -189,6 +197,8 @@ static const char help_str[] PROGMEM =	\
 	"df [adr] [len]  : dump FlashROM\n"\
 	"lx <adr>        : load binary by XMODEM\n"\
 	"sx <adr> <len>  : save binary by XMODEM\n"\
+	"esave <dst> <src> <len> : save External RAM to EEPROM\n"\
+	"eload <dst> <src> <len> : load EEPROM to External RAM\n"\
 	"mem             : remaining Internal RAM size\n"\
 	"sei             : enable  interrupt\n"\
 	"cli             : disable interrupt\n"\
@@ -311,7 +321,8 @@ static const unsigned char *write_extram(const unsigned char *dst,
 enum memory_type {
 	IntROM,		// Internal Flash ROM
 	IntRAM,		// Internal RAM
-	ExtRAM		// External RAM
+	ExtRAM,		// External RAM
+	EEPROM		// EEPROM
 };
 
 #define D_COLUMN 16
@@ -349,7 +360,11 @@ static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 			break;
 		case ExtRAM:
 			read_extram(col, *adr, D_COLUMN);
-			break;
+		break;
+		case EEPROM:
+			eeprom_busy_wait();
+			eeprom_read_block(col, *adr, D_COLUMN);
+		break;
 		default:
 			break;
 		} 
@@ -398,6 +413,14 @@ static int c_dump_external_ram(token_list *t) {
 static int c_dump_flashrom(token_list *t) {
 	static uint8_t *adr = 0;
 	return dump(t, &adr, IntROM);
+}
+
+/*********************************************************
+ * Dump EEPROM
+ *********************************************************/
+static int c_dump_eeprom(token_list *t) {
+	static uint8_t *adr = 0;
+	return dump(t, &adr, EEPROM);
 }
 
 /*********************************************************
@@ -629,6 +652,89 @@ static int c_save_bin_internal_ram(token_list *t) {
 			break;
 	}
 	return NO_ERROR;
+}
+
+/*********************************************************
+ * Save SRAM to EEPROM
+ *********************************************************/
+static int c_save_bin_eeprom(token_list *t) {
+    if (t->n < 4) {
+	    return ERR_PARAM_MISS;	// missing parameters
+    }
+    unsigned int dst, src, size;
+    if (get_uint(t, T_PARAM1, &dst) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+    if (get_uint(t, T_PARAM2, &src) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+    if (get_uint(t, T_PARAM3, &size) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+	if (dst + size > 4096) {
+        return ERR_PARAM_VAL;	// parameter error
+    }
+	
+	uint8_t ebuf[128];
+	int n = size / sizeof(ebuf);
+	for (int i = 0; i < n; i++) {
+		read_extram((const unsigned char *)ebuf, (const unsigned char *)src, sizeof(ebuf));
+		eeprom_busy_wait();
+		eeprom_write_block((const void *)ebuf, (void *)dst, sizeof(ebuf));
+		dst += sizeof(ebuf);
+		src += sizeof(ebuf);
+		size -= sizeof(ebuf);
+	}
+	if (size > 0) {
+		eeprom_busy_wait();
+		read_extram((const unsigned char *)ebuf, (const unsigned char *)src, size);
+		eeprom_write_block((const void *)ebuf, (void *)dst, size);
+	}
+	return NO_ERROR;
+}
+
+/*********************************************************
+ * Load EEPROM to SRAM
+ *********************************************************/
+static int c_load_eeprom_external_ram(token_list *t) {
+    if (t->n < 4) {
+	    return ERR_PARAM_MISS;	// missing parameters
+    }
+    unsigned int dst, src, size;
+    if (get_uint(t, T_PARAM1, &dst) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+    if (get_uint(t, T_PARAM2, &src) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+    if (get_uint(t, T_PARAM3, &size) != NO_ERROR) {
+	    return ERR_PARAM_VAL;	// parameter error
+    }
+
+	return load_eeprom_extmem((uint8_t *)dst, (uint8_t *)src, size);
+}
+
+int load_eeprom_extmem(uint8_t *dst, const uint8_t *src, size_t size) {
+	if ((size_t)src + size > 4096) {
+		return ERR_PARAM_VAL;	// parameter error
+	}
+	
+	uint8_t ebuf[128];
+	int n = size / sizeof(ebuf);
+	for (int i = 0; i < n; i++) {
+		eeprom_busy_wait();
+		eeprom_read_block((void *)ebuf, (const void *)src, sizeof(ebuf));
+		write_extram((const unsigned char *)dst, (const unsigned char *)ebuf, sizeof(ebuf));
+		dst += sizeof(ebuf);
+		src += sizeof(ebuf);
+		size -= sizeof(ebuf);
+	}
+	if (size > 0) {
+		eeprom_busy_wait();
+		eeprom_read_block((void *)ebuf, (const void *)src, size);
+		write_extram((const unsigned char *)dst, (const unsigned char *)ebuf, size);
+	}
+	return NO_ERROR;	
 }
 
 /*********************************************************
