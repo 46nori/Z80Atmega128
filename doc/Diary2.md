@@ -697,3 +697,19 @@
 ## 2023/10/05
 - DISK WRITEの確認継続。ZORK1で、SAVE/RESTOREコマンド動作した。生成されるZORK1.SAVも問題なし。ゴミファイルなどの生成も見られない。かなり安定したと思われる。
 - CP/MはBIOSのSELDSKを頻繁に発行する。AVR側は`pf_open()`を実行するが、これに時間がかかる。無駄なSELDSKも見られるので、同じDISK番号を指定されたら`pf_open()`を実行しないようにした。A:での`^C`は早くなった。
+
+## 2023/10/06
+- 46nori以外は、Pull Requestなしでmainブランチにpushできないようにした。
+  1. .gthub/CODEOWNERSに以下の設定し、mainにpushする。
+    ```
+    * @46nori
+    ```
+  2. GitHub settings/branchesでBranch Protection ruleを`main`で作成し、以下にチェックを入れておく。
+    - [x] Require a pull request before merging
+      - [x] Require approvals
+      - [x] Dismiss stale pull request approvals when new commits are pushed
+      - [x] Require review from Code Owners
+- Dockerfileからz88dkのコンパイルを外した。結局、今のところ使っていないし、最近MACのDev Containerの起動時にエラーが出るようになってしまったので。必要になったら原因追及する。
+- SD Cardに置くイメージファイル(IMAGE00.IMG)を、[cpm22-b.zip](http://www.cpm.z80.de/download/cpm22-b.zip)から生成するように変更した。
+  - この中に入っているCPM.SYSは62K CP/Mなので、そのまま使用できる。`mkfs.cpm`コマンドでイメージファイルの予約トラックに書き込む。
+  - それ以外のファイルは`cpmcp`コマンドでイメージファイルに埋め込む。

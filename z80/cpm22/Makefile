@@ -40,8 +40,8 @@ $(TMPDIR)/cpm2-asm.zip:
 	wget -P $(TMPDIR) http://www.cpm.z80.de/download/cpm2-asm.zip
 
 clean:
-	rm -fr $(TMPDIR)
-	rm -f ipl.rel ipl.lst ipl.ihx ipl.hlr
-	rm -f bios.rel bios.lst bios.ihx bios.hlr
-	rm -f cpm22.rel cpm22.ihx
-	rm -f CCP_BDOS.BIN
+	@$(RM) -fr $(TMPDIR)
+	@$(RM) -f ipl.rel ipl.lst ipl.ihx ipl.hlr
+	@$(RM) -f bios.rel bios.lst bios.ihx bios.hlr
+	@$(RM) -f cpm22.rel cpm22.ihx
+	@$(RM) -f 62K_CCP_BDOS.BIN
