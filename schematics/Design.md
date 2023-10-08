@@ -331,7 +331,7 @@ WRITEはタイミングに余裕があり、どの型番の組み合わせでも
   ![AVR-SRAM-WRITE-Cycle](Fig/AVR-SRAM-WRITE.png)
 
 ## AVRの設定
-### Fuse
+### Fuse Bits
 * Extended Fuse Byte  
     |       | bit | Value |                      |
     |-------|-----|-------|----------------------|
