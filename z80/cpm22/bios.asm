@@ -147,7 +147,7 @@ BP_ADR: .dw     0               ; (13) breakpoint address
 DEBUG_INFO_END:
 
 ;******************************************************************
-;   Interrupt vector table
+;   Interrupt vector table (Must be 256 bytes alignment)
 ;******************************************************************
         .org    VECT_TABLE
         .dw     ISR_00          ; INT 0 : DISK read  completed
@@ -157,7 +157,7 @@ DEBUG_INFO_END:
         .dw     ISR_04          ; INT 4 : Debugger
  
 ;******************************************************************
-;   Interrupt handler (Must be 256 bytes alignment)
+;   Interrupt handler
 ;******************************************************************
 ;
 ;       DISK READ complete
@@ -225,12 +225,14 @@ ISR_04: EI                      ; do nothing. Just release HALT.
 BOOT:
         DI
         LD SP, CCP_ENTRY                ; Set SP to ensure initialization
-
-        ; Init emulated I/O device
-        ; Interrupt setting
-        LD A, VECT_TABLE >> 8
+        LD A, VECT_TABLE >> 8           ; Mode2 interrupt setting
         LD I, A
         IM 2
+
+        ;
+        ; Init emulated I/O device
+        ;
+        ; Interrupt setting
         XOR A
         OUT (PORT_DSKRD_INT), A         ; INT 0
         INC A
@@ -241,10 +243,11 @@ BOOT:
         OUT (PORT_CONIN_INT), A         ; INT 3
         INC A
         OUT (PORT_DBG_INT), A           ; INT 4
-        EI
-        ; 
+        ; Init console I/O
         OUT (PORT_CONIN_BUF), A         ; Flush CONIN
         OUT (PORT_CONOUT_BUF), A        ; Flush CONOUT
+
+        EI
 
         LD HL, BOOT_MSG                 ; Boot message
         CALL PRINT_STR
@@ -257,10 +260,8 @@ BOOT:
 .endif
         CALL INIT_SYSTEM_AREA           ; Init system area
 
-        LD A,0x00
-        LD (IOBYTE), A                  ; Init IOBYTE
-
         XOR A
+        LD (IOBYTE), A                  ; Init IOBYTE
         LD (IS_CACHED), A               ; Clear disk read cache
 
         LD (LOGIN_DISK_NO), A
