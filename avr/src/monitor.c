@@ -114,11 +114,13 @@ static int c_read_internal_ram(token_list *t);
 static int c_read_external_ram(token_list *t);
 static int c_write_internal_ram(token_list *t);
 static int c_write_external_ram(token_list *t);
+static int c_fill_external_ram(token_list *t);
 static int c_load_ihx_external_ram(token_list *t);
 static int c_load_bin_external_ram(token_list *t);
 static int c_load_bin_internal_ram(token_list *t);
 static int c_save_bin_internal_ram(token_list *t);
 static int c_save_bin_eeprom(token_list *t);
+static int c_save2_bin_eeprom(token_list *t);
 static int c_load_eeprom_external_ram(token_list *t);
 static int c_mem(token_list *t);
 static int c_z80_reset(token_list *t);
@@ -144,11 +146,13 @@ static const struct {
 	{"ri",    c_read_internal_ram},
 	{"w",     c_write_external_ram},
 	{"wi",    c_write_internal_ram},
+	{"f",     c_fill_external_ram},
 	{"xload", c_load_ihx_external_ram},
 	{"bload", c_load_bin_external_ram},
 	{"lx",    c_load_bin_internal_ram},
 	{"sx",    c_save_bin_internal_ram},
 	{"esave", c_save_bin_eeprom},
+	{"esave2",c_save2_bin_eeprom},
 	{"eload", c_load_eeprom_external_ram},
 	{"mem",   c_mem},
 	{"reset", c_z80_reset},
@@ -192,12 +196,14 @@ static const char help_str[] PROGMEM =	\
 	"ri [adr]        : read  an Internal RAM byte\n"\
 	"w  <adr> <dat>  : write an External RAM byte\n"\
 	"wi <adr> <dat>  : write an Internal RAM byte\n"\
+	"f  <dat> <adr> <len> : fill External RAM with <dat>\n"\
 	"d  [adr] [len]  : dump External RAM\n"\
 	"di [adr] [len]  : dump Internal RAM\n"\
 	"df [adr] [len]  : dump FlashROM\n"\
 	"lx <adr>        : load binary by XMODEM\n"\
 	"sx <adr> <len>  : save binary by XMODEM\n"\
 	"esave <dst> <src> <len> : save External RAM to EEPROM\n"\
+	"esave2 <dst> <src> <len> : esave after writing <src> <len>\n"\
 	"eload <dst> <src> <len> : load EEPROM to External RAM\n"\
 	"mem             : remaining Internal RAM size\n"\
 	"sei             : enable  interrupt\n"\
@@ -527,6 +533,34 @@ static int c_write_external_ram(token_list *t) {
 	return NO_ERROR;
 }
 
+static int c_fill_external_ram(token_list *t) {
+	if (t->n < 4) {
+		return ERR_PARAM_MISS;     // missing parameters
+	}
+
+	unsigned int dat, adr, size;
+	if (get_uint(t, T_PARAM1, &dat) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
+	}
+	if (get_uint(t, T_PARAM2, &adr) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
+	}
+	if (get_uint(t, T_PARAM3, &size) != NO_ERROR) {
+		return ERR_PARAM_VAL;     // parameter error
+	}
+	if (dat > 0xff || adr + size > 0xffff) {
+		return ERR_PARAM_VAL;
+	}
+
+	while (size) {
+		write_a_byte_to_external_ram(adr, dat);
+		++adr;
+		--size;
+	}
+
+	return NO_ERROR;
+}
+
 //
 // Load by XMODEM
 //
@@ -674,7 +708,36 @@ static int c_save_bin_eeprom(token_list *t) {
 	if (dst + size > 4096) {
         return ERR_PARAM_VAL;	// parameter error
     }
-	
+
+	return save_extmem_eeprom((uint8_t *)dst, (const uint8_t *)src, size);
+}
+
+static int c_save2_bin_eeprom(token_list *t) {
+	if (t->n < 4) {
+		return ERR_PARAM_MISS;	// missing parameters
+	}
+	unsigned int dst, src, size;
+	if (get_uint(t, T_PARAM1, &dst) != NO_ERROR) {
+		return ERR_PARAM_VAL;	// parameter error
+	}
+	if (get_uint(t, T_PARAM2, &src) != NO_ERROR) {
+		return ERR_PARAM_VAL;	// parameter error
+	}
+	if (get_uint(t, T_PARAM3, &size) != NO_ERROR) {
+		return ERR_PARAM_VAL;	// parameter error
+	}
+	if ((dst + 4) + size > 4096) {
+		return ERR_PARAM_VAL;	// parameter error
+	}
+	eeprom_busy_wait();
+	eeprom_write_word((uint16_t *)0, src);
+	eeprom_busy_wait();
+	eeprom_write_word((uint16_t *)2, size);
+	dst += 4;
+	return save_extmem_eeprom((uint8_t *)dst, (const uint8_t *)src, size);
+}
+
+int save_extmem_eeprom(uint8_t *dst, const uint8_t *src, size_t size) {
 	uint8_t ebuf[128];
 	int n = size / sizeof(ebuf);
 	for (int i = 0; i < n; i++) {

@@ -11,5 +11,6 @@
 
 extern void monitor(void);
 extern int load_eeprom_extmem(uint8_t *dst, const uint8_t *src, size_t size);
+extern int save_extmem_eeprom(uint8_t *dst, const uint8_t *src, size_t size);
 
 #endif /* MONITOR_H_ */
