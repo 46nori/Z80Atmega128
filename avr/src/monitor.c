@@ -192,32 +192,37 @@ static const char help_str[] PROGMEM =	\
 	"   $  : Prefix of hexadecimal\n"\
 	"h               : help\n"\
 	"== AVR Commands ==\n"\
-	"r  [adr]        : read  an External RAM byte\n"\
-	"ri [adr]        : read  an Internal RAM byte\n"\
-	"w  <adr> <dat>  : write an External RAM byte\n"\
-	"wi <adr> <dat>  : write an Internal RAM byte\n"\
-	"f  <dat> <adr> <len> : fill External RAM with <dat>\n"\
-	"d  [adr] [len]  : dump External RAM\n"\
-	"di [adr] [len]  : dump Internal RAM\n"\
+	"r  [adr]        : read  an ExtRAM byte\n"\
+	"ri [adr]        : read  an IntRAM byte\n"\
+	"w  <adr> <dat>  : write an ExtRAM byte\n"\
+	"wi <adr> <dat>  : write an IntRAM byte\n"\
+	"f  <dat> <adr> <len> : fill ExtRAM with <dat>\n"\
+
+	"d  [adr] [len]  : dump ExtRAM\n"\
+	"di [adr] [len]  : dump IntRAM\n"\
 	"df [adr] [len]  : dump FlashROM\n"\
-	"lx <adr>        : load binary by XMODEM\n"\
-	"sx <adr> <len>  : save binary by XMODEM\n"\
-	"esave <dst> <src> <len> : save External RAM to EEPROM\n"\
+	"de [adr] [len]  : dump EEPROM\n"\
+
+	"lx <adr>        : load binary to   IntRAM by XMODEM\n"\
+	"sx <adr> <len>  : save binary from IntRAM by XMODEM\n"\
+	"bload <adr>     : load binary    to ExtRAM by XMODEM\n"\
+	"xload           : load INTEL HEX to ExtRAM by XMODEM\n"\
+	"eload <dst> <src> <len>  : load EEPROM to ExtRAM\n"\
+	"esave  <dst> <src> <len> : save ExtRAM to EEPROM\n"\
 	"esave2 <dst> <src> <len> : esave after writing <src> <len>\n"\
-	"eload <dst> <src> <len> : load EEPROM to External RAM\n"\
-	"mem             : remaining Internal RAM size\n"\
+
+	"mem             : remaining IntRAM size\n"\
 	"sei             : enable  interrupt\n"\
 	"cli             : disable interrupt\n"\
-	"test [adr]      : XMEM R/W test\n"\
-	"== Z80 Commands ==\n"\
-	"xload           : load INTEL HEX by XMODEM\n"\
-	"bload [adr]     : load binary by XMODEM\n"\
+	"test [adr]      : XMEM, SD Card R/W test\n"\
+	"== Z80 Control Commands ==\n"\
 	"reset [0]       : reset, and HALT if 0\n"\
-	"nmi             : NMI\n"\
-	"int <dat>       : interrupt\n"\
+	"nmi             : invoke NMI\n"\
+	"int <dat>       : invoke interrupt\n"\
 	"sts             : show Z80 status\n"\
+	"== Z80 Debug Commands ==\n"\
 	"brk [adr]       : set breakpoint, show list if no adr\n"\
-	"del <adr>       : delete n\n"\
+	"del <adr>       : delete breakpoint\n"\
 	"cont            : continue from breakpoint\n"\
 	"";
 
