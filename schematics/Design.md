@@ -331,7 +331,7 @@ WRITEはタイミングに余裕があり、どの型番の組み合わせでも
   ![AVR-SRAM-WRITE-Cycle](Fig/AVR-SRAM-WRITE.png)
 
 ## AVRの設定
-### Fuse Bits
+### Fuse
 * Extended Fuse Byte  
     |       | bit | Value |                      |
     |-------|-----|-------|----------------------|
@@ -343,20 +343,25 @@ WRITEはタイミングに余裕があり、どの型番の組み合わせでも
     |-----------|-----|-------|---------------------------|
     | OCDEN     |  7  |   1   |OFF                        |
     | JTAGEN    |  6  |   1   |JTAG OFF                   |
-    | SPIEN     |  5  |   0   |SPIプログラム許可            |
-    | CKOPT     |  4  |   0   |外部接続のセラロック16MHz     |
-    | EESAVE    |  3  |   0   |EEPROM保護                 |
-    | BOOTSZ1-0 | 2-1 |   00  |ブートローダー 4K            |
+    | SPIEN     |  5  |   0   |SPIプログラム許可           |
+    | CKOPT     |  4  |   0   |外部接続のセラロック16MHz    |
+    | EESAVE    |  3  |   0   |チップ消去からEEPROMを保護   |
+    | BOOTSZ1-0 | 2-1 |   00  |ブートローダー 4K           |
     | BOOTRST   |  0  |   1   |リセット時はユーザーアプリを実行|
+
+    CP/M BIOSをEEPROMに書き込んでいる場合、AVR側のファームウェア書き換え時のチップ消去でBIOSが消えてしまうのを防ぐため、EESAVEを有効にしている。
 
 * Fuse Low Byte
     |          | bit | Value |                       |
     |----------|-----|-------|-----------------------|
-    | BODLEVEL |  7  |  1    |                       |
-    | BODEN    |  6  |  1    |                       |
+    | BODLEVEL |  7  |  0    |BOD検出電圧=4.0V        |
+    | BODEN    |  6  |  0    |BOD有効                |
     | SUT1-0   | 5-4 |  00   |[AVR clock](#avr-clock)|
     | CKSEL3-1 | 3-1 |  111  |[AVR clock](#avr-clock)|
     | CKSEL0   |  0  |  1    |[AVR clock](#avr-clock)|
+
+    [AVRの電圧が下がるとEEPROMのデータが壊れる問題](https://microchip.my.site.com/s/article/Prevent-EEPROM-corruption)の回避のためBODを有効にする。
+    BODLEVELはデフォルト2.7Vだが、4.0Vでリセット状態に遷移するように変更する。
 
 最終的な値は以下となる。  
 値の変更はMicrochip StudioのDevice ProgrammingメニューからISP経由で行える。
@@ -364,7 +369,7 @@ WRITEはタイミングに余裕があり、どの型番の組み合わせでも
 |--------------------|---------|---------|
 | Extended Fuse Byte |  0xFF   | (0xFD)  |
 | Fuse High Byte     |  0xC1   | (0x99)  |
-| Fuse Low  Byte     |  0xCF   | (0xE1)  |
+| Fuse Low  Byte     |  0x0F   | (0xE1)  |
 
 ### IO Port
 #### PortA
@@ -460,7 +465,7 @@ AVRがDMAを行うとき、XMEMインターフェース機能により上位ア�
   常に入力にセットする。DIP SW2に接続されている。
 
 ### XMEMインターフェース
-SRAMアクセスのためにXMEMインターフェースを有効にするには、MCUCRのSRE(bit 7)をセットする。　　
+SRAMアクセスのためにXMEMインターフェースを有効にするには、MCUCRのSRE(bit 7)をセットする。  
 XMEMインターフェースを無効にしたら、Z80側バスとの衝突を防ぐためPORTAをハイインピーダンスにすること。これを保証するため、XMCRBのXMBK(bit 7)は0にセットされている必要がある。
 
 #### SRAMのWAIT設定
