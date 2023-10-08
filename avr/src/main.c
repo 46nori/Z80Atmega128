@@ -44,8 +44,10 @@ int main (void)
 	sei();				// Enable interrupt
 
 	/* Insert application code here, after the board has been initialized. */
-	if (bit_is_clear(PINE, PORTE3)) {
-		// Load 62K CP/M BIOS from EEPROM if DIPSW4 is ON.
+
+	// DIPSW1(PG3) - CP/M launch control
+	if (bit_is_clear(PING, PORTG3)) {
+		// Load 62K CP/M BIOS from EEPROM if DIPSW1 is ON.
 		const uint16_t *src = 0;
 		eeprom_busy_wait();
 		uint8_t *dst = (uint8_t *)eeprom_read_word(src++);

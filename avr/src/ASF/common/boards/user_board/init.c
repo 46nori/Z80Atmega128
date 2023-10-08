@@ -49,25 +49,35 @@ void board_init(void)
 	SET_BYTE(DDRG,  0b00000111);	// PG0,1,2 for output/XMEM, PG3,4 for input
 
 	// Configure wait settings of XMEM
-	if (PORTG & 0x08) {
-		ExtMem_Init(2);				// DIPSW1(PG3) OFF : 2wait
+	// DIPSW4(PE3) - SRAM wait
+	if (bit_is_clear(PINE, PORTE3)) {
+		ExtMem_Init(1);				// ON  : 1wait
 	} else {
-		ExtMem_Init(1);				// DIPSW1(PG3) ON  : 1wait
+		ExtMem_Init(2);				// OFF : 2wait
 	}
 	// HALT Z80
 	Z80_HALT();						// Set HALT instruction at 0x0000
 
-	// The process up to here  must be completed within 250 ms from reset.
+	// The process up to here must be completed within 250 ms from reset.
 	//=====================================================================
 	SET_BYTE(PORTE, 0xff);			// LED OFF PE7,6,5
 
 	Z80_CLRWAIT();					// Reset WAIT circuit
 	Z80_BUSREQ(0);					// /BUSREQ=H
 
-	USART0_Init(19200);				// UART for ATmega128 Monitor
-	USART1_Init(9600);				// UART for Z80 console
+	// DIPSW2(PG4) - UART baud rate
+	if (bit_is_clear(PING, PORTG4)) {
+		// ON
+		USART0_Init(19200);			// UART for ATmega128 Monitor
+		USART1_Init(19200);			// UART for Z80 console
+		Timer0_Init(1);				// Periodic timer(TIMER0_COMP) for Z80 console
+	} else {
+		// OFF		
+		USART0_Init(9600);			// UART for ATmega128 Monitor
+		USART1_Init(9600);			// UART for Z80 console
+		Timer0_Init(2);				// Periodic timer(TIMER0_COMP) for Z80 console
+	}
+	Timer2_Init(10);				// Periodic timer(TIMER2_COMP) for SD Card
 
-	Timer0_Init();					// Periodic interrupt (TIMER0_COMP)
-	Timer2_Init();					// Periodic interrupt (TIMER2_COMP)
 	ExtInt_Init();					// External interrupt (INT0,1,4)
 }
