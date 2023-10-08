@@ -1,35 +1,64 @@
+#
+# Create CP/M DISK Image
+#
+# cpmtool is required.
+#
 RM		:= rm
 CP		:= cp
 MKDIR	:= mkdir
 MAKE	:= make
 
-TMPDIR	= ./tmp
+WGET	:= wget
+UNZIP	:= unzip
+DD		:= dd
+HEXDUMP	:= hexdump
+
+# cpmtools
+CPM_MKFS	:= mkfs.cpm
+CPM_CP		:= cpmcp
+CPM_LS		:= cpmls
+
+# DISK configuration. See /etc/cpmtools/diskdefs
 DISKDEF	= sdcard
-IMAGE   = DISK00.IMG
-#CCPBDOS = ../62K_CCP_BDOS.BIN
+
+# CCP+BDOS binary for embedding to the DISK image
+#CCPBDOS = ../CPM.SYS
 CCPBDOS = $(TMPDIR)/CPM.SYS
+
 USER	= 0:
+IMAGE   = DISK00.IMG
+TMPDIR	= ./tmp
 
-
+# Create DISK image of CP/M 2.2 for SD card using cpmtools
+#   CCP+BDOS speficied by $(CCPBDOS) is set to reserved track. 
+#   Files are copy from $(TMPDIR).
 $(IMAGE):	$(TMPDIR)
-	mkfs.cpm -f $(DISKDEF) -b $(CCPBDOS) $(IMAGE)
-	dd if=/dev/zero of=$(IMAGE) bs=8192 count=1021 oflag=append conv=notrunc
-	cpmcp -f $(DISKDEF) $(IMAGE) $(TMPDIR)/*.* $(USER)
-	cpmls -f $(DISKDEF) $(IMAGE)
+	$(CPM_MKFS) -f $(DISKDEF) -b $(CCPBDOS) $(IMAGE)
+	$(DD) if=/dev/zero of=$(IMAGE) bs=8192 count=1021 oflag=append conv=notrunc
+	$(CPM_CP) -f $(DISKDEF) $(IMAGE) $(TMPDIR)/*.* $(USER)
+	$(CPM_LS) -f $(DISKDEF) $(IMAGE)
 	echo `wc -c < $(IMAGE)`
 
+# Download CP/M 2.2 binay:
+#   http://www.cpm.z80.de/download/cpm22-b.zip
 $(TMPDIR):
 	$(MKDIR) -p $(TMPDIR)
-	wget -P $(TMPDIR) http://www.cpm.z80.de/download/cpm22-b.zip
-	unzip -o -d $(TMPDIR) $(TMPDIR)/cpm22-b.zip
-	$(RM) $(TMPDIR)/cpm22-b.zip
+	$(WGET) -P $(TMPDIR) http://www.cpm.z80.de/download/cpm22-b.zip
+	$(UNZIP) -o -d $(TMPDIR) $(TMPDIR)/cpm22-b.zip
+	$(RM) -f $(TMPDIR)/cpm22-b.zip
 
+# list files in the image file
+.PHONY: ls
 ls:
-	cpmls -f $(DISKDEF) $(IMAGE)
+	$(CPM_LS) -f $(DISKDEF) $(IMAGE)
 
+# Hex dump the image file
+.PHONY: dump
 dump:
-	hexdump -C -v $(IMAGE)
+	$(HEXDUMP) -C -v $(IMAGE)
 
+# clean up
+.PHONY: clean
 clean:
 	@$(RM) -f $(IMAGE)
 	@$(RM) -fr $(TMPDIR)

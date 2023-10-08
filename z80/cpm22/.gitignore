@@ -7,6 +7,7 @@
 *.BIN
 *.bin
 *.IMG
+*.SYS
 *.img
 tmp/
 cpmdisks

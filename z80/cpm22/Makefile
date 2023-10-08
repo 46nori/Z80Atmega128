@@ -1,50 +1,73 @@
-AS		:= asz80
-LD		:= aslink
-
+#
+# Create Intel hex files of CP/M and BIOS, and CPM.SYS (CCP+BDOS)
+#
+# ASxxxx Cross Assembler is required.
+#
 RM		:= rm
 CP		:= cp
 MKDIR	:= mkdir
 MAKE	:= make
 OC      := objcopy
+WGET	:= wget
+UNZIP	:= unzip
+
+# ASxxxx Cross Assembler
+AS		:= asz80
+LD		:= aslink
 
 TMPDIR	= ./tmp
 
+.PHONY: all
+all:	cpm.ihx bios.ihx CPM.SYS
 
+#
+# IPL + CCP/BDOS + BIOS (INTEL HEX)
+#
 cpm.ihx: $(TMPDIR)/cpm22.rel ipl.rel bios.rel
 	$(LD) -i $@ ipl.rel $(TMPDIR)/cpm22.rel bios.rel
 
+ipl.rel: ipl.asm
+	$(AS) -o $(ASFLAGS) $<
+
+#
+# BIOS only (INTEL HEX)
+#
 bios.ihx: bios.rel
 	$(LD) -i $@ $<
 
-%.rel:%.asm
+bios.rel: bios.asm
 	$(AS) -l -o $(ASFLAGS) $<
 
 #
-# Build CP/M 2.2 from source code
+# Build CP/M 2.2(CCP+BDOS) binay from source code
 #
-62K_CCP_BDOS.BIN: $(TMPDIR)/cpm22.ihx
+CPM.SYS: $(TMPDIR)/cpm22.ihx
 	$(OC) -I ihex -O binary $< $@
 
 $(TMPDIR)/cpm22.ihx: $(TMPDIR)/cpm22.rel
-	$(LD) -i $@ $(TMPDIR)/cpm22.rel
+	$(LD) -i $@ $<
 
 $(TMPDIR)/cpm22.rel: $(TMPDIR)/cpm22.asm
 	$(AS) -l -o $(ASFLAGS) $<
 
+# Patch CPM22.Z80 to assemble by asz80
 $(TMPDIR)/cpm22.asm: $(TMPDIR)/CPM22.Z80
 	patch -i CPM22-asz80.patch -o $@ $<
 
+# Extract CP/M 2.2 source code written in Z80 mnemonic
 $(TMPDIR)/CPM22.Z80: $(TMPDIR)/cpm2-asm.zip
-	unzip -o -d $(TMPDIR) $(TMPDIR)/cpm2-asm.zip CPM22.Z80
+	$(UNZIP) -o -d $(TMPDIR) $(TMPDIR)/cpm2-asm.zip CPM22.Z80
 	touch $@
 
+# Download CP/M 2.2 source archive
 $(TMPDIR)/cpm2-asm.zip:
 	$(MKDIR) -p $(TMPDIR)
-	wget -P $(TMPDIR) http://www.cpm.z80.de/download/cpm2-asm.zip
+	$(WGET) -P $(TMPDIR) http://www.cpm.z80.de/download/cpm2-asm.zip
 
+
+.PHONY: clean
 clean:
 	@$(RM) -fr $(TMPDIR)
-	@$(RM) -f ipl.rel ipl.lst ipl.ihx ipl.hlr
-	@$(RM) -f bios.rel bios.lst bios.ihx bios.hlr
-	@$(RM) -f cpm22.rel cpm22.ihx
-	@$(RM) -f 62K_CCP_BDOS.BIN
+	@$(RM) -f CPM.SYS
+	@$(RM) -f *.ihx *.rel *.lst *.hlr
+	
