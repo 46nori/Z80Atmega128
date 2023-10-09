@@ -11,5 +11,5 @@
 - [CP/M DISK Parameters](Software/DiskParameters.md)
 
 ## Developement Log
-- [2023/2/25-2023/7/4](Diary1.md)
-- [2023/7/7-](Diary1.md)
+- [2023/2/25-2023/7/4](Diary.md)
+- [2023/7/7-](Diary2.md)
