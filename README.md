@@ -24,14 +24,13 @@ Hence, I've devised the following design principles:
 ├── avr                      AVR firmware
 ├── z80                      Z80 software
 │   └── cpm22                  CP/M-80 2.2 BIOS
-│       └── image              CP/M imagenerator
+│       └── image              CP/M image generator
 ├── doc
 │   ├── Diary?.md            Development Log (Japanese)
 │   ├── Hardware/            Hardware documents
 │   ├── Software/            Software documents
 │   └── README.md            Table of contents
 └── schematics
-    ├── Design.md            Hardware design document (Japanese)
     └── KiCad
         ├── *.kicad_sch      Schematic
         └── *.kicad_pcb      PCB Data
