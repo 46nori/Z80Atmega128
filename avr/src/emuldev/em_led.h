@@ -11,5 +11,6 @@
 extern void init_em_led(void);
 extern void OUT_1F_LED_Set(uint8_t data);
 extern uint8_t IN_1F_LED_Get(void);
+extern void em_led_heartbeat(int f);
 
 #endif /* EM_LED_H_ */

@@ -1,20 +1,13 @@
-/**
- * \file
- *
- * \brief User board initialization template
- *
- */
 /*
- * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
- */
-
+ * init.c
+ *
+ * Created: 2023/03/05 11:29:23
+ *  Author: 46nori
+ */ 
 #include <asf.h>
 #include <board.h>
 #include <conf_board.h>
 #include "z80io.h"
-#include "usart.h"
-#include "timer.h"
-#include "isr.h"
 
 void board_init(void)
 {
@@ -64,20 +57,4 @@ void board_init(void)
 
 	Z80_CLRWAIT();					// Reset WAIT circuit
 	Z80_BUSREQ(0);					// /BUSREQ=H
-
-	// DIPSW2(PG4) - UART baud rate
-	if (bit_is_clear(PING, PORTG4)) {
-		// ON
-		USART0_Init(19200);			// UART for ATmega128 Monitor
-		USART1_Init(19200);			// UART for Z80 console
-		Timer0_Init(1);				// Periodic timer(TIMER0_COMP) for Z80 console
-	} else {
-		// OFF		
-		USART0_Init(9600);			// UART for ATmega128 Monitor
-		USART1_Init(9600);			// UART for Z80 console
-		Timer0_Init(2);				// Periodic timer(TIMER0_COMP) for Z80 console
-	}
-	Timer2_Init(10);				// Periodic timer(TIMER2_COMP) for SD Card
-
-	ExtInt_Init();					// External interrupt (INT0,1,4)
 }

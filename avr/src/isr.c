@@ -9,8 +9,6 @@
 #include "z80io.h"
 #include "emuldev/emuldev.h"
 
-static void DebugTwinkleLED(void);
-
 //
 // External Interrupt
 //
@@ -99,21 +97,7 @@ ISR(TIMER0_COMP_vect) {
 // Timer2 handler (every 10ms)
 ///////////////////////////////////////////////////////////////////
 ISR(TIMER2_COMP_vect, ISR_NOBLOCK) {
-	DebugTwinkleLED();
 	em_disk_read();
 	em_disk_write();
-}
-
-// Debug
-static void DebugTwinkleLED(void)
-{
-	static uint16_t i = 0;
-	if (i < 100) {
-		PORTE &= ~_BV(PORTE7);			// DEBUG: RED LED ON PE7
-	} else if (i < 200) {
-		PORTE |=  _BV(PORTE7);			// DEBUG: RED LED OFF PE7
-	} else {
-		i = 0;
-	}
-	++i;
+	em_led_heartbeat(2);			// Blink RED LED at 2Hz
 }

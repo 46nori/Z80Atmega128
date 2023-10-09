@@ -186,49 +186,61 @@ static int exec_command(token_list *t) {
  * Help
  *********************************************************/
 static int c_help(token_list *t) {
+// Allocate literal in Flash ROM.
 static const char help_str[] PROGMEM =	\
 	"   <> : mandatory\n"\
 	"   [] : optional\n"\
 	"   $  : Prefix of hexadecimal\n"\
-	"h               : help\n"\
+	"h               : Help\n"\
 	"== AVR Commands ==\n"\
-	"r  [adr]        : read  an ExtRAM byte\n"\
-	"ri [adr]        : read  an IntRAM byte\n"\
-	"w  <adr> <dat>  : write an ExtRAM byte\n"\
-	"wi <adr> <dat>  : write an IntRAM byte\n"\
-	"f  <dat> <adr> <len> : fill ExtRAM with <dat>\n"\
+	"r  [adr]        : Read  an ExtRAM byte\n"\
+	"ri [adr]        : Read  an IntRAM byte\n"\
+	"w  <adr> <dat>  : Write an ExtRAM byte\n"\
+	"wi <adr> <dat>  : Write an IntRAM byte\n"\
+	"f  <dat> <adr> <len> : Fill ExtRAM with <dat>\n"\
 
-	"d  [adr] [len]  : dump ExtRAM\n"\
-	"di [adr] [len]  : dump IntRAM\n"\
-	"df [adr] [len]  : dump FlashROM\n"\
-	"de [adr] [len]  : dump EEPROM\n"\
+	"d  [adr] [len]  : Dump ExtRAM\n"\
+	"di [adr] [len]  : Dump IntRAM\n"\
+	"df [adr] [len]  : Dump FlashROM\n"\
+	"de [adr] [len]  : Dump EEPROM\n"\
 
-	"lx <adr>        : load binary to   IntRAM by XMODEM\n"\
-	"sx <adr> <len>  : save binary from IntRAM by XMODEM\n"\
-	"bload <adr>     : load binary    to ExtRAM by XMODEM\n"\
-	"xload           : load INTEL HEX to ExtRAM by XMODEM\n"\
-	"eload <dst> <src> <len>  : load EEPROM to ExtRAM\n"\
-	"esave  <dst> <src> <len> : save ExtRAM to EEPROM\n"\
+	"lx <adr>        : Load binary to   IntRAM by XMODEM\n"\
+	"sx <adr> <len>  : Save binary from IntRAM by XMODEM\n"\
+	"bload <adr>     : Load binary    to ExtRAM by XMODEM\n"\
+	"xload           : Load INTEL HEX to ExtRAM by XMODEM\n"\
+	"eload <dst> <src> <len>  : Load EEPROM to ExtRAM\n"\
+	"esave  <dst> <src> <len> : Save ExtRAM to EEPROM\n"\
 	"esave2 <dst> <src> <len> : esave after writing <src> <len>\n"\
 
-	"mem             : remaining IntRAM size\n"\
-	"sei             : enable  interrupt\n"\
-	"cli             : disable interrupt\n"\
-	"test [adr]      : XMEM, SD Card R/W test\n"\
+	"mem             : Remaining IntRAM size\n"\
+	"sei             : Set  interrupt\n"\
+	"cli             : Clear interrupt\n"\
+	"test [adr]      : Test XMEM, SD Card R/W\n"\
 	"== Z80 Control Commands ==\n"\
-	"reset [0]       : reset, and HALT if 0\n"\
-	"nmi             : invoke NMI\n"\
-	"int <dat>       : invoke interrupt\n"\
-	"sts             : show Z80 status\n"\
+	"reset [0]       : Reset, HALT if 0\n"\
+	"nmi             : Invoke NMI\n"\
+	"int <dat>       : Invoke interrupt\n"\
+	"sts             : Show Z80 status\n"\
 	"== Z80 Debug Commands ==\n"\
-	"brk [adr]       : set breakpoint, show list if no adr\n"\
-	"del <adr>       : delete breakpoint\n"\
-	"cont            : continue from breakpoint\n"\
+	"brk [adr]       : Set breakpoint, show list if no adr\n"\
+	"del <adr>       : Delete breakpoint\n"\
+	"cont            : Continue from breakpoint\n"\
 	"";
 
-#if 1	
-	char tmp[sizeof(help_str) + 1];
-	strncpy_P(tmp, help_str, sizeof(help_str));
+#if 1
+	// Copy help_str to stack
+	const char *str = help_str;
+	char tmp[32];
+	int blk = sizeof(tmp) - 1;
+	tmp[blk] = '\0';
+	for (int i = 0; i < sizeof(help_str) / blk; i++) {
+		strncpy_P(tmp, str, blk);
+		str += blk;
+		x_printf("%s", tmp);
+	}
+	int mod = sizeof(help_str) % blk;
+	strncpy_P(tmp, str, mod);
+	tmp[mod] = '\0';
 	x_puts(tmp);
 #else
 	x_puts(help_str);

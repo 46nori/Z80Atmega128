@@ -1,7 +1,6 @@
 ;******************************************************************
 ;       CP/M-80 Version 2.2 BIOS for Z80ATmega128
 ;       Copyright (C) 2023 46nori
-;
 ;******************************************************************
 MEM	        .equ    62              ; 62K CP/M
 
@@ -252,24 +251,19 @@ BOOT:
         LD HL, BOOT_MSG                 ; Boot message
         CALL PRINT_STR
 
-.if 1
         CALL LOAD_CCP_BDOS              ; Load CCP + BDOS
-.else
-        LD BC, 0x0080                   ; Set DMA address
-        CALL SETDMA
-.endif
         CALL INIT_SYSTEM_AREA           ; Init system area
 
         XOR A
-        LD (IOBYTE), A                  ; Init IOBYTE
         LD (IS_CACHED), A               ; Clear disk read cache
+        LD (IOBYTE), A                  ; Init IOBYTE
 
-        LD (LOGIN_DISK_NO), A
-        LD C, A                         ; Set A:(0) to login disk
+        LD (LOGIN_DISK_NO), A           ; Set A:(0) to login disk
+        LD C, A
 
         ; Start CP/M
         LD SP, CCP_ENTRY                ; Init SP
-        JP CCP_ENTRY+3                  ; Exec CCP + 3
+        JP CCP_ENTRY + 3                ; Exec CCP + 3
 
 BOOT_MSG:
         .str    "\r\n"
@@ -295,8 +289,8 @@ WBOOT:
         XOR A
         LD (IS_CACHED), A               ; Clear disk read cache
 
-        LD A, (LOGIN_DISK_NO)
-        LD C, A                         ; Restore login disk
+        LD A, (LOGIN_DISK_NO)           ; Restore login disk
+        LD C, A
 
         ; Start CP/M
         LD SP, CCP_ENTRY                ; Init SP
@@ -344,17 +338,15 @@ LOAD_CCP_BDOS:
         ; Load CPP+BDOS
         CALL DISK_READ_SUB
         OR A
-        RET Z
+        RET Z                           ; Success
 
         ; System boot error
-BOOT_ERROR:
         OUT (PORT_CONOUT_BUF), A        ; Flush CONOUT
         LD HL, BOOT_ERROR_MSG
 BOOT_ERROR_PRINT:
         LD A, (HL)
         OR A
         JR Z, BOOT_ERROR_HALT
-        LD C, A
         OUT (PORT_CONOUT), A
         INC HL
         JR BOOT_ERROR_PRINT

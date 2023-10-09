@@ -1,5 +1,5 @@
 ;
-; CP/M BIOS for Z80ATmega128
+;       IPL for launching CP/M BIOS for Z80ATmega128
 ;
 MEM         .equ        62		; 62K CP/M
 CCP_ENTRY   .equ        (MEM-7)*1024
