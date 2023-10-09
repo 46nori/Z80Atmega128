@@ -13,36 +13,47 @@ Hence, I've devised the following design principles:
 3. The AVR microcontroller will manage the Z80's bootstrap code placement and emulate external I/O.
 4. Design circuits using components that are as easy to procure as possible. (As of 2023, mainly in the Japanese electronic parts market.)
 
-### Contents
+## Achievements
+* CP/M 2.2 runs natively on the Z80.
+* The text adventure game ZORK can be played.
+* The system can boot CP/M using a microSD card containing the CP/M image file.
+
+## Contents
 ```
 .
 ├── avr                      AVR firmware
 ├── z80                      Z80 software
+│   └── cpm22                  CP/M-80 2.2 BIOS
+│       └── image              CP/M imagenerator
 ├── doc
-│   ├── Diary.md             Development Log (Japanese)
+│   ├── Diary?.md            Development Log (Japanese)
+│   ├── Hardware/            Hardware documents
+│   ├── Software/            Software documents
+│   └── README.md            Table of contents
 └── schematics
     ├── Design.md            Hardware design document (Japanese)
     └── KiCad
         ├── *.kicad_sch      Schematic
         └── *.kicad_pcb      PCB Data
 ```
+- [TOC](doc/README.md)
+- [Hardware design document](doc/Hardware/Design.md)
 - [Development log](doc/Diary.md)
-- [Hardware design document](schematics/Design.md)
 
-### Required tools
+## Required tools
 - [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio) for AVR v7.0 or later is required to build avr/.
 - [AVRISP mkII](https://www.microchip.com/en-us/development-tool/ATAVRISP2) is required to program software(avr/) into ATmega128.
 - Schematics and PCB is designed by [KiCad](https://www.kicad.org/) v7.0.
 - [ASxxxx Cross Assemblers](https://shop-pdp.net/ashtml/asxxxx.php)
 
-### Prototype board
+## Prototype
   ![](doc/Fig/20230506.jpeg)
 
-### PCB
+## PCB
   ![](doc/Fig/PCB2.jpeg)  
   ![](doc/Fig/PCB1.jpeg)  
 
-### Schematic diagram
+## Schematic diagram
 ![](schematics/KiCad/SVG/Z80ATmega128.svg)
 ![](schematics/KiCad/SVG/Z80ATmega128-Reset.svg)
 ![](schematics/KiCad/SVG/Z80ATmega128-SD_Card_Interface.svg)
