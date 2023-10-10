@@ -15,7 +15,6 @@
 #include "xmodem.h"
 #include "z80io.h"
 #include "intelhex.h"
-#include "sdcard.h"
 #include "emuldev/em_debugger.h"
 
 #define DLIMITER	" "
@@ -215,7 +214,7 @@ static const char help_str[] PROGMEM =	\
 	"mem             : Remaining IntRAM size\n"\
 	"sei             : Set  interrupt\n"\
 	"cli             : Clear interrupt\n"\
-	"test [adr]      : Test XMEM, SD Card R/W\n"\
+	"test [adr]      : Test XMEM R/W\n"\
 	"== Z80 Control Commands ==\n"\
 	"reset [0]       : Reset, HALT if 0\n"\
 	"nmi             : Invoke NMI\n"\
@@ -981,6 +980,7 @@ static int c_test(token_list *t) {
 	}
 	ExtMem_detach();
 
+	x_printf("%04x-%04x\n", adr, adr+0x500);
 	x_printf("write sum=%x\n", w_sum);
 	x_printf("read  sum=%x\n", r_sum);
 	if (w_sum != r_sum) {
@@ -989,13 +989,5 @@ static int c_test(token_list *t) {
 	} else {
 		x_puts("XMEM OK!\n");
 	}
-	
-	// SD Card Test	
-	if (sdcard_test() == 0) {
-		x_puts("SD Card OK.");
-		} else {
-		x_puts("SD Card NG.");
-	}
-	
 	return NO_ERROR;
 }

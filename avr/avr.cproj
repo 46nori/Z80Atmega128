@@ -298,12 +298,6 @@
     <Compile Include="src\petitfs\pffconf.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\sdcard.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\sdcard.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\timer.c">
       <SubType>compile</SubType>
     </Compile>
