@@ -35,8 +35,9 @@ Hence, I've devised the following design principles:
         ├── *.kicad_sch      Schematic
         └── *.kicad_pcb      PCB Data
 ```
-- [TOC](doc/README.md)
-- [Hardware design document](doc/Hardware/Design.md)
+- [Document](doc/README.md)
+  - [Z80ATmega128 Board Setup Guide](doc/SetupGuide.md)
+  - [Hardware design document](doc/Hardware/Design.md)
 - [Development log](doc/Diary.md)
 
 ## Required tools
