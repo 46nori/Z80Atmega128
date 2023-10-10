@@ -24,7 +24,7 @@ int main (void)
 		USART0_Init(19200);			// UART0 for ATmega128 Monitor
 		USART1_Init(19200);			// UART1 for Z80 console
 		Timer0_Init(1);				// UART1 console out every 1ms
-		} else {
+	} else {
 		// OFF
 		USART0_Init(9600);			// UART0 for ATmega128 Monitor
 		USART1_Init(9600);			// UART1 for Z80 console

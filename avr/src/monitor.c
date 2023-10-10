@@ -39,7 +39,8 @@ static int exec_command(token_list *t);
 /*********************************************************
  * Monitor main
  *********************************************************/
-void monitor(void) {
+void monitor(void)
+{
 	token_list tokens;
 	char cmd_line[32];
 
@@ -68,7 +69,8 @@ void monitor(void) {
 }
 
 // Tokenizer
-static token_list *tokenizer(char *str, const char *delim, token_list *t) {
+static token_list *tokenizer(char *str, const char *delim, token_list *t)
+{
 	char *token;
 	t->n = 0;
 	token = strtok(str, delim);
@@ -80,7 +82,8 @@ static token_list *tokenizer(char *str, const char *delim, token_list *t) {
 }
 
 // Get token value as an unsigned int
-static int get_uint(token_list *t, unsigned int idx, unsigned int *val) {
+static int get_uint(token_list *t, unsigned int idx, unsigned int *val)
+{
 	if (idx >= t->n) {
 		return ERR_PARAM_MISS;
 	}
@@ -169,7 +172,8 @@ static const struct {
 };
 
 // Lookup command
-static int exec_command(token_list *t) {
+static int exec_command(token_list *t)
+{
 	if (t->n == 0) {
 		return NO_ERROR;	// do nothing
 	}
@@ -184,7 +188,8 @@ static int exec_command(token_list *t) {
 /*********************************************************
  * Help
  *********************************************************/
-static int c_help(token_list *t) {
+static int c_help(token_list *t)
+{
 // Allocate literal in Flash ROM.
 static const char help_str[] PROGMEM =	\
 	"   <> : mandatory\n"\
@@ -263,7 +268,8 @@ static const char help_str[] PROGMEM =	\
 //   len : transfer length
 static const unsigned char *read_extram(const unsigned char *dst,
                                         const unsigned char *src,
-                                        size_t len) {
+                                        size_t len)
+{
 	size_t rest;
 	unsigned int offset;
 	ExtMem_attach();
@@ -303,7 +309,8 @@ static const unsigned char *read_extram(const unsigned char *dst,
 //   len : transfer length
 static const unsigned char *write_extram(const unsigned char *dst,
                                          const unsigned char *src,
-                                         size_t len) {
+                                         size_t len)
+{
 	size_t rest;
 	unsigned int offset;
 	ExtMem_attach();
@@ -348,7 +355,8 @@ enum memory_type {
 };
 
 #define D_COLUMN 16
-static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
+static int dump(token_list *t, uint8_t **adr, enum memory_type mtype)
+{
 	unsigned int tmp, len = D_COLUMN;
 	switch (t->n) {
 		case 3:
@@ -416,7 +424,8 @@ static int dump(token_list *t, uint8_t **adr, enum memory_type mtype) {
 /*********************************************************
  * Dump internal SRAM
  *********************************************************/
-static int c_dump_internal_ram(token_list *t) {
+static int c_dump_internal_ram(token_list *t)
+{
 	static uint8_t *adr = 0;
 	return dump(t, &adr, IntRAM);
 }
@@ -424,7 +433,8 @@ static int c_dump_internal_ram(token_list *t) {
 /*********************************************************
  * Dump external SRAM
  *********************************************************/
-static int c_dump_external_ram(token_list *t) {
+static int c_dump_external_ram(token_list *t)
+{
 	static uint8_t *adr = 0;
 	return dump(t, &adr, ExtRAM);
 }
@@ -432,7 +442,8 @@ static int c_dump_external_ram(token_list *t) {
 /*********************************************************
  * Dump flash ROM
  *********************************************************/
-static int c_dump_flashrom(token_list *t) {
+static int c_dump_flashrom(token_list *t)
+{
 	static uint8_t *adr = 0;
 	return dump(t, &adr, IntROM);
 }
@@ -440,7 +451,8 @@ static int c_dump_flashrom(token_list *t) {
 /*********************************************************
  * Dump EEPROM
  *********************************************************/
-static int c_dump_eeprom(token_list *t) {
+static int c_dump_eeprom(token_list *t)
+{
 	static uint8_t *adr = 0;
 	return dump(t, &adr, EEPROM);
 }
@@ -448,7 +460,8 @@ static int c_dump_eeprom(token_list *t) {
 /*********************************************************
  * Read a byte from internal SRAM
  *********************************************************/
-static int c_read_internal_ram(token_list *t) {
+static int c_read_internal_ram(token_list *t)
+{
 	static uint8_t *adr = 0;
 	if (t->n > 1) {
 		unsigned int tmp;
@@ -465,7 +478,8 @@ static int c_read_internal_ram(token_list *t) {
 /*********************************************************
  * Read a byte from external SRAM
  *********************************************************/
-static int c_read_external_ram(token_list *t) {
+static int c_read_external_ram(token_list *t)
+{
     static uint8_t *adr = 0;
     if (t->n > 1) {
 	    unsigned int tmp;
@@ -493,7 +507,8 @@ static int c_read_external_ram(token_list *t) {
 /*********************************************************
  * Write a byte into internal SRAM
  *********************************************************/
-static int c_write_internal_ram(token_list *t) {
+static int c_write_internal_ram(token_list *t)
+{
 	if (t->n < 3) {
 		return ERR_PARAM_MISS;     // missing parameters
 	}
@@ -515,7 +530,8 @@ static int c_write_internal_ram(token_list *t) {
 /*********************************************************
  * Write a byte into external SRAM
  *********************************************************/
-static int write_a_byte_to_external_ram(unsigned int adr, unsigned int dat) {
+static int write_a_byte_to_external_ram(unsigned int adr, unsigned int dat)
+{
 	ExtMem_attach();
 	if (adr < INTERNAL_RAM_SIZE) {
 		*(volatile uint8_t *)(adr + (unsigned int)ExtMem_map()) = dat;
@@ -528,7 +544,8 @@ static int write_a_byte_to_external_ram(unsigned int adr, unsigned int dat) {
 	return 0;
 }
 
-static int c_write_external_ram(token_list *t) {
+static int c_write_external_ram(token_list *t)
+{
 	if (t->n < 3) {
 		return ERR_PARAM_MISS;     // missing parameters
 	}
@@ -549,7 +566,8 @@ static int c_write_external_ram(token_list *t) {
 	return NO_ERROR;
 }
 
-static int c_fill_external_ram(token_list *t) {
+static int c_fill_external_ram(token_list *t)
+{
 	if (t->n < 4) {
 		return ERR_PARAM_MISS;     // missing parameters
 	}
@@ -580,7 +598,8 @@ static int c_fill_external_ram(token_list *t) {
 //
 // Load by XMODEM
 //
-static int load_xmodem(unsigned int dest, copyfunc cfunc) {
+static int load_xmodem(unsigned int dest, copyfunc cfunc)
+{
 	size_t size;
 	x_puts("Start XMODEM within 90s...");
 	switch (r_xmodem((unsigned char *)dest, &size, cfunc)) {
@@ -605,7 +624,8 @@ static int load_xmodem(unsigned int dest, copyfunc cfunc) {
  *********************************************************/
 static struct ix_ctx ctx;
 // convert IHX in a XMODEM packet to binary and write to external memory  
-static int copy_ihx_xmem(unsigned char *dst, unsigned char *src, size_t size) {
+static int copy_ihx_xmem(unsigned char *dst, unsigned char *src, size_t size)
+{
 	while (size-- > 0) {
 		if (push_ix(&ctx, *src++) >= 2) {
 			return -4;	// copy error
@@ -614,7 +634,8 @@ static int copy_ihx_xmem(unsigned char *dst, unsigned char *src, size_t size) {
 	return 0;
 }
 
-static int c_load_ihx_external_ram(token_list *t) {
+static int c_load_ihx_external_ram(token_list *t)
+{
 	init_ix(&ctx, write_a_byte_to_external_ram);
 	load_xmodem(0, copy_ihx_xmem);
 	switch (ctx.status) {
@@ -637,12 +658,14 @@ static int c_load_ihx_external_ram(token_list *t) {
  * Download binary into external SRAM
  *********************************************************/
 // copy XMODEM packet to external memory
-static int copy_bin_xmem(unsigned char *dst, unsigned char *src, size_t size) {
+static int copy_bin_xmem(unsigned char *dst, unsigned char *src, size_t size)
+{
 	write_extram(dst, src, size);
 	return 0;
 }
 
-static int c_load_bin_external_ram(token_list *t) {
+static int c_load_bin_external_ram(token_list *t)
+{
     if (t->n < 2) {
 	    return ERR_PARAM_MISS;	// missing parameters
     }
@@ -657,7 +680,8 @@ static int c_load_bin_external_ram(token_list *t) {
 /*********************************************************
  * Download binary into internal SRAM
  *********************************************************/
-static int c_load_bin_internal_ram(token_list *t) {
+static int c_load_bin_internal_ram(token_list *t)
+{
     if (t->n < 2) {
 	    return ERR_PARAM_MISS;	// missing parameters
     }
@@ -671,7 +695,8 @@ static int c_load_bin_internal_ram(token_list *t) {
 /*********************************************************
  * Save by XMODEM
  *********************************************************/
-static int c_save_bin_internal_ram(token_list *t) {
+static int c_save_bin_internal_ram(token_list *t)
+{
     if (t->n < 3) {
         return ERR_PARAM_MISS;	// missing parameters
     }
@@ -707,7 +732,8 @@ static int c_save_bin_internal_ram(token_list *t) {
 /*********************************************************
  * Save SRAM to EEPROM
  *********************************************************/
-static int c_save_bin_eeprom(token_list *t) {
+static int c_save_bin_eeprom(token_list *t)
+{
     if (t->n < 4) {
 	    return ERR_PARAM_MISS;	// missing parameters
     }
@@ -728,7 +754,8 @@ static int c_save_bin_eeprom(token_list *t) {
 	return save_extmem_eeprom((uint8_t *)dst, (const uint8_t *)src, size);
 }
 
-static int c_save2_bin_eeprom(token_list *t) {
+static int c_save2_bin_eeprom(token_list *t)
+{
 	if (t->n < 4) {
 		return ERR_PARAM_MISS;	// missing parameters
 	}
@@ -753,7 +780,8 @@ static int c_save2_bin_eeprom(token_list *t) {
 	return save_extmem_eeprom((uint8_t *)dst, (const uint8_t *)src, size);
 }
 
-int save_extmem_eeprom(uint8_t *dst, const uint8_t *src, size_t size) {
+int save_extmem_eeprom(uint8_t *dst, const uint8_t *src, size_t size)
+{
 	uint8_t ebuf[128];
 	int n = size / sizeof(ebuf);
 	for (int i = 0; i < n; i++) {
@@ -775,7 +803,8 @@ int save_extmem_eeprom(uint8_t *dst, const uint8_t *src, size_t size) {
 /*********************************************************
  * Load EEPROM to SRAM
  *********************************************************/
-static int c_load_eeprom_external_ram(token_list *t) {
+static int c_load_eeprom_external_ram(token_list *t)
+{
     if (t->n < 4) {
 	    return ERR_PARAM_MISS;	// missing parameters
     }
@@ -819,7 +848,8 @@ int load_eeprom_extmem(uint8_t *dst, const uint8_t *src, size_t size) {
 /*********************************************************
  * Calculate remaining size of internal RAM
  *********************************************************/
-static int c_mem(token_list *t) {
+static int c_mem(token_list *t)
+{
 	extern int __heap_start, *__brkval;
 	int v;
 	x_printf("%d bytes left.\n",
@@ -830,7 +860,8 @@ static int c_mem(token_list *t) {
 /*********************************************************
  * Invoke reset of Z80
  *********************************************************/
-static int c_z80_reset(token_list *t) {
+static int c_z80_reset(token_list *t)
+{
     if (t->n > 1) {
 		// HALT after reset if 0 is presented as parameter
 	    unsigned int tmp;
@@ -848,7 +879,8 @@ static int c_z80_reset(token_list *t) {
 /*********************************************************
  * Invoke NMI of Z80
  *********************************************************/
-static int c_z80_nmi(token_list *t) {
+static int c_z80_nmi(token_list *t)
+{
 	Z80_NMI();
 	return NO_ERROR;
 }
@@ -856,7 +888,8 @@ static int c_z80_nmi(token_list *t) {
 /*********************************************************
  * Invoke INT of Z80
  *********************************************************/
-static int c_z80_int(token_list *t) {
+static int c_z80_int(token_list *t)
+{
 	if (t->n < 2) {
 		return ERR_PARAM_MISS;     // missing parameters
 	}
@@ -872,7 +905,8 @@ static int c_z80_int(token_list *t) {
 /*********************************************************
  * Show Z80 status
  *********************************************************/
-static int c_z80_status(token_list *t) {
+static int c_z80_status(token_list *t)
+{
 	x_printf("/BUSRQ :%c\n", Is_Z80_BUSRQ()  ? 'H' : 'L');
 	x_printf("/BUSACK:%c\n", Is_Z80_BUSACK() ? 'H' : 'L');
 	x_printf("/HALT  :%c\n", Is_Z80_HALT()   ? 'H' : 'L');
@@ -927,7 +961,8 @@ static int c_z80_continue(token_list *t)
 /*********************************************************
  * Enable AVR interrupt
  *********************************************************/
-static int c_avr_sei(token_list *t) {
+static int c_avr_sei(token_list *t)
+{
 	sei();
 	return NO_ERROR;
 }
@@ -935,7 +970,8 @@ static int c_avr_sei(token_list *t) {
 /*********************************************************
  * Disable AVR interrupt
  *********************************************************/
-static int c_avr_cli(token_list *t) {
+static int c_avr_cli(token_list *t)
+{
 	cli();
 	return NO_ERROR;
 }
@@ -943,15 +979,16 @@ static int c_avr_cli(token_list *t) {
 /*********************************************************
  * Test external memory
  *********************************************************/
-static int c_test(token_list *t) {
+static int c_test(token_list *t)
+{
 	// External memory test
-    unsigned int offset = 0;
-    if (t->n > 1) {
-	    unsigned int tmp;
-	    if (get_uint(t, T_PARAM1, &tmp) != NO_ERROR) {
-		    return ERR_PARAM_VAL;
-	    }
-	    offset = tmp;
+	unsigned int offset = 0;
+	if (t->n > 1) {
+		unsigned int tmp;
+		if (get_uint(t, T_PARAM1, &tmp) != NO_ERROR) {
+			return ERR_PARAM_VAL;
+		}
+		offset = tmp;
     }
 
 	ExtMem_attach();

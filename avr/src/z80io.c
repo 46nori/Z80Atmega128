@@ -10,7 +10,8 @@
 //
 // Initialize external memory settings
 //
-void ExtMem_Init(int wait) {
+void ExtMem_Init(int wait)
+{
 	// WAIT setting for external SRAM
 	if (wait < 2) {
 		// SRAM access time < 100ns
@@ -34,7 +35,8 @@ void ExtMem_Init(int wait) {
 // Caution: Do NOT call at the interrupt handler
 //          for Z80 (/IN0, /INT1, /INT4)
 //
-void ExtMem_attach(void) {
+void ExtMem_attach(void)
+{
 	Z80_BUSREQ(1);				// Acquire memory bus
 	SET_BIT(MCUCR, SRE);		// Enable XMEM
 }
@@ -42,7 +44,8 @@ void ExtMem_attach(void) {
 //
 // Detach external memory and let Z80 be active
 //
-void ExtMem_detach(void) {
+void ExtMem_detach(void)
+{
 	CLR_BIT(MCUCR, SRE);		// Disable XMEM
 	Z80_BUSREQ(0);				// Release memory bus
 }
@@ -50,12 +53,14 @@ void ExtMem_detach(void) {
 //
 // Set shadow area to access hiding area of external memory
 //
-void *ExtMem_map(void) {
+void *ExtMem_map(void)
+{
 	SET_BYTE(XMCRB, 0x03);	// Enable shadow
 	return (void *)0x2000;
 }
 
-void ExtMem_unmap(void) {
+void ExtMem_unmap(void)
+{
 	SET_BYTE(XMCRB, 0x00);	// Disable shadow
 }
 
@@ -65,7 +70,8 @@ void ExtMem_unmap(void) {
 //
 // Invoke /BUSRQ (PD6)
 //
-void Z80_BUSREQ(int st) {
+void Z80_BUSREQ(int st)
+{
 	if (st) {
 		// Enable /BUSREQ
 		CLR_BIT(PORTD, PORTD6);
@@ -82,7 +88,8 @@ void Z80_BUSREQ(int st) {
 //
 // Invoke /RESET (PB5) to reset Z80
 //
-void Z80_RESET(void) {
+void Z80_RESET(void)
+{
 	ExtMem_detach();
 	// Send reset pulse
 	CLR_BIT(PORTB, PORTB5);
@@ -93,7 +100,8 @@ void Z80_RESET(void) {
 //
 // Invoke /NMI (PB6) for Z80 NMI
 //   /NMI required >80ns low period in Z80A
-void Z80_NMI(void) {
+void Z80_NMI(void)
+{
 	CLR_BIT(PORTB, PORTB6);		// t_w(/NML) > 80ns
 	asm("NOP");					// 62.5ns (=1CLK@16MHz)
 	asm("NOP");					// 62.5ns (=1CLK@16MHz)
@@ -105,7 +113,8 @@ void Z80_NMI(void) {
 //   adr is jump address
 //   0x0000-0x0003 is overwritten with 'JP adr'.
 //
-void Z80_RESET_GO(uint8_t *adr) {
+void Z80_RESET_GO(uint8_t *adr)
+{
 	SET_BIT(MCUCR, SRE);		// Enable XMEM
 	uint8_t *p = (uint8_t *)ExtMem_map();	// 0x0000
 	p[0] = 0xc3;							// JP
@@ -137,7 +146,8 @@ void Z80_EXTINT_High(void)
 	SET_BIT(PORTD, PORTD4);		// /INT = High
 }
 
-void Z80_EXTINT(uint8_t vector) {
+void Z80_EXTINT(uint8_t vector)
+{
 	Z80_EXTINT_low(vector);		// /INT = Low
 	_delay_us(1);				// t_s(IT) > 80ns
 	Z80_EXTINT_High();			// /INT = High
@@ -147,7 +157,8 @@ void Z80_EXTINT(uint8_t vector) {
 // Clear /CLRWAIT (PD5) to deactivate Z80 /WAIT
 // Pulse width must be >250ns (Z80 1CLK@4MHz)
 //   62.5ns(AVR 1CLK@16MHz) * 5CLK = 312.5ns
-void Z80_CLRWAIT(void) {
+void Z80_CLRWAIT(void)
+{
 	CLR_BIT(PORTD, PORTD5);
 	asm("NOP");					// 1 CLK
 	asm("NOP");					// 1 CLK
@@ -158,7 +169,8 @@ void Z80_CLRWAIT(void) {
 //
 // Set HALT instruction at 0x0000 to stay Z80 halt after reset
 //
-void Z80_HALT(void) {
+void Z80_HALT(void)
+{
 	SET_BIT(MCUCR, SRE);		// Enable XMEM
 	*(volatile uint8_t *)ExtMem_map() = 0x76;	// HALT instruction
 	ExtMem_unmap();

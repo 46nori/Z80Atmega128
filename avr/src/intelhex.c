@@ -9,12 +9,14 @@
 #include <ctype.h>
 #include "intelhex.h"
 
-static void init_rbuf(struct ix_rbuf *p) {
+static void init_rbuf(struct ix_rbuf *p)
+{
 	p->index = 0;
 	memset(p->buf, '\0', RBUF_SIZE);
 }
 
-static int push_rbuf(struct ix_rbuf *p, char c) {
+static int push_rbuf(struct ix_rbuf *p, char c)
+{
 	if (isxdigit(c) && (p->index < RBUF_SIZE)) {
 		p->buf[p->index++] = c;
 	}
@@ -27,7 +29,8 @@ static int push_rbuf(struct ix_rbuf *p, char c) {
  *    @param [in] p : pointer of ix_ctx instance
  *           [in] f : 1 byte memory write function. 
  */
-void init_ix(struct ix_ctx *p, MemWriteFunc f) {
+void init_ix(struct ix_ctx *p, MemWriteFunc f)
+{
 	p->func    = f;
 	p->state   = HEAD;
 	p->length  = 0;
@@ -50,7 +53,8 @@ void init_ix(struct ix_ctx *p, MemWriteFunc f) {
  *
  *    @note RecordType 02 is not supported 
  */
-int push_ix(struct ix_ctx *p, char c) {
+int push_ix(struct ix_ctx *p, char c)
+{
 	int tmp;
 	int ret = 1;			// need next data
 

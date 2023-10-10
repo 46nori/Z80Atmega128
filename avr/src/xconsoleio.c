@@ -9,7 +9,8 @@
 #include <stdarg.h>
 #include "xconsoleio.h"
 
-int x_printf(const char *format, ...) {
+int x_printf(const char *format, ...)
+{
 	char buffer[128];
 	int size;
 	va_list argptr;
@@ -25,7 +26,8 @@ int x_printf(const char *format, ...) {
 	return size;
 }
 
-int x_puts(const char *s) {
+int x_puts(const char *s)
+{
 	int st;
 	while (*s) {
 		if (*s == '\n') {
@@ -48,7 +50,8 @@ int x_puts(const char *s) {
 	return st;
 }
 
-char *x_gets_s(char *buffer, size_t size) {
+char *x_gets_s(char *buffer, size_t size)
+{
 	if (size == 0) {
 		buffer[0] = '\0';
 		return NULL;
@@ -93,18 +96,21 @@ char *x_gets_s(char *buffer, size_t size) {
 	return buffer;
 }
 
-int x_putchar(int c) {
+int x_putchar(int c)
+{
 	if (c != EOF) {
 		USART0_Transmit(c);
 	}
 	return c;
 }
 
-int x_getchar(void) {
+int x_getchar(void)
+{
 	return x_getchar_tout(0);
 }
 
-int x_getchar_tout(int32_t us) {
+int x_getchar_tout(int32_t us)
+{
 	int c = EOF;
 	if (us == 0) {
 		c = USART0_Receive();
@@ -114,7 +120,8 @@ int x_getchar_tout(int32_t us) {
 	return c;
 }
 
-void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size) {
+void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size)
+{
 	cli();
 	cb->buffer = buffer;
 	cb->size = size;
@@ -133,7 +140,8 @@ void x_flush(ConsoleBuffer* cb)
 	sei();
 }
 
-int x_enqueue(ConsoleBuffer* cb, char data) {
+int x_enqueue(ConsoleBuffer* cb, char data)
+{
 	if (cb->count == cb->size) {
 		return 3;	// Buffer is already full. Cannot enqueue.
 	}
@@ -152,7 +160,8 @@ int x_enqueue(ConsoleBuffer* cb, char data) {
 	return 0;		// Buffer is still enough available.
 }
 
-char x_dequeue(ConsoleBuffer* cb) {
+char x_dequeue(ConsoleBuffer* cb)
+{
 	if (cb->count == 0) {
 		return '\0';  // Buffer is empty. Cannot dequeue.
 	}
@@ -167,7 +176,8 @@ char x_dequeue(ConsoleBuffer* cb) {
 
 
 //////////////////////////////////////////////////////
-int x_printf_TX1(const char *format, ...) {
+int x_printf_TX1(const char *format, ...)
+{
 	char buffer[128];
 	int size;
 	va_list argptr;

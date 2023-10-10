@@ -12,7 +12,8 @@
 //
 // External Interrupt
 //
-void ExtInt_Init(void) {
+void ExtInt_Init(void)
+{
 	// External interrupt
 	EICRA = 0b10101010;				// Falling edge sense
 	EICRB = 0b10101010;				// Falling edge sense
@@ -23,7 +24,8 @@ void ExtInt_Init(void) {
 ///////////////////////////////////////////////////////////////////
 // INT0 : Z80 IN instruction(I/O READ) handler
 ///////////////////////////////////////////////////////////////////
-ISR(INT0_vect) {
+ISR(INT0_vect)
+{
 	// Emulate device and return port data to Z80
 	PORTA = (*InHandler[PINF % PORT_MAX])();
 	DDRA  = 0xff;					// Set Port A output
@@ -41,7 +43,8 @@ ISR(INT0_vect) {
 ///////////////////////////////////////////////////////////////////
 // INT1 : Z80 OUT instruction(I/O WRITE) handler
 ///////////////////////////////////////////////////////////////////
-ISR(INT1_vect) {
+ISR(INT1_vect)
+{
 	// Set Port A input
 	PORTA = 0xff;
 	DDRA  = 0x00;
@@ -61,7 +64,8 @@ ISR(INT1_vect) {
 ///////////////////////////////////////////////////////////////////
 // INT4 : Z80 external INT handler
 ///////////////////////////////////////////////////////////////////
-ISR(INT4_vect) {
+ISR(INT4_vect)
+{
 	// Z80 /INT = High
 	Z80_EXTINT_High();
 	// Z80 int vector
@@ -89,14 +93,16 @@ ISR(USART1_RX_vect)
 ///////////////////////////////////////////////////////////////////
 // Timer0 handler (every 1ms)
 ///////////////////////////////////////////////////////////////////
-ISR(TIMER0_COMP_vect) {
+ISR(TIMER0_COMP_vect)
+{
 	Transmit_TX1_Buf();
 }
 
 ///////////////////////////////////////////////////////////////////
 // Timer2 handler (every 10ms)
 ///////////////////////////////////////////////////////////////////
-ISR(TIMER2_COMP_vect, ISR_NOBLOCK) {
+ISR(TIMER2_COMP_vect, ISR_NOBLOCK)
+{
 	em_disk_read();
 	em_disk_write();
 	em_led_heartbeat(2);			// Blink RED LED at 2Hz

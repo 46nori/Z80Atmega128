@@ -46,7 +46,8 @@
  *    @retval  0  Success
  *    @retval -4  copy error
  */
-static int copy(unsigned char *dst, unsigned char *src, size_t size) {
+static int copy(unsigned char *dst, unsigned char *src, size_t size)
+{
 	memcpy(dst, src, size);
 	return 0;
 }

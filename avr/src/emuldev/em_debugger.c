@@ -96,7 +96,8 @@ static int FindBreakPoint(uint8_t *p)
 	return -1;
 }
 
-static void swap_bp(struct BreakPoint *a, struct BreakPoint *b) {
+static void swap_bp(struct BreakPoint *a, struct BreakPoint *b)
+{
 	struct BreakPoint tmp;
 	memcpy(&tmp, a, sizeof(struct BreakPoint));
 	memcpy(a, b, sizeof(struct BreakPoint));
