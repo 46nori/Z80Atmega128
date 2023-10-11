@@ -37,7 +37,7 @@ Hence, I've devised the following design principles:
         └── *.kicad_pcb      PCB Data
 ```
 - [Document](doc/README.md)
-  - [Z80ATmega128 Board Setup Guide](doc/SetupGuide.md)
+  - [Z80ATmega128 Board Setup Guide](doc/SetupGuide_en.md)
   - [Hardware design document](doc/Hardware/Design.md)
 - [Development log](doc/Diary.md)
 

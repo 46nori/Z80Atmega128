@@ -1,6 +1,8 @@
 # Z80ATmega128 documents
 ## User's Guide
-- [Z80ATmega128 Board Setup Guide](./SetupGuide.md)
+- Z80ATmega128 Board Setup Guide
+  - [English](./SetupGuide_en.md)
+  - [Japanese](./SetupGuide.md)
 
 ## Hardware Specifications
 - [Z80ATmega128 Board Hardware Specification](./Hardware/Design.md)
