@@ -118,8 +118,28 @@ Z80ATmega128 BoardでCP/M-80を動作させるための手順を説明する。
 
 なお、ライセンスの関係で本リポジトリにはCP/Mのソースもバイナリも置いていない。ここでは、[The Unofficial CP/M Web site](http://www.cpm.z80.de/)にある、[CP/M 2.2 BINARY](http://www.cpm.z80.de/download/cpm22-b.zip)を使用してCP/Mのディスクイメージを作成する。
 
-### 3-1. CP/MディスクイメージとmicroSD Cardの作成
+### 3-1. ビルド環境の構築
+BIOSのアセンブル、およびCP/Mのディスクイメージの作成はLinux環境で行う。
+Windows/macOSの場合は、VS Code + Dev Containerの環境がおすすめ。
 
+#### Linux (Debian12)の場合
+1. 必要なツールのインストール
+   ```
+   sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
+   ```
+2. Z80のクロスアセンブラ(asxxxx)のインストール
+   ```
+   cd z80/toolchain
+   make
+   ```
+
+#### VS Code + Dev Containerの場合
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) と [VS Code](https://azure.microsoft.com/ja-jp/products/visual-studio-code/)をインストール
+- VS Codeの`Dev Containers`プラグインをインストール
+- Dev Containerでbashを起動
+
+
+### 3-2. CP/MディスクイメージとmicroSD Cardの作成
 1. CP/Mディスクイメージの生成 (VSCode + Dev Container環境の場合)    
   `z80/cpm22/image` で `DISK00.IMG` を生成する。これがCP/Mのディスクイメージのバイナリファイル。
     ```
@@ -189,7 +209,7 @@ Z80ATmega128 BoardでCP/M-80を動作させるための手順を説明する。
      - `00`はドライブA:に相当する。`15`(ドライブP:)まで指定可能。
      - 例えば `DISK00.IMG` を `DISK01.IMG` としてコピーし追加すれば、B:ドライブが見えるようになる。
 
-### 3-2. CP/M自動起動のための設定
+### 3-3. CP/M自動起動のための設定
 microSD CardからCP/Mが起動できるようにするための設定を行う。
 
 1. BIOSのビルド (VSCode + Dev Container環境の場合)  
@@ -220,7 +240,7 @@ microSD CardからCP/Mが起動できるようにするための設定を行う�
         >
         ```
 
-### 3-3. 動作確認
+### 3-4. 動作確認
   1. AVR, Z80用のシリアルインターフェースを端末に接続。
   2. CP/Mイメージファイルを書き込んだmicroSD Cardをスロットに挿入する。
   3. DIP SW 1をON(CP/M起動モード)にして、リセットボタンを押す。

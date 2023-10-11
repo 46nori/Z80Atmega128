@@ -119,8 +119,28 @@ The procedure for operating the CP/M-80 on the Z80ATmega128 Board is described b
 
 Due to licensing, neither the source nor the binary of the CP/M is provided in this repository. In this section, you will create a CP/M disk image using the [CP/M 2.2 BINARY](http://www.cpm.z80.de/download/cpm22-b.zip) located at [The Unofficial CP/M Web site](http://www.cpm.z80.de/).
 
-### 3-1. Creating a CP/M Disk Image for microSD Card
+### 3-1. Setup Build Environment
+Linux is required for BIOS build and the CP/M disk image generation.
+VS Code + Dev Container environment is recommended for Windows and macOS.
 
+#### Linux (Debian12)
+1. apt install
+   ```
+   sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
+   ```
+2. Install Z80 cross assembler(asxxxx)
+   ```
+   cd z80/toolchain
+   make
+   ```
+
+#### VS Code + Dev Container
+- Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- Install [VS Code](https://azure.microsoft.com/en-us/products/visual-studio-code/)
+- Install `Dev Containers` plugin of VS Code
+- Open bash in Dev Container
+
+### 3-2. Creating a CP/M Disk Image for microSD Card
 1. Generating a CP/M Disk Image (VSCode + Dev Container Environment)    
   Generate `DISK00.IMG` with `z80/cpm22/image`, which is the CP/M disk image binary file.
     ```
@@ -193,7 +213,7 @@ Due to licensing, neither the source nor the binary of the CP/M is provided in t
      - `00` corresponds to drive A:. You can specify drives up to `15`(P:).
      - For instance, if you copy `DISK00.IMG` as `DISK01.IMG`, drive B: will become visible."
 
-### 3-2. Configuration for automatic CP/M startup
+### 3-3. Configuration for automatic CP/M startup
 Configure settings to enable CP/M startup from the microSD Card when power on.
 
 1. Build CP/M BIOS (VSCode + Dev Container environment)  
@@ -224,7 +244,7 @@ Configure settings to enable CP/M startup from the microSD Card when power on.
         >
         ```
 
-### 3-3. Functionality Test
+### 3-4. Functionality Test
   1. Connect the AVR and Z80 serial interfaces to the terminal.
   2. Insert a microSD card with the CP/M image file into the slot.
   3. Turn on DIP switch SW1 (CP/M start mode) and press the RESET button.
