@@ -33,11 +33,11 @@ TMPDIR	= ./tmp
 #   CCP+BDOS speficied by $(CCPBDOS) is set to reserved track. 
 #   Files are copy from $(TMPDIR).
 $(IMAGE):	$(TMPDIR)
-	$(CPM_MKFS) -f $(DISKDEF) -b $(CCPBDOS) $(IMAGE)
-	$(DD) if=/dev/zero of=$(IMAGE) bs=8192 count=1021 oflag=append conv=notrunc
-	$(CPM_CP) -f $(DISKDEF) $(IMAGE) $(TMPDIR)/*.* $(USER)
-	$(CPM_LS) -f $(DISKDEF) $(IMAGE)
-	echo `wc -c < $(IMAGE)`
+	$(CPM_MKFS) -f $(DISKDEF) -b $(CCPBDOS) $@
+	$(DD) if=/dev/zero of=$@ bs=8192 count=1021 oflag=append conv=notrunc
+	$(CPM_CP) -f $(DISKDEF) $@ $(TMPDIR)/*.* $(USER)
+	$(CPM_LS) -f $(DISKDEF) $@
+	echo `wc -c < $@`
 
 # Download CP/M 2.2 binay:
 #   http://www.cpm.z80.de/download/cpm22-b.zip
