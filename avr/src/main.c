@@ -41,7 +41,7 @@ int main (void)
 	if (bit_is_clear(PING, PORTG3)) {
 		// Check if SD Card is inserted
 		if (PINB & _BV(PORTB4)) {
-			x_puts("\Insert microSDHC card.");
+			x_puts("Insert microSDHC card.");
 		} else {
 			// Load 62K CP/M BIOS from EEPROM
 			const uint16_t *src = 0;
