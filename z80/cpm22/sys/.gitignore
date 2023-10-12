@@ -1,13 +1,9 @@
+*.SYS
 *.lst
 *.rel
 *.sym
 *.ihx
 *.hlr
-*.zip
 *.BIN
 *.bin
-*.IMG
-*.SYS
-*.img
 tmp/
-cpmdisks
