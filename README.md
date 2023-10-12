@@ -24,8 +24,10 @@ Hence, I've devised the following design principles:
 .
 ├── avr                      AVR firmware
 ├── z80                      Z80 software
-│   └── cpm22                  CP/M-80 2.2 BIOS
-│       └── image              CP/M image generator
+│   └── cpm22                CP/M-80 Ver2.2
+│       ├── bios               BIOS
+│       ├── image              Disk image
+│       └── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IP+CCP/BDOS+BIOS)
 ├── doc
 │   ├── Diary?.md            Development Log
 │   ├── Hardware/            Hardware documents

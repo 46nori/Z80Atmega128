@@ -22,7 +22,7 @@ CPM_LS		:= cpmls
 DISKDEF	= sdcard
 
 # CCP+BDOS binary for embedding to the DISK image
-#CCPBDOS = ../CPM.SYS
+#CCPBDOS = ../sys/CPM.SYS
 CCPBDOS = $(TMPDIR)/CPM.SYS
 
 USER	= 0:

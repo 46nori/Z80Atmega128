@@ -99,8 +99,6 @@ This section describes the steps to burn the firmware into the Z80ATmega128 Boar
 3. Connect the serial interface for AVR to the terminal software.
 4. Verified the prompt appears when the power is ON or the reset button is pressed.
     ```
-    SDHC mount error
-
     ATmega128 Tiny Monitor
     >
     ```
@@ -217,9 +215,9 @@ VS Code + Dev Container environment is recommended for Windows and macOS.
 Configure settings to enable CP/M startup from the microSD Card when power on.
 
 1. Build CP/M BIOS (VSCode + Dev Container environment)  
-   Generate `bios.ihx` with `z80/cpm22`. This is an Intel HEX format file.
+   Generate `bios.ihx` with `z80/cpm22/bios`. This is an Intel HEX format file.
     ```
-    vscode@Z80ATmega128:/z80/cpm22$ make bios.ihx
+    vscode@Z80ATmega128:/z80/cpm22/bios$ make bios.ihx
     asz80 -l -o  bios.asm
     
     aslink -i bios.ihx bios.rel

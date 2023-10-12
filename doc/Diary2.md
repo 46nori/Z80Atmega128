@@ -833,3 +833,6 @@
 ## 2023/10/11
 - [SetupGuide](./SetupGuide.md)を追加
 
+## 2023/10/12
+- `avr/src/main.c`でPORTB4をチェックし、CP/M modeでSD Cardの挿入状態を確認するようにした。
+- z80/cpm以下のディレクトリ構成を変更し、`bios/`と`sys/`にファイルを分離した。

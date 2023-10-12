@@ -17,26 +17,26 @@ LD		:= aslink
 
 TMPDIR	= ./tmp
 
+
+BIOS	= ../bios
+
 .PHONY: all
-all:	cpm.ihx bios.ihx CPM.SYS
+all:	cpm.ihx CPM.SYS
 
 #
 # IPL + CCP/BDOS + BIOS (INTEL HEX)
 #
-cpm.ihx: $(TMPDIR)/cpm22.rel ipl.rel bios.rel
-	$(LD) -i $@ ipl.rel $(TMPDIR)/cpm22.rel bios.rel
+cpm.ihx: $(TMPDIR)/cpm22.rel ipl.rel $(BIOS)/bios.rel
+	$(LD) -i $@ ipl.rel $(TMPDIR)/cpm22.rel $(BIOS)/bios.rel
 
 ipl.rel: ipl.asm
 	$(AS) -o $(ASFLAGS) $<
 
 #
-# BIOS only (INTEL HEX)
+# BIOS 
 #
-bios.ihx: bios.rel
-	$(LD) -i $@ $<
-
-bios.rel: bios.asm
-	$(AS) -l -o $(ASFLAGS) $<
+$(BIOS)/bios.rel: 
+	$(MAKE) -C $(BIOS)
 
 #
 # Build CP/M 2.2(CCP+BDOS) binay from source code

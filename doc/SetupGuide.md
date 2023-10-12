@@ -98,8 +98,6 @@ Z80ATmega128 Boardにファームウェアを焼き込み、モニタプログ�
 3. AVR用シリアルインターフェースを端末ソフトに接続。
 4. 電源ONまたはリセットボタン押下で、プロンプトが表示されることを確認。
     ```
-    SDHC mount error
-
     ATmega128 Tiny Monitor
     >
     ```
@@ -213,9 +211,9 @@ Windows/macOSの場合は、VS Code + Dev Containerの環境がおすすめ。
 microSD CardからCP/Mが起動できるようにするための設定を行う。
 
 1. BIOSのビルド (VSCode + Dev Container環境の場合)  
-   `z80/cpm22` で `bios.ihx` を生成する。これはIntel HEX formatのファイル。
+   `z80/cpm22/bios` で `bios.ihx` を生成する。これはIntel HEX formatのファイル。
     ```
-    vscode@Z80ATmega128:/z80/cpm22$ make bios.ihx
+    vscode@Z80ATmega128:/z80/cpm22/bios$ make bios.ihx
     asz80 -l -o  bios.asm
     
     aslink -i bios.ihx bios.rel
