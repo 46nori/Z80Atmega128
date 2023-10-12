@@ -37,18 +37,23 @@ int main (void)
 
 	sei();							// Enable interrupt
 
-	// DIPSW1(PG3) - CP/M launch control
+	// CHeck if DIPSW1(PG3) is ON - CP/M launch control
 	if (bit_is_clear(PING, PORTG3)) {
-		// Load 62K CP/M BIOS from EEPROM if DIPSW1 is ON.
-		const uint16_t *src = 0;
-		eeprom_busy_wait();
-		uint8_t *dst = (uint8_t *)eeprom_read_word(src++);
-		eeprom_busy_wait();
-		size_t len = eeprom_read_word(src++);
-		load_eeprom_extmem(dst, (const uint8_t *)src, len);
-		Z80_RESET_GO(dst);			// Start CP/M
-		x_puts("\n=== CP/M mode ===");
-		x_printf("BIOS: 0x%04x - 0x%04x\n", dst, dst + len - 1);
+		// Check if SD Card is inserted
+		if (PINB & _BV(PORTB4)) {
+			x_puts("\Insert microSDHC card.");
+		} else {
+			// Load 62K CP/M BIOS from EEPROM
+			const uint16_t *src = 0;
+			eeprom_busy_wait();
+			uint8_t *dst = (uint8_t *)eeprom_read_word(src++);
+			eeprom_busy_wait();
+			size_t len = eeprom_read_word(src++);
+			load_eeprom_extmem(dst, (const uint8_t *)src, len);
+			Z80_RESET_GO(dst);			// Start CP/M
+			x_puts("\n=== CP/M mode ===");
+			x_printf("BIOS: 0x%04x - 0x%04x\n", dst, dst + len - 1);
+		}
 	}
 
 	monitor();						// Start Tiny Monitor
