@@ -26,17 +26,16 @@ Hence, I've devised the following design principles:
 ├── z80                      Z80 software
 │   └── cpm22                CP/M-80 Ver2.2
 │       ├── bios               BIOS
-│       ├── image              Disk image
-│       └── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IP+CCP/BDOS+BIOS)
+│       ├── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IP+CCP/BDOS+BIOS)
+│       └── image              Disk image
 ├── doc
-│   ├── Diary?.md            Development Log
 │   ├── Hardware/            Hardware documents
 │   ├── Software/            Software documents
 │   └── README.md            Table of contents
 └── schematics
     └── KiCad
-        ├── *.kicad_sch      Schematic
-        └── *.kicad_pcb      PCB Data
+        ├── *.kicad_sch      Schematic diagram
+        └── *.kicad_pcb      PCB diagram
 ```
 - [Document](doc/README.md)
   - [Z80ATmega128 Board Setup Guide](doc/SetupGuide_en.md)
