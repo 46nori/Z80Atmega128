@@ -18,6 +18,9 @@ Hence, I've devised the following design principles:
 * The system can boot CP/M from a microSD card containing the CP/M image file.
 * You can enjoy playing the text adventure game ZORK I, II and III !
 * The printed circuit board (PCB) is available.
+* Demo Video  
+  [![](https://img.youtube.com/vi/2_RJPk65XRE/0.jpg)](https://youtu.be/2_RJPk65XRE
+)
 
 ## Contents
 ```
