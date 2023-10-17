@@ -2,7 +2,7 @@
 ;       CP/M-80 Version 2.2 BIOS for Z80ATmega128
 ;       Copyright (C) 2023 46nori
 ;******************************************************************
-MEM	        .equ    62              ; 62K CP/M
+MEM	        .equ    62      ; 62K CP/M
 
 CCP_ENTRY       .equ    (MEM-7)*1024
 BDOS_ENTRY      .equ    CCP_ENTRY+0x800
@@ -11,6 +11,9 @@ CCP_BDOS_LENGTH .equ    0x1600
 VECT_TABLE      .equ    (BIOS_ENTRY + 0x100) & 0xff00
 IOBYTE          .equ    0x0003
 LOGIN_DISK_NO   .equ    0x0004
+
+; BIOS parameter
+NUM_OF_DISKS    .equ    5       ; Number of supported disks
 
 ; Emulated I/O address 
 PORT_CONIN      .equ    0x00    ; Get a character from CONIN
@@ -478,6 +481,9 @@ HOME:
 ;******************************************************************
 SELDSK:
         PUSH AF
+        LD A, NUM_OF_DISKS - 1
+        CP C
+        JR C, DISK_ERROR
         XOR A
         LD (IS_CACHED), A       ; Clear read cache
 
@@ -488,7 +494,18 @@ SELDSK:
         JR NZ, DISK_ERROR
 
         ; Success
-        LD HL, DPH00            ; Return HL = DPH
+        PUSH DE
+        PUSH IX
+        LD A, C
+        ADD A, A
+        LD D, 0
+        LD E, A
+        LD IX, DRIVE_TABLE
+        ADD IX, DE
+        LD H, (IX + 1)          ; Return HL = DPH
+        LD L, (IX + 0)
+        POP IX
+        POP DE
         POP AF
         RET
 
@@ -933,19 +950,6 @@ ADD32_16:
         RET
 
 ;******************************************************************
-;       DPH: Disk Parameter Header
-;******************************************************************
-DPH00:
-        .dw     0               ; XLT: Translation Table address (0 if no table)
-        .dw     0               ; SPA: scratch pad area 1
-        .dw     0               ; SPA: scratch pad area 2
-        .dw     0               ; SPA: scratch pad area 3
-        .dw     DIRB00          ; DIRB: Directory Buffer address
-        .dw     DPB00           ; DPB: Disk Parameter Block address
-        .dw     CSV00           ; CSV: Check sum vector address
-        .dw     ALV00           ; ALV: Allocation(bit map) vector address
-
-;==================================================================
 ;       DPB: Disk Parameter Block
 ;
 ;       SSZ: 128 bytes per a sector 
@@ -966,7 +970,7 @@ DPH00:
 ;               (DRM + 1) / 4 if removable disk
 ;               0 if hard disk
 ;       AVL: Allocation vector size, DSM / 8 + 1
-;==================================================================
+;******************************************************************
 DPB00_SPT       .equ    256
 DPB00_DSM       .equ    1023
 DPB00_DRM       .equ    255
@@ -982,15 +986,89 @@ DPB00:  .dw     DPB00_SPT       ; SPT: sectors per track
         .dw     DPB00_CKS       ; CKS: check vector table size
         .dw     1               ; OFF: offset. first usable track number.
 
-;==================================================================
+;******************************************************************
+;       Drive Table (for NUM_OF_DISKS)
+;******************************************************************
+DRIVE_TABLE:
+        .dw     DPH00           ; A:
+        .dw     DPH01           ; B:
+        .dw     DPH02           ; C:
+        .dw     DPH03           ; D:
+        .dw     DPH04           ; E:
+
+;******************************************************************
+;       DPH: Disk Parameter Header
+;******************************************************************
+DPH00:
+        .dw     0               ; XLT: Translation Table address (0 if no table)
+        .dw     0               ; SPA: scratch pad area 1
+        .dw     0               ; SPA: scratch pad area 2
+        .dw     0               ; SPA: scratch pad area 3
+        .dw     DIRB00          ; DIRB: Directory Buffer address
+        .dw     DPB00           ; DPB: Disk Parameter Block address
+        .dw     CSV00           ; CSV: Check sum vector address
+        .dw     ALV00           ; ALV: Allocation(bit map) vector address
+
+DPH01:
+        .dw     0               ; XLT: Translation Table address (0 if no table)
+        .dw     0               ; SPA: scratch pad area 1
+        .dw     0               ; SPA: scratch pad area 2
+        .dw     0               ; SPA: scratch pad area 3
+        .dw     DIRB01          ; DIRB: Directory Buffer address
+        .dw     DPB00           ; DPB: Disk Parameter Block address
+        .dw     CSV01           ; CSV: Check sum vector address
+        .dw     ALV01           ; ALV: Allocation(bit map) vector address
+
+DPH02:
+        .dw     0               ; XLT: Translation Table address (0 if no table)
+        .dw     0               ; SPA: scratch pad area 1
+        .dw     0               ; SPA: scratch pad area 2
+        .dw     0               ; SPA: scratch pad area 3
+        .dw     DIRB02          ; DIRB: Directory Buffer address
+        .dw     DPB00           ; DPB: Disk Parameter Block address
+        .dw     CSV02           ; CSV: Check sum vector address
+        .dw     ALV02           ; ALV: Allocation(bit map) vector address
+
+DPH03:
+        .dw     0               ; XLT: Translation Table address (0 if no table)
+        .dw     0               ; SPA: scratch pad area 1
+        .dw     0               ; SPA: scratch pad area 2
+        .dw     0               ; SPA: scratch pad area 3
+        .dw     DIRB03          ; DIRB: Directory Buffer address
+        .dw     DPB00           ; DPB: Disk Parameter Block address
+        .dw     CSV03           ; CSV: Check sum vector address
+        .dw     ALV03           ; ALV: Allocation(bit map) vector address
+
+DPH04:
+        .dw     0               ; XLT: Translation Table address (0 if no table)
+        .dw     0               ; SPA: scratch pad area 1
+        .dw     0               ; SPA: scratch pad area 2
+        .dw     0               ; SPA: scratch pad area 3
+        .dw     DIRB04          ; DIRB: Directory Buffer address
+        .dw     DPB00           ; DPB: Disk Parameter Block address
+        .dw     CSV04           ; CSV: Check sum vector address
+        .dw     ALV04           ; ALV: Allocation(bit map) vector address
+
 ;       Directory buffer (128bytes)
 DIRB00: .ds     128
+DIRB01: .ds     128
+DIRB02: .ds     128
+DIRB03: .ds     128
+DIRB04: .ds     128
 
 ;       Check vector table (CKS in DPB bytes)
 CSV00:  .ds     DPB00_CKS
+CSV01:  .ds     DPB00_CKS
+CSV02:  .ds     DPB00_CKS
+CSV03:  .ds     DPB00_CKS
+CSV04:  .ds     DPB00_CKS
 
 ;       Allocation vector table (DSM/8+1 bytes)
 ALV00:  .ds     DPB00_DSM / 8 + 1
+ALV01:  .ds     DPB00_DSM / 8 + 1
+ALV02:  .ds     DPB00_DSM / 8 + 1
+ALV03:  .ds     DPB00_DSM / 8 + 1
+ALV04:  .ds     DPB00_DSM / 8 + 1
 
 ;******************************************************************
 ;   DMA buffer
