@@ -260,6 +260,8 @@ BOOT:
         XOR A
         LD (IS_CACHED), A               ; Clear disk read cache
         LD (IOBYTE), A                  ; Init IOBYTE
+        CALL INIT_WRITE
+
 
         LD (LOGIN_DISK_NO), A           ; Set A:(0) to login disk
         LD C, A
@@ -291,6 +293,7 @@ WBOOT:
 
         XOR A
         LD (IS_CACHED), A               ; Clear disk read cache
+        CALL INIT_WRITE
 
         LD A, (LOGIN_DISK_NO)           ; Restore login disk
         LD C, A
@@ -481,6 +484,8 @@ HOME:
 ;******************************************************************
 SELDSK:
         PUSH AF
+        CALL WRITE_FLUSH
+
         LD A, NUM_OF_DISKS - 1
         CP C
         JR C, DISK_ERROR
@@ -567,6 +572,7 @@ READ:
         PUSH HL
         PUSH IX
         PUSH IY
+        CALL WRITE_FLUSH
         CALL READ_SUB
         POP IY
         POP IX
@@ -736,15 +742,221 @@ WAIT_READ_COMPLETE:
 
 ;******************************************************************
 ;   14: Write a record to DISK
-;       IN:  C = 0 - Write can be deferred
-;            C = 1 - Write must be immediate
-;            C = 2 - Write can be deferred, no pre-read is necessary.
+;       IN:  C = Deblocking code
+;                0 - Write can be deferred
+;                1 - Write must be immediate
+;                2 - Write can be deferred, no pre-read is necessary.
 ;       OUT: A = 0x00 - Success
 ;                0x01 - Unrecoverable error
 ;                0x02 - Read only
 ;                0xff - Media changed
 ;******************************************************************
 WRITE:
+
+.if 1
+        PUSH BC
+        PUSH DE
+        PUSH HL
+        PUSH IX
+        CALL WRITE_SUB
+        POP IX
+        POP HL
+        POP DE
+        POP BC
+        RET
+
+WRITE_SUB:
+        ; Clear read cache
+        XOR A
+        LD (IS_CACHED), A       ; Clear cache flag
+
+        PUSH BC
+
+;       offset  index
+; DMABUF[  0] ->  0
+;       [128] ->  1
+;       [256] ->  2
+;       [384] ->  3
+;
+;       abssec = TRACK * SPT + SECTOR
+;       index  = abssec % 4
+;       offset = DMABUF + index * 128
+
+        ; DE,HL = abssec
+        LD HL, (CURRENT_TRACK_NO)
+        LD DE, DPB00_SPT
+        CALL MUL16_16
+        LD BC, (CURRENT_SECTOR_NO)
+        CALL ADD32_16
+
+        ; A = index
+        LD A, L
+        AND 3
+
+        ; HL = offset
+        LD B, A
+        INC B
+        LD HL, DMABUF - 128
+        LD DE, 128
+WRTSUB_0:
+        ADD HL, DE
+        DJNZ WRTSUB_0
+        PUSH HL
+
+        ; Copy data to offset
+        EX DE, HL
+        LD HL, (DMA_ADRS)
+        LD BC, 128
+        LDIR
+
+        ; update write count
+        LD HL, WRT_COUNT
+        INC (HL)
+
+        POP HL                  ; HL = offset
+        POP BC                  ;  C = Deblocking code
+        LD B, A                 ;  B = index
+
+        ; already in write pending?
+        LD A, (IS_WRT_PENDING)
+        OR A
+        JR NZ, WRTSUB_1         ; yes, keep pending
+
+        ; Start write pending
+        LD A, 1                 ; set pending flag
+        LD (IS_WRT_PENDING), A
+
+        ; save buffer offset
+        LD (WRT_OFFSET), HL
+
+        ; save track and sector
+        LD HL, (CURRENT_TRACK_NO)
+        LD (WRT_TRACK_NO), HL
+        LD HL, (CURRENT_SECTOR_NO)
+        LD (WRT_SECTOR_NO), HL
+ 
+WRTSUB_1:
+        ; Check if write immediate is necessary?
+        LD A, B
+        CP 3                    ; if index == 3
+        JR Z, DO_WRITE
+        LD A, C                 ; if C == 1
+        CP 1
+        JR Z, DO_WRITE
+
+        XOR A                   ; Success on pending
+        RET
+
+DO_WRITE:
+        ;
+        ; Set SD Card address to write
+        ;  (DE, HL) = TRACK * SPT + SECTOR
+        LD HL, (WRT_TRACK_NO)
+        LD DE, DPB00_SPT
+        CALL MUL16_16
+        LD BC, (WRT_SECTOR_NO)
+        CALL ADD32_16
+        ;
+        ;  (DE,HL) * 128
+        ;  0eeeeeee ehhhhhhh hlllllll l0000000
+        ;    HIGH                        LOW
+        IN A, (PORT_DSKWRPOS)   ; Reset sequencer
+        SRL E
+        LD A, E
+        OUT (PORT_DSKWRPOS), A
+        RR H
+        LD A, H
+        OUT (PORT_DSKWRPOS), A
+        RR L
+        LD A, L
+        OUT (PORT_DSKWRPOS), A
+        LD A,0
+        RRA
+        OUT (PORT_DSKWRPOS), A
+
+        ;
+        ; Set source buffer address
+        ;
+        LD C, PORT_DSKWRBUF
+        IN A, (C)               ; Reset sequencer
+        LD HL, (WRT_OFFSET)
+        OUT (C), H
+        OUT (C), L
+
+        ;
+        ; Set write length
+        ;   = (WRT_COUNT) * 128
+        ;
+        LD HL, 0
+        LD BC, 128
+        LD A, (WRT_COUNT)
+DO_WRITE_0:
+        ADD HL, BC
+        DEC A
+        JR NZ, DO_WRITE_0
+        LD C, PORT_DSKWRLEN
+        IN A, (C)               ; Reset sequencer
+        OUT (C), H
+        OUT (C), L
+
+        ; Clear pending state
+        XOR A
+        LD (IS_WRT_PENDING), A
+        LD (WRT_COUNT), A
+
+        ; Write a SD card sector
+RETRY_WRITE:
+        ; WRITE
+        CALL DISK_WRITE_SUB
+        CP 4
+        JR Z, RETRY_WRITE       ; retry if rejected
+        CP 2
+        JR Z, WRITE_ERROR
+        XOR A
+        RET                     ; Success on write
+WRITE_ERROR:
+        LD A, 1                 ; Error on write
+        RET
+
+IS_WRT_PENDING:
+        .db     0               ; 1 if pending state
+WRT_COUNT:
+        .db     0               ; peding count
+WRT_OFFSET:
+        .dw     DMABUF
+WRT_TRACK_NO:
+        .dw     0
+WRT_SECTOR_NO:
+        .dw     0
+
+;  Flush sectors in pending write
+;       OUT: A = 0x00 - Success
+;                0x01 - Unrecoverable error
+;                0x02 - Read only
+;                0xff - Media changed
+WRITE_FLUSH:
+        LD A, (IS_WRT_PENDING)
+        OR A
+        RET Z
+        PUSH BC
+        PUSH DE
+        PUSH HL
+        CALL DO_WRITE
+        POP HL
+        POP DE
+        POP BC
+        RET
+
+INIT_WRITE:
+        PUSH AF
+        XOR A
+        LD (IS_WRT_PENDING), A
+        LD (WRT_COUNT), A
+        POP AF
+        RET
+
+.else   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
         PUSH BC
         PUSH DE
         PUSH HL
@@ -817,6 +1029,8 @@ WRITE_EXIT:
         POP DE
         POP BC
         RET
+
+.endif ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;================================================
 ; DISK WRITE

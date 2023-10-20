@@ -384,6 +384,9 @@ void em_disk_write(void)
 	// process the last sector
 	len %= sizeof(tmpbuf);
 	if (len > 0) {
+#if DEBUG_PRINT_WR
+	x_printf("$$$ Read/");
+#endif
 		// read
 		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
@@ -394,12 +397,18 @@ void em_disk_write(void)
 			goto error_skip;
 		}
 		// modify
+#if DEBUG_PRINT_WR
+	x_printf("Modify/");
+#endif
 		cli();
 		ExtMem_attach();
 		memcpy(tmpbuf, buf, len);
 		ExtMem_detach();
 		sei();
 		// write
+#if DEBUG_PRINT_WR
+x_printf("Write\n");
+#endif
 		write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes);
 		pf_write(0, 0, &bytes);
 #if DEBUG_PRINT_WR_DATA
