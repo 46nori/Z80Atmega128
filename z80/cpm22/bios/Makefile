@@ -21,5 +21,5 @@ bios.rel: bios.asm
 
 .PHONY: clean
 clean:
-	@$(RM) -f *.ihx *.rel *.lst *.hlr
+	@$(RM) -f *.ihx *.rel *.lst *.hlr *.map
 	
