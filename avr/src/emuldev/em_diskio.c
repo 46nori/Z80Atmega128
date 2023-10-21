@@ -266,11 +266,13 @@ void OUT_0F_DSK_WriteIntLevel(uint8_t data)
 //  . : pre-read data
 //  # : write data
 //
+//    sizeof(tmpbuf)
+//   <------> <------> <------> <------>
 //  |        |        |        |        |
-//      wr.position   	
-//  |....^#########################.....|
+//  |.....#########################.....|
+//        ^wr.position
 //        <------wr.length-------->
-//   <--> offset
+//   <----> offset
 //
 void em_disk_write(void)
 {
@@ -289,13 +291,13 @@ void em_disk_write(void)
 
 	UINT bytes;
 	unsigned int offset = wr.position % sizeof(tmpbuf);
-	void *buf = wr.buffer;
+	void *src = wr.buffer;
 	UINT len = wr.length;
 
 	// move to the first sector to write if necessary
 	DWORD pos = wr.position;
 	if (offset > 0) {
-		pos -= offset;			// set previous block boundary
+		pos -= offset;			// set pos previous block boundary
 	}
 	if (pos != file_system.fptr) {
 		if ((write_result = pf_lseek(pos)) != FR_OK) {
@@ -309,6 +311,9 @@ void em_disk_write(void)
 	// process the first sector which is unaligned
 	if (offset > 0) {
 		// read
+#if DEBUG_PRINT_WR
+		x_printf("$$$ Head Read/");
+#endif
 		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
 			goto error_skip;
@@ -319,28 +324,39 @@ void em_disk_write(void)
 			goto error_skip;
 		}
 		// modify
-		unsigned int plen = sizeof(tmpbuf) - offset;
+#if DEBUG_PRINT_WR
+		x_printf("Modify/");
+#endif
+		unsigned int plen;
+		if (offset + len <= sizeof(tmpbuf)) {
+			plen = len;
+		} else {
+			plen = sizeof(tmpbuf) - offset;			
+		}
 		cli();
 		ExtMem_attach();
-		memcpy(&tmpbuf[offset], buf, plen);
+		memcpy(&tmpbuf[offset], src, plen);
 		ExtMem_detach();
 		sei();
 		// write
+#if DEBUG_PRINT_WR
+		x_printf("Write\n");
+#endif
 		if ((write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
-		buf = (uint8_t*)buf + plen;
+		src = (uint8_t*)src + plen;
 		len -= plen;
 #if DEBUG_PRINT_WR_DATA
-		for (unsigned int i = offset; i < plen; i++) {
-			if (!isprint(tmpbuf[i])) {
+		for (unsigned int i = offset; i < offset + plen; i++) {
+			if (!isprint(tmpbuf[i]) || tmpbuf[i] < ' ') {
 				x_putchar('.');
 			} else {
 				x_putchar(tmpbuf[i]);
 			}
 		}
 		x_puts("");
-		for (unsigned int i = offset; i < plen; i++) {
+		for (unsigned int i = offset; i < offset + plen; i++) {
 			x_printf("%02x ", tmpbuf[i]);
 			if (i % 32 == 31) x_puts("");
 		}
@@ -348,22 +364,25 @@ void em_disk_write(void)
 #endif
 	}
 
-	// process middle sectors
+	// process the first aligned sector or later sectors
 	unsigned int n = len / sizeof(tmpbuf);
 	for (unsigned int i = 0; i < n; i++) {
+#if DEBUG_PRINT_WR
+		x_printf("$$$ %d/%d\n", i, n);
+#endif
 		cli();
 		ExtMem_attach();
-		memcpy(tmpbuf, buf, sizeof(tmpbuf));
+		memcpy(tmpbuf, src, sizeof(tmpbuf));
 		ExtMem_detach();
 		sei();
 		if ((write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
-		buf = (uint8_t*)buf + sizeof(tmpbuf);
+		src = (uint8_t*)src + sizeof(tmpbuf);
 		len -= sizeof(tmpbuf);
 #if DEBUG_PRINT_WR_DATA
 		for (int i = 0; i < sizeof(tmpbuf); i++) {
-			if (!isprint(tmpbuf[i])) {
+			if (!isprint(tmpbuf[i]) || tmpbuf[i] < ' ') {
 				x_putchar('.');
 			} else {
 				x_putchar(tmpbuf[i]);
@@ -381,30 +400,39 @@ void em_disk_write(void)
 		pf_write(0, 0, &bytes);		
 	}
 
-	// process the last sector
-	len %= sizeof(tmpbuf);
+	// process the last sector 
 	if (len > 0) {
+#if DEBUG_PRINT_WR
+		x_printf("$$$ Tail Read/");
+#endif
 		// read
 		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
-		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf)); // rewind
+		// rewind
+		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf));
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
 		// modify
+#if DEBUG_PRINT_WR
+		x_printf("Modify/");
+#endif
 		cli();
 		ExtMem_attach();
-		memcpy(tmpbuf, buf, len);
+		memcpy(tmpbuf, src, len);
 		ExtMem_detach();
 		sei();
 		// write
+#if DEBUG_PRINT_WR
+		x_printf("Write\n");
+#endif
 		write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes);
 		pf_write(0, 0, &bytes);
 #if DEBUG_PRINT_WR_DATA
 		for (unsigned int i = 0; i < len; i++) {
-			if (!isprint(tmpbuf[i])) {
+			if (!isprint(tmpbuf[i]) || tmpbuf[i] < ' ') {
 				x_putchar('.');
 			} else {
 				x_putchar(tmpbuf[i]);
@@ -421,7 +449,8 @@ void em_disk_write(void)
 
 error_skip:
 #if DEBUG_PRINT_WR
-	x_printf("!!!WRITE:%06lx : %02x\n", wr.position, write_result);
+	x_printf("!!!WRITE:%06lx, %04x : %02x\n\n", wr.position, wr.length, write_result);
+	x_puts("-----------");
 #endif
 	if (int_level_write < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
@@ -519,21 +548,22 @@ void em_disk_read(void)
 		}
 	}
 
-	void *buf = rd.buffer;
+	void *dst = rd.buffer;
 	UINT len = rd.length;
 	UINT br;
 
-	for (unsigned int i = 0; i < len / sizeof(tmpbuf); i++) {
+	unsigned int n = len / sizeof(tmpbuf);
+	for (unsigned int i = 0; i < n; i++) {
 		read_result = pf_read(tmpbuf, sizeof(tmpbuf), &br);
 		if (read_result != FR_OK) {
 			goto error_skip;
 		}
 		cli();
 		ExtMem_attach();
-		memcpy(buf, tmpbuf, sizeof(tmpbuf));
+		memcpy(dst, tmpbuf, sizeof(tmpbuf));
 		ExtMem_detach();
 		sei();
-		buf = (uint8_t*)buf + sizeof(tmpbuf);
+		dst = (uint8_t*)dst + sizeof(tmpbuf);
 	}
 	len = len % sizeof(tmpbuf);
 	if (len > 0) {
@@ -541,7 +571,7 @@ void em_disk_read(void)
 		if (read_result == FR_OK) {
 			cli();
 			ExtMem_attach();
-			memcpy(buf, tmpbuf, len);
+			memcpy(dst, tmpbuf, len);
 			ExtMem_detach();
 			sei();
 		}
@@ -549,7 +579,8 @@ void em_disk_read(void)
 	
 error_skip:
 #if DEBUG_PRINT_RD
-	x_printf(">>>READ:%06lx : %02x\n", rd.position, read_result);
+	x_printf(">>>READ:%06lx, %04x : %02x\n\n", rd.position, rd.length, read_result);
+	x_puts("-----------");
 #endif
 	if (int_level_read < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)

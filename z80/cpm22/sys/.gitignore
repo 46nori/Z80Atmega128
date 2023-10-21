@@ -4,6 +4,7 @@
 *.sym
 *.ihx
 *.hlr
+*.map
 *.BIN
 *.bin
 tmp/

@@ -69,5 +69,5 @@ $(TMPDIR)/cpm2-asm.zip:
 clean:
 	@$(RM) -fr $(TMPDIR)
 	@$(RM) -f CPM.SYS
-	@$(RM) -f *.ihx *.rel *.lst *.hlr
+	@$(RM) -f *.ihx *.rel *.lst *.hlr *.map
 	

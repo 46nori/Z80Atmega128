@@ -254,11 +254,12 @@ BOOT:
         LD HL, BOOT_MSG                 ; Boot message
         CALL PRINT_STR
 
+        CALL INIT_RD_CACHE              ; Init disk read
+        CALL INIT_WRT_PENDING           ; Init disk write
         CALL LOAD_CCP_BDOS              ; Load CCP + BDOS
         CALL INIT_SYSTEM_AREA           ; Init system area
 
         XOR A
-        LD (IS_CACHED), A               ; Clear disk read cache
         LD (IOBYTE), A                  ; Init IOBYTE
 
         LD (LOGIN_DISK_NO), A           ; Set A:(0) to login disk
@@ -286,11 +287,10 @@ WBOOT:
         LD HL, REBOOT_MSG               ; Reboot message
         CALL PRINT_STR
 
+        CALL INIT_RD_CACHE              ; Init disk read
+        CALL INIT_WRT_PENDING           ; Init disk write
         CALL LOAD_CCP_BDOS              ; Load CCP + BDOS
         CALL INIT_SYSTEM_AREA           ; Init system area
-
-        XOR A
-        LD (IS_CACHED), A               ; Clear disk read cache
 
         LD A, (LOGIN_DISK_NO)           ; Restore login disk
         LD C, A
@@ -481,11 +481,12 @@ HOME:
 ;******************************************************************
 SELDSK:
         PUSH AF
+        CALL WRITE_FLUSH
+
         LD A, NUM_OF_DISKS - 1
         CP C
         JR C, DISK_ERROR
-        XOR A
-        LD (IS_CACHED), A       ; Clear read cache
+        CALL INIT_RD_CACHE
 
         LD A, C
         OUT (PORT_SELDSK), A    ; Open DISK
@@ -567,6 +568,7 @@ READ:
         PUSH HL
         PUSH IX
         PUSH IY
+        CALL WRITE_FLUSH
         CALL READ_SUB
         POP IY
         POP IX
@@ -584,7 +586,7 @@ READ_SUB:
         CALL ADD32_16
 
         ; Check cache
-        LD A, (IS_CACHED)
+        LD A, (IS_RD_CACHED)
         OR A
         JR Z, MISHIT_CACHE
         LD IX, CACHE_SECTOR_NO
@@ -681,20 +683,20 @@ RETRY_READ:
         LD (IX + 2), H
         LD (IX + 3), L
         LD A, 1
-        LD (IS_CACHED), A       ; Set cache flag
+        LD (IS_RD_CACHED), A    ; Set cache flag
         XOR A                   ; Success A=0
         RET
 
 READ_ERROR:
         XOR A
-        LD (IS_CACHED), A       ; Clear cache flag
+        LD (IS_RD_CACHED), A    ; Clear cache flag
         INC A                   ; Error A=1
         RET
 
 CACHE_SECTOR_NO:                ; sector # of the 1st DMA buffer
         .db     0, 0, 0, 0
-IS_CACHED:
-        .db     0
+IS_RD_CACHED:
+        .db     0               ; read cache flag
 
 ;================================================
 ; Copy BIOS buffer to DMA buffer
@@ -710,6 +712,14 @@ READ_DMA_BUFFER:
         LD DE, (DMA_ADRS)       ; DE = destination
         LD BC, 128
         LDIR
+        RET
+
+;================================================
+;  Init read cache
+;================================================
+INIT_RD_CACHE:
+        XOR A
+        LD (IS_RD_CACHED), A
         RET
 
 ;================================================
@@ -736,9 +746,10 @@ WAIT_READ_COMPLETE:
 
 ;******************************************************************
 ;   14: Write a record to DISK
-;       IN:  C = 0 - Write can be deferred
-;            C = 1 - Write must be immediate
-;            C = 2 - Write can be deferred, no pre-read is necessary.
+;       IN:  C = Deblocking code
+;                0 - Write can be deferred
+;                1 - Write must be immediate
+;                2 - Write can be deferred, no pre-read is necessary.
 ;       OUT: A = 0x00 - Success
 ;                0x01 - Unrecoverable error
 ;                0x02 - Read only
@@ -748,25 +759,105 @@ WRITE:
         PUSH BC
         PUSH DE
         PUSH HL
+        PUSH IX
+        CALL WRITE_SUB
+        POP IX
+        POP HL
+        POP DE
+        POP BC
+        RET
 
-        ; Clear cache
-        XOR A
-        LD (IS_CACHED), A       ; Clear cache flag
+WRITE_SUB:
+        ; Clear read cache
+        CALL INIT_RD_CACHE
 
-        ; Copy write data to DMA buffer
-        LD HL, (DMA_ADRS)
-        LD DE, DMABUF
-        LD BC, 128
-        LDIR
+        PUSH BC
 
-        ; DE,HL = TRACK * SPT + SECTOR
+        ;       offset  index
+        ; DMABUF[  0] ->  0
+        ;       [128] ->  1
+        ;       [256] ->  2
+        ;       [384] ->  3
+        ;
+        ;       abssec = TRACK * SPT + SECTOR
+        ;       index  = abssec % 4
+        ;       offset = DMABUF + index * 128
+
+        ; DE,HL = abssec
         LD HL, (CURRENT_TRACK_NO)
         LD DE, DPB00_SPT
         CALL MUL16_16
         LD BC, (CURRENT_SECTOR_NO)
         CALL ADD32_16
 
+        ; A = index
+        LD A, L
+        AND 3
+
+        ; HL = offset
+        LD B, A
+        INC B
+        LD HL, DMABUF - 128
+        LD DE, 128
+WRTSUB_0:
+        ADD HL, DE
+        DJNZ WRTSUB_0
+        PUSH HL
+
+        ; Copy data to offset
+        EX DE, HL
+        LD HL, (DMA_ADRS)
+        LD BC, 128
+        LDIR
+
+        ; update write count
+        LD HL, WRT_COUNT
+        INC (HL)
+
+        POP HL                  ; HL = offset
+        POP BC                  ;  C = Deblocking code
+        LD B, A                 ;  B = index
+
+        ; already in write pending?
+        LD A, (IS_WRT_PENDING)
+        OR A
+        JR NZ, WRTSUB_1         ; yes, keep pending state
+
+        ; Start write pending
+        LD A, 1                 ; set pending flag
+        LD (IS_WRT_PENDING), A
+
+        ; save buffer offset
+        LD (WRT_OFFSET), HL
+
+        ; save track and sector
+        LD HL, (CURRENT_TRACK_NO)
+        LD (WRT_TRACK_NO), HL
+        LD HL, (CURRENT_SECTOR_NO)
+        LD (WRT_SECTOR_NO), HL
+ 
+WRTSUB_1:
+        ; Check if write immediate is necessary?
+        LD A, B
+        CP 3                    ; if index == 3
+        JR Z, DO_WRITE
+        LD A, C                 ; if C == 1
+        CP 1
+        JR Z, DO_WRITE
+
+        XOR A                   ; Success on pending
+        RET
+
+DO_WRITE:
+        ;
         ; Set SD Card address to write
+        ;  (DE, HL) = TRACK * SPT + SECTOR
+        LD HL, (WRT_TRACK_NO)
+        LD DE, DPB00_SPT
+        CALL MUL16_16
+        LD BC, (WRT_SECTOR_NO)
+        CALL ADD32_16
+        ;
         ;  (DE,HL) * 128
         ;  0eeeeeee ehhhhhhh hlllllll l0000000
         ;    HIGH                        LOW
@@ -780,25 +871,39 @@ WRITE:
         RR L
         LD A, L
         OUT (PORT_DSKWRPOS), A
-        LD A,0
+        LD A, 0
         RRA
         OUT (PORT_DSKWRPOS), A
 
-        ; Set destination buffer address
+        ;
+        ; Set source buffer address
+        ;
         LD C, PORT_DSKWRBUF
         IN A, (C)               ; Reset sequencer
-        LD HL, DMABUF
+        LD HL, (WRT_OFFSET)
         OUT (C), H
         OUT (C), L
 
-        ; Set write length (128byte)
+        ;
+        ; Set write length
+        ;   = (WRT_COUNT) * 128
+        ;
+        LD HL, 0
+        LD BC, 128
+        LD A, (WRT_COUNT)
+DO_WRITE_0:
+        ADD HL, BC
+        DEC A
+        JR NZ, DO_WRITE_0
         LD C, PORT_DSKWRLEN
         IN A, (C)               ; Reset sequencer
-        LD HL, 128
         OUT (C), H
         OUT (C), L
 
-        ; Write a SD card sector (512bytes)
+        ; Clear pending state
+        CALL INIT_WRT_PENDING
+
+        ; Write sectors
 RETRY_WRITE:
         ; WRITE
         CALL DISK_WRITE_SUB
@@ -807,15 +912,52 @@ RETRY_WRITE:
         CP 2
         JR Z, WRITE_ERROR
         XOR A
-        JR WRITE_EXIT           ; Success A=0
-
+        RET                     ; Success on write
 WRITE_ERROR:
-        LD A, 1                 ; Error A=1
+        LD A, 1                 ; Error on write
+        RET
 
-WRITE_EXIT:
+;  Pending state
+IS_WRT_PENDING:
+        .db     0               ; 1 if under pending
+WRT_COUNT:
+        .db     0               ; peding num of sectors
+WRT_OFFSET:
+        .dw     DMABUF          ; head address of buffer
+WRT_TRACK_NO:
+        .dw     0               ; head track to write
+WRT_SECTOR_NO:
+        .dw     0               ; head sector to write
+
+;================================================
+;  Flush sectors in pending write
+;       OUT: A = 0x00 - Success
+;                0x01 - Unrecoverable error
+;                0x02 - Read only
+;                0xff - Media changed
+;================================================
+WRITE_FLUSH:
+        LD A, (IS_WRT_PENDING)
+        OR A
+        RET Z
+        PUSH BC
+        PUSH DE
+        PUSH HL
+        CALL DO_WRITE
         POP HL
         POP DE
         POP BC
+        RET
+
+;================================================
+;  Init pending write state
+;================================================
+INIT_WRT_PENDING:
+        PUSH AF
+        XOR A
+        LD (IS_WRT_PENDING), A
+        LD (WRT_COUNT), A
+        POP AF
         RET
 
 ;================================================
