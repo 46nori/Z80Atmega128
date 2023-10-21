@@ -718,8 +718,10 @@ READ_DMA_BUFFER:
 ;  Init read cache
 ;================================================
 INIT_RD_CACHE:
+        PUSH AF
         XOR A
         LD (IS_RD_CACHED), A
+        POP AF
         RET
 
 ;================================================
@@ -804,7 +806,7 @@ WRTSUB_0:
         DJNZ WRTSUB_0
         PUSH HL
 
-        ; Copy data to offset
+        ; Copy DMA data to offset in BIOS  buffer
         EX DE, HL
         LD HL, (DMA_ADRS)
         LD BC, 128
