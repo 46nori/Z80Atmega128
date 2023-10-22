@@ -1,6 +1,7 @@
-# Z80ATmega128 documents
+# Documents
 ## User's Guide
 - Z80ATmega128 Board Setup Guide ([English](./SetupGuide_en.md) / [Japanese](./SetupGuide.md))
+- [ATmega128 Tiny Monitor Command Reference](./Software/AVRTinyMonitor.md)
 
 ## Hardware Specifications
 - [Z80ATmega128 Board Hardware Specification](./Hardware/Design.md) (Japanese)
@@ -13,5 +14,6 @@
 - [PCB design memo of KiCad](./Hardware/PCB/KiCad-PCB.md) (Japanese)
 
 ## Developement Log (Japanese)
-- [2023/2/25-2023/7/4](./Diary.md)
-- [2023/7/7-](./Diary2.md)
+- [Summary of progress](./Progress.md)
+- [2023/02/25-2023/07/04](./Diary.md)
+- [2023/07/07-2023/10/22](./Diary2.md)

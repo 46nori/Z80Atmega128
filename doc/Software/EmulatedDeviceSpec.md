@@ -224,7 +224,7 @@ rd.DOINGおよびwr.DOINGでSD CardのアクセスとSRAMとのデータ転送�
     |-----|---------------|----------------|
     | REQ | READ実行(0x13) | WRITE実行(0x0e)|
     | DONE| READ完了       | WRITE完了      |
-    | INT |タイマー割り込み  |タイマー割り込み  |
+    | INT | 周期割り込み    | 周期割り込み     |
 
 - 状態
     |State     | READ                    | WRITE 　　　　　　　　　　　|
