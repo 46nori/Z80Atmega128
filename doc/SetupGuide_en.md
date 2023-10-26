@@ -203,7 +203,7 @@ VS Code + Dev Container environment is recommended for Windows and macOS.
     8429568
     ```
 2. Creating a microSD Card
-   - Format the microSD card as **FAT16**.
+   - Format the microSD card as **FAT32**.
    - Copy `DISK00.IMG` to the root directory on it. It is mandatory.
      - `00` corresponds to drive A:. You can specify up to 15 `(drive P:).
      - For example, copy `DISK00.IMG` as `DISK01.IMG` and add, B: drive will bet visible.
