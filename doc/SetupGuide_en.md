@@ -47,9 +47,10 @@ The procedure for setting up the firmware on the Z80Atmega128 Board and booting 
 |  3  | Red    | AVR heartbeat (blinking at 2 Hz) |
 
 ### Notes
-PCB Rev1.0 has a bug in the wiring and needs to be fixed.
-- [Front Plane](./Hardware/PCB/PCB1.0-FP-Errata.pdf): 7 pattern cuts
-- [Back Plane](./Hardware/PCB/PCB1.0-BP-Errata.pdf): 1 pattern cut, 6 patch wires
+- PCB Rev1.00 has a bug in the wiring and needs to be fixed.
+  - [Front Plane](./Hardware/PCB/PCB1.0-FP-Errata.pdf): 7 pattern cuts
+  - [Back Plane](./Hardware/PCB/PCB1.0-BP-Errata.pdf): 1 pattern cut, 6 patch wires
+- PCB Rev2.00, The silk printing of U18 and U19 are incorrect.
 
 ## 1. Preparation
 - Install [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio) on Windows.

@@ -5,6 +5,7 @@
 
 ## Hardware Specifications
 - [Z80ATmega128 Board Hardware Specification](./Hardware/Design.md) (Japanese)
+- Hardware Release Note ([English](./Hardware/HW-ReleaseNote.md) / [Japanese](./Hardware/HW-ReleaseNote-ja.md))
 
 ## Software Specifications
 - [Emulated external I/O device specification](./Software/EmulatedDeviceSpec.md)

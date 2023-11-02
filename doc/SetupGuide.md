@@ -46,9 +46,10 @@ Z80Atmega128 Boardにファームウェアを焼き込み、CP/M2.2を単体動�
 |  3  | 赤 | AVRのハートビート表示(2Hzで点滅)  |
 
 ### 注意
-PCB Rev1.0は配線にバグがあるため、ハード改修の必要がある。
-- [表面](./Hardware/PCB/PCB1.0-FP-Errata.pdf) : パターンカット7箇所
-- [裏面](./Hardware/PCB/PCB1.0-BP-Errata.pdf) : パターンカット1箇所、パッチ配線6箇所
+- PCB Rev1.00　配線にバグがあるため、ハード改修の必要がある。
+   - [表面](./Hardware/PCB/PCB1.0-FP-Errata.pdf) : パターンカット7箇所
+   - [裏面](./Hardware/PCB/PCB1.0-BP-Errata.pdf) : パターンカット1箇所、パッチ配線6箇所
+- PCB Rev2.00　U18, U19のUARTのシルクが間違っている。
 
 ## 1. 事前準備
 - Windowsに[Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)をインストールする。
