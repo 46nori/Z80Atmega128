@@ -39,6 +39,12 @@ ATmega128側のファームウェアで利用しているSD Cardのアクセス�
 ```
 make
 ```
+#### `z80/cpm22/sys/CPM.SYS`を使用する場合
+[CP/M 2.2 ASM SOURCE](http://www.cpm.z80.de/download/cpm2-asm.zip)のソースコードをベースに構築した`CPM.SYS`を使用する場合、`z80/cpm22/image/Makefile`を以下のように変更する。
+```
+CCPBDOS   = ../sys/CPM.SYS
+#CCPBDOS  = $(CPM22_DIR)/CPM.SYS
+```
 
 ### 空のディスクイメージ
 `EMPTY.IMG`が生成されるので、`DISKnn.IMG`にコピーして使用するか、これをベースに新たなイメージを作成する。

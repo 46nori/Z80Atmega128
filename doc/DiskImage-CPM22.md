@@ -36,6 +36,12 @@ Generate `DISK00.IMG` based on [CP/M 2.2 BINARY](http://www.cpm.z80.de/download/
 ```
 make
 ```
+#### When using `z80/cpm22/sys/CPM.SYS`
+If you want to use `CPM.SYS` built based on the source code of [CP/M 2.2 ASM SOURCE](http://www.cpm.z80.de/download/cpm2-asm.zip), change `z80/cpm22/image/Makefile` as follows.
+```
+CCPBDOS   = ../sys/CPM.SYS
+#CCPBDOS  = $(CPM22_DIR)/CPM.SYS
+```
 
 ### Empty disk image
 `EMPTY.IMG` will be generated, so copy it to `DISKnn.IMG` and use it, or create a new image based on this.
