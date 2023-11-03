@@ -19,3 +19,4 @@
 - [Summary of progress](./Progress.md)
 - [2023/02/25-2023/07/04](./Diary.md)
 - [2023/07/07-2023/10/22](./Diary2.md)
+- [2023/10/23-](./Diary3.md)

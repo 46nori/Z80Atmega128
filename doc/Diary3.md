@@ -1,0 +1,20 @@
+## [以前の日記](Diary2.md)
+
+## 2023/10/24
+- PCB Rev2.00の更新。
+
+## 2023/10/26
+- PCB Rev2.00をPCBWayに発注。
+
+## 2023/10/26
+- PCB Rev2.00入荷。
+
+## 2023/11/02
+- Rev1.00のバグ修正したfeature-PCB2ブランチをdevelopにマージした。
+  - PCB Rev2.00にパーツをマウントし動作確認できた。
+  - [Hardware Release Note](./Hardware/HW-ReleaseNote-ja.md)などのドキュメントも更新。
+
+## 2023/11/03
+- CP/Mのディスクイメージを作りやすくするとともに、ドキュメントを追加した。
+  - システムディスク、空ディスク、ZORK I/II/IIIのイメージ作成をMakefileのターゲット指定でできるようにした。
+  - developブランチにマージ済み。
