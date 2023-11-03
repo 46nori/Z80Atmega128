@@ -50,6 +50,7 @@ $(CPM22_DIR):
 	$(MKDIR) -p $(CPM22_DIR)
 	$(WGET) -P $(CPM22_DIR) http://www.cpm.z80.de/download/cpm22-b.zip
 	$(UNZIP) -o -d $(CPM22_DIR) $(CPM22_DIR)/cpm22-b.zip
+	$(RM) -f $(CPM22_DIR)/cpm22-b.zip
 
 ##########################################################
 # Empty disk image
@@ -95,7 +96,7 @@ $(ZORK_DIR):
 	$(MKDIR) -p $(ZORK_DIR)
 	$(WGET) -P $(ZORK_DIR) http://www.retroarchive.org/cpm/games/zork123_80.zip
 	$(UNZIP) -o -d $(ZORK_DIR) $(ZORK_DIR)/zork123_80.zip
-
+	$(RM) -f $(ZORK_DIR)/zork123_80.zip
 
 ##########################################################
 # Utilities
