@@ -59,16 +59,41 @@ make zork
 `ZORK.IMG`が生成されるので、`DISKnn.IMG`にコピーして使用する。
 
 ### 任意のディスクイメージ
-cpmtoolsの`cpm.cp`を使用し、任意のファイルをディスクイメージ上に転送することで、任意のイメージを作成できる。
+#### cpmcpを使う方法
+cpmtoolsの`cpmcp`を使用し、任意のファイルをディスクイメージ上に転送することで、任意のイメージを作成できる。
 
 例えば[CP/M software Download site](#cpm-software-download-site)などにはたくさんのCP/Mのバイナリファイルが存在する。その中から必要なファイルをピックアップしてディスクイメージを作成することもできる。
-
 
 以下の例では、`./tmp`の全ファイルを空のディスクイメージに転送し、`DISK01.IMG`として`B:`ドライブに割り当てる。
 ```
 cpmcp -f sdcard EMPTY.IMG ./tmp/*.* 0:
 cp EMPTY.IMG DISK01.IMG
 ```
+
+#### シェルスクリプト mkimg.shを使う方法
+[../z80/cpm22/image/mkimg.sh](../z80/cpm22/image/mkimg.sh)を使うと、`EMPTY.IMG`を使わなくても直接イメージの生成が可能。
+- 使い方:
+  ```
+  Usage: mkimg.sh <fmt> <img> [files ...]
+        <fmt>: format defined in /etc/cpmtools/diskdefs
+        <img>: image file name
+        [files ...]: CP/M files (optional)
+  ```
+- 実行例:
+  ```
+  $ ./mkimg.sh sdcard test.img tmp/zork/*.*
+  1021+0 records in
+  1021+0 records out
+  8364032 bytes (8.4 MB, 8.0 MiB) copied, 0.149639 s, 55.9 MB/s
+  0:
+  file_id.diz
+  zork1.com
+  zork1.dat
+  zork2.com
+  zork2.dat
+  zork3.com
+  zork3.dat
+  ```
 
 ## CP/M software Download site
 - [The Unofficial CP/M Web site](http://www.cpm.z80.de/)

@@ -2,7 +2,7 @@
 #
 # Create CP/M disk image
 #
-if [ $# -l 3 ]; then
+if [ $# -lt 3 ]; then
   echo "Usage: mkimg.sh <fmt> <img> [files ...]" 1>&2
   echo "       <fmt>: format defined in /etc/cpmtools/diskdefs" 1>&2
   echo "       <img>: image file name" 1>&2

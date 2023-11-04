@@ -56,7 +56,8 @@ make zork
 `ZORK.IMG` will be generated, so copy it to `DISKnn.IMG` and use it.
 
 ### Any disk image
-You can create any image by using cpmtools' `cpm.cp' to transfer any file onto the disk image.
+#### Using `cpmcp`
+You can create any image by using cpmtools' `cpmcp' to transfer any file onto the disk image.
 
 For example, there are many CP/M binary files at [CP/M software Download site](#cpm-software-download-site). You can also pick up the files and create a disk image that you want.
 
@@ -65,6 +66,31 @@ The following example transfers all files in `./tmp` to an empty disk image and 
 cpmcp -f sdcard EMPTY.IMG ./tmp/*.* 0:
 cp EMPTY.IMG DISK01.IMG
 ```
+#### Using shell script mkimg.sh
+By using [../z80/cpm22/image/mkimg.sh](../z80/cpm22/image/mkimg.sh), you can directly generate an image without using `EMPTY.IMG`.
+
+- Usage:
+  ```
+  Usage: mkimg.sh <fmt> <img> [files ...]
+        <fmt>: format defined in /etc/cpmtools/diskdefs
+        <img>: image file name
+        [files ...]: CP/M files (optional)
+  ```
+- Example:
+  ```
+  $ ./mkimg.sh sdcard test.img tmp/zork/*.*
+  1021+0 records in
+  1021+0 records out
+  8364032 bytes (8.4 MB, 8.0 MiB) copied, 0.149639 s, 55.9 MB/s
+  0:
+  file_id.diz
+  zork1.com
+  zork1.dat
+  zork2.com
+  zork2.dat
+  zork3.com
+  zork3.dat
+  ```
 
 ## CP/M software Download site
 - [The Unofficial CP/M Web site](http://www.cpm.z80.de/)
