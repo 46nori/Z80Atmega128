@@ -4,7 +4,7 @@
 - 62KB BIOS
 - Z80ニーモニックで記述
 - Mode2 割り込みを使用
-- CON: をサポート。 LST:, PUN:, RDR: は身サポート。
+- CON: をサポート。 LST:, PUN:, RDR: は未サポート。
 - DISK I/O
   - 5 ドライブ (A: to E:) をサポート 
   - Blocking and Deblocking をサポート
@@ -12,17 +12,17 @@
 ## Boot Sequence
 AVRファームウェアは電源ONおよびリセット時に以下を実行する。
 1. DIPSW-1がON、かつmicroSD CardがマウントできたらCP/Mモードで起動する。
-2. EEPROMの0番地から EntryAddress と Length をリードする。 (1)
-3. SRAMの0x0000番地に `JP EntryAddress` 命令を書き込む。 (2)
-4. EEPROM内のBIOSを EntryAddress にコピーする。 (3)
+2. EEPROMの0番地から`EntryAddress`と`Length`をリードする。 (1)
+3. SRAMの0x0000番地に`JP EntryAddress`命令を書き込む。 (2)
+4. EEPROM内のBIOSを`EntryAddress`に`Length`分コピーする。 (3)
 5. Z80をリセットし、CP/Mを起動。
 6. TinyMonitorを起動。
 
 Z80はCP/Mを以下のように起動する。
 1. 0番地のJP命令によりBIOSが起動される。
-2. CCP+BDOSを EntryAddress にロードするために、BIOS BOOT ルーチンがAVRにDISK READを要求する。  
+2. CCP+BDOSを`EntryAddress`にロードするために、BIOS BOOTルーチンがAVRにDISK READを要求する。  
    AVRは CCP+BDOS を microSD Card上のディスクイメージファイルのTrack 0相当から読み出し、SRAMにコピーする。
-3. BIOS BOOT ルーチンがCCPを起動する。
+3. BIOS BOOTルーチンがCCPを起動する。
 
 ![](../Fig/CpmBootSequence.drawio.svg)
 
@@ -35,12 +35,13 @@ BOOTとWBOOTの違いは以下。
 - CCP+3番地にジャンプ
 
 ### WBOOT
-- 直前まで使用していたドライブをセット。
+- ドライブは直前まで使用していたものをセット。
 - CCPの先頭にジャンプ
 
 ## DISK I/O
-BDOSが指定する論理トラックと論理セクタを、絶対セクタ番号に変換して扱っている。絶対セクタの定義は以下の通り。
-`TRK`と`SEC`は、それぞれ`SETTRK`、`SETSEC`のBIOSコールで事前にセットされるものとする。また`SPT`はDPB(Disk Parameter Block)で定義される値である。
+BDOSが指定する論理トラックと論理セクタを、絶対セクタ番号に変換して扱っている。絶対セクタの定義は以下。
+`TRK`と`SEC`は、それぞれ`SETTRK`、`SETSEC`のBIOSコールで事前にセットされるものとする。
+`SPT`はDPB(Disk Parameter Block)で定義される値である。詳細は[BIOSのソース](../../z80/cpm22/bios/bios.asm)と[こちら](./DiskParameters.md)を参照。
 - 論理トラック番号 : `TRK`
 - 論理セクタ番号 : `SCT`
 - 論理トラックあたりのセクタ数 : `SPT`

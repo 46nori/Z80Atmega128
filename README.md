@@ -30,7 +30,7 @@ Hence, I've devised the following design principles:
 │   └── cpm22                CP/M-80 Ver2.2
 │       ├── bios               BIOS
 │       ├── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IP+CCP/BDOS+BIOS)
-│       └── image              Disk image
+│       └── image              CP/M Disk image
 ├── doc
 │   ├── Hardware/            Hardware documents
 │   ├── Software/            Software documents
@@ -48,9 +48,9 @@ Hence, I've devised the following design principles:
 ## Required tools
 - [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio) for AVR v7.0 or later is required to build avr/.
 - [AVRISP mkII](https://www.microchip.com/en-us/development-tool/ATAVRISP2) is required to program software(avr/) into ATmega128.
-- Schematics and PCB is designed by [KiCad](https://www.kicad.org/) v7.0.
+- Schematics and PCB are designed by [KiCad](https://www.kicad.org/) v7.0.
 - [ASxxxx Cross Assemblers](https://shop-pdp.net/ashtml/asxxxx.php) to build the CP/M BIOS in z80/.
-- [cpmtools](https://github.com/lipro-cpm4l/cpmtools) for creating CP/M disk image.
+- [cpmtools](https://github.com/lipro-cpm4l/cpmtools) for creating CP/M disk images.
 
 ## Prototype
   ![](doc/Fig/20230506.jpeg)
