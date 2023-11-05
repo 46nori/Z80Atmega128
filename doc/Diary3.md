@@ -24,3 +24,6 @@
 ## 2023/11/04
 - CP/M BIOSのドキュメント追加。
 - Boot sequenceのドキュメント追加。
+
+## 2023/11/05
+- `z80/cpm22/image/mkimg.sh`で引数チェックのバグを修正。DiskImage-CPM22.mdも更新。
