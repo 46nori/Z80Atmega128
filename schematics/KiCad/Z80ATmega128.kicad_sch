@@ -6,7 +6,7 @@
 
   (title_block
     (title "Z80-ATmega128 Board")
-    (date "2023-08-27")
+    (date "2023-10-26")
     (company "By 46nori")
   )
 
@@ -11003,7 +11003,7 @@
     (property "Reference" "CPU2" (at 128.27 139.7 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "ATmega128-16A" (at 128.27 142.24 0)
+    (property "Value" "ATmega128-16AU" (at 128.27 142.24 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Footprint" "Package_QFP:TQFP-64_14x14mm_P0.8mm" (at 120.65 88.9 0)
@@ -11579,7 +11579,7 @@
     (property "Reference" "SW1" (at 45.72 193.04 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "Power" (at 45.72 195.58 0)
+    (property "Value" "POWER" (at 45.72 195.58 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "46nori:2MD1-T1-B4-VS2-Q-E" (at 45.72 217.17 0)

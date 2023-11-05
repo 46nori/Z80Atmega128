@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "46nori")(type "KiCad")(uri "${KIPRJMOD}/footprint/46nori.pretty")(options "")(descr ""))
+)
