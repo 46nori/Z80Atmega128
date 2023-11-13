@@ -2,6 +2,7 @@
 ## User's Guide
 - Z80ATmega128 Board Setup Guide ([English](./SetupGuide_en.md) / [Japanese](./SetupGuide.md))
 - How to make CP/M2.2 disk image ([English](./DiskImage-CPM22.md) / [Japanese](./DiskImage-CPM22-ja.md))
+- How to make CP/M3 (CP/M Plus) disk image ([English](../z80/cpm3/image/README.md) / [Japanese](../z80/cpm3/image/README-ja.md))
 - ATmega128 Tiny Monitor Command Reference ([English](./Software/AVRTinyMonitor.md))
 
 ## Hardware Specifications
