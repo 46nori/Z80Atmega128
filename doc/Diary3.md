@@ -148,3 +148,30 @@
   Total 1k Blocks =    370   Used/Max Dir Entries For Drive A:   46/ 256
 
   ```
+
+## 2023/11/16
+- 以下のパッチをあてるときにエラーになる場合があるので、Issueを上げた。(
+  [Issue 10](https://github.com/46nori/Z80Atmega128/issues/10), 
+  [Issue 12](https://github.com/46nori/Z80Atmega128/issues/12))
+  - z80/cpm22/sys/CPM22-asz80.patch
+  - z80/cpm3/image/CPM3-LDRBIOS.patch
+  ```
+  vscode@Z80ATmega128:/z80/cpm3/image$ make
+
+  ...
+
+  patch -i CPM3-LDRBIOS.patch ./tmp/cpm3on2/LDRBIOS.ASM
+  patching file ./tmp/cpm3on2/LDRBIOS.ASM
+  Hunk #1 FAILED at 110 (different line endings).
+  1 out of 1 hunk FAILED -- saving rejects to file ./tmp/cpm3on2/LDRBIOS.ASM.rej
+  make: *** [Makefile:89: tmp/cpm3on2] Error 1
+  ```
+  - 原因
+    - checkout時にファイルの改行コードがLFになっているから。パッチ適用先のCP/MのファイルはCRLFなので、Gitで勝手にLFに変換されてしまうと行が一致しないのでエラーになる。
+  - 対策
+    - `.gitattributes`に以下を追加して、強制的に改行コードをCRLFにする。
+      ```
+      *.patch text eol=crlf
+      ```
+    - さらにpatchコマンドにバイナリ比較オプション`--binary`を追加したら解決した。(だが、なぜこれが必要なのかよくわからない。。)
+- Ubuntu 22.04上で`mkfs.cpm`でディスクイメージ作るとエラーになる。`apt install cpmtool`した`/etc/cpmtools/diskdefs`に`sdcard`の定義が存在しないのが原因。コマンドラインで指定できないのでdiskdefsに定義を追加するしかない。wontfix扱いで[Issue 13](https://github.com/46nori/Z80Atmega128/issues/13)を登録した。
