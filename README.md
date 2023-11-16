@@ -14,8 +14,9 @@ Hence, I've devised the following design principles:
 4. Design circuits using components that are as easy to procure as possible. (As of 2023, mainly in the Japanese electronic parts market.)
 
 ## Achievements
-* CP/M 2.2 runs directly on the Z80 processor.
+* CP/M 2.2 works directly on the Z80 processor.
 * The system can boot CP/M from a microSD card containing the CP/M image file.
+* CP/M 3 (Non-banked memory version) works as well.
 * You can enjoy playing the text adventure game ZORK I, II and III !
 * The printed circuit board (PCB) is available.
 * Demo Video  
@@ -27,10 +28,12 @@ Hence, I've devised the following design principles:
 .
 ├── avr                      AVR firmware
 ├── z80                      Z80 software
-│   └── cpm22                CP/M-80 Ver2.2
-│       ├── bios               BIOS
-│       ├── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IP+CCP/BDOS+BIOS)
-│       └── image              CP/M Disk image
+│   ├── cpm22                CP/M-80 Ver2.2
+│   │   ├── bios               BIOS
+│   │   ├── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IP+CCP/BDOS+BIOS)
+│   │   └── image              CP/M 2.2 Disk image
+│   └── cpm3                 CP/M 3 (CP/M Plus)
+│       └── image              CP/M 3 Disk image
 ├── doc
 │   ├── Hardware/            Hardware documents
 │   ├── Software/            Software documents

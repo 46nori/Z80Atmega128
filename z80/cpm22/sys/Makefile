@@ -52,7 +52,7 @@ $(TMPDIR)/cpm22.rel: $(TMPDIR)/cpm22.asm
 
 # Patch CPM22.Z80 to assemble by asz80
 $(TMPDIR)/cpm22.asm: $(TMPDIR)/CPM22.Z80
-	patch -i CPM22-asz80.patch -o $@ $<
+	patch --binary -i CPM22-asz80.patch -o $@ $<
 
 # Extract CP/M 2.2 source code written in Z80 mnemonic
 $(TMPDIR)/CPM22.Z80: $(TMPDIR)/cpm2-asm.zip

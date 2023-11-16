@@ -1,0 +1,11 @@
+--- LDRBIOS_ORG.ASM	2023-11-13 18:41:21.040823900 +0900
++++ LDRBIOS.ASM	2023-11-13 18:41:33.954611600 +0900
+@@ -110,7 +110,7 @@ dma	equ	26
+ ;
+ ;--------------------------------------------------------
+ drives	equ	2		;number of drives supported
+-bios	equ	0e900h		;address of your bios
++bios	equ	0f200h		;address of your bios
+ ldrbios	equ	true
+ ;ldrbios	equ	false
+ ;--------------------------------------------------------
