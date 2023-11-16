@@ -86,7 +86,7 @@ $(CPM3ON2_DIR):
 	$(WGET) -P $(CPM3ON2_DIR) http://www.cpm.z80.de/download/cpm3on2.zip
 	$(UNZIP) -o -d $(CPM3ON2_DIR) $(CPM3ON2_DIR)/cpm3on2.zip $(CPM3_GEN_FILES)
 	$(RM) -f $(CPM3ON2_DIR)/cpm3on2.zip
-	$(PATCH) -i $(LDRBIOS_PATCH) $(CPM3ON2_DIR)/$(LDRBIOS)
+	$(PATCH) --binary -i $(LDRBIOS_PATCH) $(CPM3ON2_DIR)/$(LDRBIOS)
 
 # Download CP/M 3 files
 #   http://www.cpm.z80.de/download/cpm3bin.zip
