@@ -124,12 +124,29 @@ Windows/macOSの場合は、VS Code + Dev Containerの環境がおすすめ。
 #### Linux (Debian12)の場合
 1. 必要なツールのインストール
    ```
-   sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
+   sudo apt-get install -y wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
    ```
 2. Z80のクロスアセンブラ(asxxxx)のインストール
    ```
    cd z80/toolchain
    make
+   ```
+3. cpmtoolsのインストール
+   ```
+   sudo apt-get install -y cpmtools
+   ```
+   `/etc/cpmtools/diskdefs`に以下の定義がない場合は追加する。([Issue#13](https://github.com/46nori/Z80Atmega128/issues/13))
+   ```
+   diskdef sdcard
+     seclen 512
+     tracks 256
+     sectrk 64
+     blocksize 8192
+     maxdir 256
+     skew 0
+     boottrk 1
+     os 2.2
+   end
    ```
 
 #### VS Code + Dev Containerの場合
@@ -204,8 +221,8 @@ Windows/macOSの場合は、VS Code + Dev Containerの環境がおすすめ。
     ```
 2. microSD Cardの作成
    - **FAT32**でフォーマットする。
-   - ルートディレクトリに `DISK00.IMG` をコピーする。これは必ず存在する必要がある。
-     - `00`はドライブA:に相当する。`15`(ドライブP:)まで指定可能。
+   - ルートディレクトリに `DISK00.IMG` をコピーする。これはシステムディスクで必ず存在する必要がある。
+     - `00`はドライブA:に相当する。`4`(ドライブE:)まで指定可能。
      - 例えば `DISK00.IMG` を `DISK01.IMG` としてコピーし追加すれば、B:ドライブが見えるようになる。
 
 ### 3-3. CP/M自動起動のための設定

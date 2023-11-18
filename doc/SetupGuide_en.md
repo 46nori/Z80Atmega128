@@ -125,13 +125,31 @@ VS Code + Dev Container environment is recommended for Windows and macOS.
 #### Linux (Debian12)
 1. apt install
    ```
-   sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
+   sudo apt-get install -y wget git make unzip bzip2 g++ gcc
    ```
 2. Install Z80 cross assembler(asxxxx)
    ```
    cd z80/toolchain
    make
    ```
+3. Install cpmtools
+   ```
+   sudo apt-get install -y cpmtools
+   ```
+   In some environments, the following definitions may not be in `/etc/cpmtools/diskdefs`. In that case, add them. ([Issue#13](https://github.com/46nori/Z80Atmega128/issues/13))
+   ```
+   diskdef sdcard
+     seclen 512
+     tracks 256
+     sectrk 64
+     blocksize 8192
+     maxdir 256
+     skew 0
+     boottrk 1
+     os 2.2
+   end
+   ```
+
 
 #### VS Code + Dev Container
 - Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
@@ -205,12 +223,9 @@ VS Code + Dev Container environment is recommended for Windows and macOS.
     ```
 2. Creating a microSD Card
    - Format the microSD card as **FAT32**.
-   - Copy `DISK00.IMG` to the root directory on it. It is mandatory.
-     - `00` corresponds to drive A:. You can specify up to 15 `(drive P:).
-     - For example, copy `DISK00.IMG` as `DISK01.IMG` and add, B: drive will bet visible.
-   - Copy `DISK00.IMG`` to the root directory. This is a mandatory step.
-     - `00` corresponds to drive A:. You can specify drives up to `15`(P:).
-     - For instance, if you copy `DISK00.IMG` as `DISK01.IMG`, drive B: will become visible."
+    - Copy `DISK00.IMG`` to the root directory. This is a mandatory step because it is the system disk.
+     - `00` corresponds to drive A:. You can specify drives up to `4`(E:).
+     - For instance, if you copy `DISK00.IMG` as `DISK01.IMG`, drive B: will become visible.
 
 ### 3-3. Configuration for automatic CP/M startup
 Configure settings to enable CP/M startup from the microSD Card when power on.

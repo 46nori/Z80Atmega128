@@ -1,4 +1,4 @@
-# Z80-ATmega128 Board
+# Z80ATmega128 Board
 ## ハードウェア
 - Z80A 4MHz (以下Z80)
 - 共有メモリ 64KB (256Kbit SRAM x 2)

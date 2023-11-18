@@ -29,6 +29,39 @@
 - `z80/cpm22/image/mkimg.sh`で引数チェックのバグを修正。DiskImage-CPM22.mdも更新。
 - v2.0をリリースした。
 
+## 2023/11/11
+10/24にeBayで購入した、旧東ドイツ製 Z80互換CPU(デッドコピー)の`U880`がウクライナから届いた。
+パッケージのシルクは`80A-CPU MME`となっているが、[Wikipedia](https://en.wikipedia.org/wiki/U880)によるとこれはピン間隔2.54mmの輸出版らしい。
+換装して動作確認したところ、あっさり動いた。あたりまえか。
+
+以下が[eBay](https://www.ebay.com/itm/324007899221)にあったスペックだが、Soviet cloneってのはちょっと違うんじゃないか？
+```
+80A CPU MME Soviet Clone Z80A IC 4MHz NMOS MCPU logic 8-bit microprocessor NEW
+
+MME 80A-CPU
+
+Soviet Clone Z80A
+Manufacturer: MME Erfurt
+Type: Microprocessor
+Introduced: 198х
+Name (codename): Z80A clone
+Code (Copyright): 80A-CPU (no)
+Specification number: no
+Core speed: 4MHz
+BUS: 4MHz, 8-bit
+Transistors хх
+Technology: 3.0-micron NMOS
+L1/L2 cache: no / no
+Can address: 64 kB of physical memory
+V core: 5V
+Power dissipation (max.): х W
+Operating temperature (min./max.): 0 — 70°C
+Package (Socket): Plastic DIP 40-pin (40-pin DIL)
+Dimensions: 52 x 15 x 8mm
+```
+[こんな文書](https://datasheet.datasheetarchive.com/originals/scans/Scans-048/DSAGER000639.pdf)にUA880の記載がある。
+
+
 ## 2023/11/12
 - CP/M Plusの対応を始めた。
 - [これ](http://www.cpm.z80.de/download/cpm3on2.zip)を利用すれば、CP/M 2.2からCP/M 3が起動できるみたいだ。まずCP/M 2.2を起動し、二段ロケット方式でCP/M3を起動する方式。
@@ -150,9 +183,7 @@
   ```
 
 ## 2023/11/16
-- 以下のパッチをあてるときにエラーになる場合があるので、Issueを上げた。(
-  [Issue 10](https://github.com/46nori/Z80Atmega128/issues/10), 
-  [Issue 12](https://github.com/46nori/Z80Atmega128/issues/12))
+- 以下のパッチをあてるときにエラーになる場合があるので、Issueを上げた。([Issue 10](https://github.com/46nori/Z80Atmega128/issues/10), [Issue 12](https://github.com/46nori/Z80Atmega128/issues/12))
   - z80/cpm22/sys/CPM22-asz80.patch
   - z80/cpm3/image/CPM3-LDRBIOS.patch
   ```
@@ -167,7 +198,7 @@
   make: *** [Makefile:89: tmp/cpm3on2] Error 1
   ```
   - 原因
-    - checkout時にファイルの改行コードがLFになっているから。パッチ適用先のCP/MのファイルはCRLFなので、Gitで勝手にLFに変換されてしまうと行が一致しないのでエラーになる。
+    - checkout時にファイルの改行コードがLFになるから。パッチ適用先のCP/MのファイルはCRLFなので、Gitで勝手にLFに変換されてしまうと行が一致しないのでエラーになる。
   - 対策
     - `.gitattributes`に以下を追加して、強制的に改行コードをCRLFにする。
       ```
@@ -175,3 +206,6 @@
       ```
     - さらにpatchコマンドにバイナリ比較オプション`--binary`を追加したら解決した。(だが、なぜこれが必要なのかよくわからない。。)
 - Ubuntu 22.04上で`mkfs.cpm`でディスクイメージ作るとエラーになる。`apt install cpmtool`した`/etc/cpmtools/diskdefs`に`sdcard`の定義が存在しないのが原因。コマンドラインで指定できないのでdiskdefsに定義を追加するしかない。wontfix扱いで[Issue 13](https://github.com/46nori/Z80Atmega128/issues/13)を登録した。
+
+## 2023/11/18
+10/24に[eBay](https://www.ebay.com/itm/165487756685)で発注した`Z8400APS`が届いた。深圳からだけどEconomy International Shipping($2USD)だったので時間かかった。
