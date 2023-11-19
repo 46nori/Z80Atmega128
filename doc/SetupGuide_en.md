@@ -120,12 +120,12 @@ Due to licensing, neither the source nor the binary of the CP/M is provided in t
 
 ### 3-1. Setup Build Environment
 Linux is required for BIOS build and the CP/M disk image generation.
-VS Code + Dev Container environment is recommended for Windows and macOS.
+WSL for Windows and VS Code + Dev Container environment for macOS are recommended.
 
-#### Linux (Debian12)
+#### Linux, WSL (Ubuntu22.04)
 1. apt install
    ```
-   sudo apt-get install -y wget git make unzip bzip2 g++ gcc
+   sudo apt-get install -y wget git make unzip gcc
    ```
 2. Install Z80 cross assembler(asxxxx)
    ```

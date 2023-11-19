@@ -119,12 +119,12 @@ Z80ATmega128 BoardでCP/M-80を動作させるための手順を説明する。
 
 ### 3-1. ビルド環境の構築
 BIOSのアセンブル、およびCP/Mのディスクイメージの作成はLinux環境で行う。
-Windows/macOSの場合は、VS Code + Dev Containerの環境がおすすめ。
+WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
 
-#### Linux (Debian12)の場合
+#### Linux, WSL (Ubuntu22.04)の場合
 1. 必要なツールのインストール
    ```
-   sudo apt-get install -y wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
+   sudo apt-get install -y wget git make unzip gcc
    ```
 2. Z80のクロスアセンブラ(asxxxx)のインストール
    ```
