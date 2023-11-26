@@ -1478,7 +1478,7 @@
     (property "Footprint" "Crystal:Crystal_HC18-U_Vertical" (at 57.15 139.7 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Datasheet" "~" (at 57.15 139.7 0)
+    (property "Datasheet" "https://akizukidenshi.com/download/ds/mercuryelectronic/HUSG-8.000-20_20190701.pdf" (at 57.15 139.7 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "購入先(参考)" "https://akizukidenshi.com/catalog/g/gP-08667/" (at 57.15 139.7 0)
