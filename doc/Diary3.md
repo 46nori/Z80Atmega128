@@ -208,4 +208,27 @@ Dimensions: 52 x 15 x 8mm
 - Ubuntu 22.04上で`mkfs.cpm`でディスクイメージ作るとエラーになる。`apt install cpmtool`した`/etc/cpmtools/diskdefs`に`sdcard`の定義が存在しないのが原因。コマンドラインで指定できないのでdiskdefsに定義を追加するしかない。wontfix扱いで[Issue 13](https://github.com/46nori/Z80Atmega128/issues/13)を登録した。
 
 ## 2023/11/18
-10/24に[eBay](https://www.ebay.com/itm/165487756685)で発注した`Z8400APS`が届いた。深圳からだけどEconomy International Shipping($2USD)だったので時間かかった。
+10/24に[eBay](https://www.ebay.com/itm/165487756685)で発注した`Z8400APS`(5個セット)が届いた。深圳からだけどEconomy International Shipping($2USD)だったので時間かかった。
+
+## 2023/11/24
+- [樫木総業](https://www.kashinoki.shop)に発注していたNECのuPD780C-1が届いた。
+- いまのところZ80Aのコレクションはこんな感じ。
+  |Manufacturer|型番|ロット?|その他|
+  |---|---|---|---|
+  |Zilog|Z8400APS |8320|中学生の頃入手|
+  |Zilog|Z8400APS |9013|eBayで購入|
+  |SHARP|LH0080A  |9640|SHARP MZ-80Bで採用|
+  | NEC |uPD780C-1|8338X5|NEC PC-8001で採用|
+  | MME |80A-CPU (U880)||eBayで購入。旧東ドイツ製。輸出版。|
+
+## 2023/11/25
+- Z80を何度も挿抜しているとチップもソケットも傷がつくので、評価用にゼロプレッシャーソケットの基板を1枚作った。
+- eBayで購入した5個セットのZ8400APS、全数チェックしたら1個故障していた。(泣)
+
+#### 基板の動作確認時に地味にハマったことのメモ
+1. TinyMonitorの`test`コマンドがハングアップする。  
+   Z80を載せる。/BUSACKによるZ80のバス解放をAVRのPD6で確認しているため。
+2. `Insert microSD Card`が表示される。  
+   microSD Card slotの挿入状態が正しく取れていない。以下を確認。  
+   - PB6のハンダ不良
+   - microSD Card slotの9番ピン、10番ピン(GND)のハンダ不良
