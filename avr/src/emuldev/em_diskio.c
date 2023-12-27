@@ -8,8 +8,8 @@
 #include <string.h>
 #include <ctype.h>
 #include "em_diskio.h"
-#include "petitfs/pff.h"
-#include "petitfs/diskio.h"
+#include "fatfs/ff.h"
+#include "fatfs/diskio.h"
 #include "xconsoleio.h"
 #include "z80io.h"
 
@@ -23,7 +23,6 @@
 // DISK I/O emulated device
 //=================================================================
 // Disk parameters
-static uint8_t disk_result = 0;
 static uint8_t int_level_write = 128;
 static uint8_t int_level_read  = 128;
 
@@ -40,8 +39,13 @@ static uint8_t tmpbuf[512];
 static FRESULT read_result  = FR_OK;
 static FRESULT write_result = FR_OK;
 FATFS file_system;
-
-static const char* get_filename(int disk_no);
+#define MAX_FILES	5
+struct FD {
+	FIL fil;
+	FRESULT fr;
+	char name[16];
+} fd[MAX_FILES];
+static struct FD *cfd;
 
 ///////////////////////////////////////////////////////////////////
 // Initialize emulated device
@@ -49,33 +53,34 @@ static const char* get_filename(int disk_no);
 void init_em_diskio(void)
 {
 	/* Initialize physical drive */
-	DSTATUS status = disk_initialize();
+	DSTATUS status = disk_initialize(0);
 	if (status == 0) {
 		/* Set SPI clock faster after initialization */
 		SPSR |= _BV(SPI2X);		// 1/32 With 16MHz F_CPU
 	}
 	
 	/* Mount volume */
-	FRESULT result = pf_mount(&file_system);
+	PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
+	FRESULT result = f_mount(&file_system, "", 1);
 	if (result != FR_OK) {
 		x_puts("SDHC mount error");
-		PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
 	} else {
-		PORTE |=  _BV(PORTE5);			// DEBUG: BLUE LED OFF PE5		
+		/* open disk images file */
+		for (int i = MAX_FILES-1; i >= 0; i--) {
+			cfd = &fd[i];
+			sprintf(cfd->name, "DISK%02d.IMG", i);
+			cfd->fr = f_open(&cfd->fil, (const char *)&cfd->name, FA_READ | FA_WRITE);
+#if DEBUG_PRINT_OPEN
+			if (cfd->fr != FR_OK) {
+				x_printf("%s open error : %d\n", cfd->name, cfd->fr);
+			}
+#endif
+		}
+
+		rd.state = IDLE;
+		wr.state = IDLE;
+		PORTE |= _BV(PORTE5);		// DEBUG: BLUE LED OFF PE5
 	}
-
-	// set filename of default disk image
-	get_filename(0);
-
-	rd.state = IDLE;
-	wr.state = IDLE;
-}
-
-static const char* get_filename(int disk_no)
-{
-	static char *filename = "DISK00.IMG      ";
-	sprintf(filename, "DISK%02d.IMG", disk_no);
-	return filename;
 }
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -89,41 +94,21 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 #if DEBUG_PRINT_OPEN
 	x_printf("###SELSDK: %d\n", data);
 #endif
-	static int selected_disk = -1;
-	if (selected_disk == data) {
-		// already opened
-#if DEBUG_PRINT_OPEN
-		x_printf("  Skip\n");
-#endif
-		return;
+	if (data < MAX_FILES) {
+		cfd = &fd[data];
+		rd.state = IDLE;
+		wr.state = IDLE;
+		read_result  = FR_OK;
+		write_result = FR_OK;
 	}
-
-	PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
-
-	// Open file
-	const char *filename = get_filename(data);
-	if (pf_open(filename) != FR_OK) {
-		disk_result = 1;		// error
-		selected_disk = -1;
-#if DEBUG_PRINT_OPEN
-		x_printf("%s open error\n", filename);
-#endif
-		return;
-	}
-	selected_disk = data;
-	disk_result = 0;			// success
-
-	rd.state = IDLE;
-	wr.state = IDLE;
-	read_result  = FR_OK;
-	write_result = FR_OK;
-
-	PORTE |=  _BV(PORTE5);			// DEBUG: BLUE LED OFF PE5
 }
 
 uint8_t IN_0A_DSK_GetDiskStatus()
 {
-	return disk_result;
+	if (cfd->fr != FR_OK) {
+		return 1;	// error
+	}
+	return 0;		// success
 }
 
 //
@@ -299,8 +284,8 @@ void em_disk_write(void)
 	if (offset > 0) {
 		pos -= offset;			// set pos previous block boundary
 	}
-	if (pos != file_system.fptr) {
-		if ((write_result = pf_lseek(pos)) != FR_OK) {
+	if (pos != f_tell(&cfd->fil)) {
+		if ((write_result = f_lseek(&cfd->fil, pos)) != FR_OK) {
 			goto error_skip;
 		}		
 	}
@@ -314,12 +299,12 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("$$$ Head Read/");
 #endif
-		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
+		write_result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
 		//rewind
-		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf));
+		write_result = f_lseek(&cfd->fil, f_tell(&cfd->fil) - sizeof(tmpbuf));
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
@@ -342,7 +327,7 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
 #endif
-		if ((write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
+		if ((write_result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
 		src = (uint8_t*)src + plen;
@@ -375,7 +360,7 @@ void em_disk_write(void)
 		memcpy(tmpbuf, src, sizeof(tmpbuf));
 		ExtMem_detach();
 		sei();
-		if ((write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
+		if ((write_result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
 		src = (uint8_t*)src + sizeof(tmpbuf);
@@ -397,7 +382,7 @@ void em_disk_write(void)
 #endif
 	}
 	if (offset > 0 || n > 0) {
-		pf_write(0, 0, &bytes);		
+		f_sync(&cfd->fil);
 	}
 
 	// process the last sector 
@@ -406,12 +391,12 @@ void em_disk_write(void)
 		x_printf("$$$ Tail Read/");
 #endif
 		// read
-		write_result = pf_read(tmpbuf, sizeof(tmpbuf), &bytes);
+		write_result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
 		// rewind
-		write_result = pf_lseek(file_system.fptr - sizeof(tmpbuf));
+		write_result = f_lseek(&cfd->fil, f_tell(&cfd->fil) - sizeof(tmpbuf));
 		if (write_result != FR_OK) {
 			goto error_skip;
 		}
@@ -428,8 +413,8 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
 #endif
-		write_result = pf_write(tmpbuf, sizeof(tmpbuf), &bytes);
-		pf_write(0, 0, &bytes);
+		write_result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
+		f_sync(&cfd->fil);
 #if DEBUG_PRINT_WR_DATA
 		for (unsigned int i = 0; i < len; i++) {
 			if (!isprint(tmpbuf[i]) || tmpbuf[i] < ' ') {
@@ -541,8 +526,8 @@ void em_disk_read(void)
 	rd.state = DOING;
 
 	// move to the first sector to read if necessary
-	if (file_system.fptr != rd.position) {
-		read_result = pf_lseek(rd.position);
+	if (f_tell(&cfd->fil) != rd.position) {
+		read_result = f_lseek(&cfd->fil, rd.position);
 		if (read_result != FR_OK) {
 			goto error_skip;
 		}
@@ -554,7 +539,7 @@ void em_disk_read(void)
 
 	unsigned int n = len / sizeof(tmpbuf);
 	for (unsigned int i = 0; i < n; i++) {
-		read_result = pf_read(tmpbuf, sizeof(tmpbuf), &br);
+		read_result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &br);
 		if (read_result != FR_OK) {
 			goto error_skip;
 		}
@@ -567,7 +552,7 @@ void em_disk_read(void)
 	}
 	len = len % sizeof(tmpbuf);
 	if (len > 0) {
-		read_result = pf_read(tmpbuf, len, &br);
+		read_result = f_read(&cfd->fil, tmpbuf, len, &br);
 		if (read_result == FR_OK) {
 			cli();
 			ExtMem_attach();

@@ -12,16 +12,23 @@
 /-------------------------------------------------------------------------*/
 
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include "diskio.h"
 #include "mmc_avr.h"
 
 /* Peripheral controls (Platform dependent) */
-#define CS_LOW()		To be filled	/* Set MMC_CS = low */
-#define	CS_HIGH()		To be filled	/* Set MMC_CS = high */
-#define MMC_CD			To be filled	/* Test if card detected.   yes:true, no:false, default:true */
-#define MMC_WP			To be filled	/* Test if write protected. yes:true, no:false, default:false */
-#define	FCLK_SLOW()		To be filled	/* Set SPI clock for initialization (100-400kHz) */
-#define	FCLK_FAST()		To be filled	/* Set SPI clock for read/write (20MHz max) */
+#define SPIPORT  PORTB
+#define SPI_CS   _BV(PORTB0) //(1 << 0)  /* PB0 */
+#define SPI_SCK  _BV(PORTB1) //(1 << 1)  /* PB1 */
+#define SPI_MOSI _BV(PORTB2) //(1 << 2)  /* PB2 SD card DI */
+#define SPI_MISO _BV(PORTB3) //(1 << 3)  /* PB3 SD card DO */
+
+#define CS_LOW()		(SPIPORT &= ~SPI_CS)	/* Set MMC_CS = low */
+#define	CS_HIGH()		(SPIPORT |= SPI_CS) 	/* Set MMC_CS = high */
+#define MMC_CD			(1)						/* Test if card detected.   yes:true, no:false, default:true */
+#define MMC_WP			(0)						/* Test if write protected. yes:true, no:false, default:false */
+#define	FCLK_SLOW()								/* Set SPI clock for initialization (100-400kHz) */
+#define	FCLK_FAST()								/* Set SPI clock for read/write (20MHz max) */
 
 
 /*--------------------------------------------------------------------------
@@ -75,15 +82,15 @@ static
 void power_on (void)
 {
 	/* Trun socket power on and wait for 10ms+ (nothing to do if no power controls) */
-	To be filled
-
-
 	/* Configure MOSI/MISO/SCLK/CS pins */
-	To be filled
-
-
 	/* Enable SPI module in SPI mode 0 */
-	To be filled
+	DDRB  |= (SPI_MOSI | SPI_CS | SPI_SCK); /* Set outputs */
+	PORTB |= SPI_MISO; /* Enable pull-up on SPI_MISO (SD card DO) */
+
+	SPCR = _BV(SPE)  |	// Enable SPI
+	       _BV(MSTR) |	// Master mode
+	       _BV(SPR1); 	// SPI prescaler to give 100-400kHz clock
+						// 1/64 With 16MHz F_CPU
 }
 
 
@@ -91,15 +98,8 @@ static
 void power_off (void)
 {
 	/* Disable SPI function */
-	To be filled
-
-
 	/* De-configure MOSI/MISO/SCLK/CS pins (set hi-z) */
-	To be filled
-
-
 	/* Trun socket power off (nothing to do if no power controls) */
-	To be filled
 }
 
 

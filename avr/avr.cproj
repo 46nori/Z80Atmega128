@@ -235,7 +235,7 @@
     <Folder Include="src\ASF\mega\utils\preprocessor\" />
     <Folder Include="src\config\" />
     <Folder Include="src\emuldev" />
-    <Folder Include="src\petitfs" />
+    <Folder Include="src\fatfs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\emuldev\emuldev.c">
@@ -268,6 +268,27 @@
     <Compile Include="src\emuldev\em_led.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\fatfs\diskio.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\fatfs\diskio.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\fatfs\ff.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\fatfs\ff.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\fatfs\ffconf.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\fatfs\mmc_avr.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\fatfs\mmc_avr_spi.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\intelhex.c">
       <SubType>compile</SubType>
     </Compile>
@@ -278,24 +299,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\isr.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\petitfs\diskio.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\petitfs\diskio_avr.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\petitfs\integer.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\petitfs\pff.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\petitfs\pff.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\petitfs\pffconf.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\timer.c">
@@ -391,6 +394,9 @@
     <Compile Include="src\main.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\fatfs\README.md">
+      <SubType>compile</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
