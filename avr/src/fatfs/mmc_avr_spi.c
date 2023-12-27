@@ -25,10 +25,10 @@
 
 #define CS_LOW()		(SPIPORT &= ~SPI_CS)	/* Set MMC_CS = low */
 #define	CS_HIGH()		(SPIPORT |= SPI_CS) 	/* Set MMC_CS = high */
-#define MMC_CD			(1)						/* Test if card detected.   yes:true, no:false, default:true */
-#define MMC_WP			(0)						/* Test if write protected. yes:true, no:false, default:false */
-#define	FCLK_SLOW()								/* Set SPI clock for initialization (100-400kHz) */
-#define	FCLK_FAST()								/* Set SPI clock for read/write (20MHz max) */
+#define MMC_CD			(!(PINB & _BV(PORTB4)))	/* Test if card detected.   yes:true, no:false, default:true */
+#define MMC_WP			(!(PINE & _BV(PORTE2)))	/* Test if write protected. yes:true, no:false, default:false */
+#define	FCLK_SLOW()		SPCR=_BV(SPE)|_BV(MSTR)|_BV(SPR1);	/* Set SPI clock for initialization (100-400kHz) */
+#define	FCLK_FAST()		SPCR=_BV(SPE)|_BV(MSTR)|_BV(SPI2X);	/* Set SPI clock for read/write (20MHz max) */
 
 
 /*--------------------------------------------------------------------------
@@ -81,7 +81,6 @@ static BYTE CardType;			/* Card type flags (b0:MMC, b1:SDv1, b2:SDv2, b3:Block a
 static
 void power_on (void)
 {
-	/* Trun socket power on and wait for 10ms+ (nothing to do if no power controls) */
 	/* Configure MOSI/MISO/SCLK/CS pins */
 	/* Enable SPI module in SPI mode 0 */
 	DDRB  |= (SPI_MOSI | SPI_CS | SPI_SCK); /* Set outputs */
@@ -99,7 +98,6 @@ void power_off (void)
 {
 	/* Disable SPI function */
 	/* De-configure MOSI/MISO/SCLK/CS pins (set hi-z) */
-	/* Trun socket power off (nothing to do if no power controls) */
 }
 
 
@@ -657,13 +655,17 @@ void mmc_disk_timerproc (void)
 	b = Stat;
 	if (MMC_WP) {				/* Write protected */
 		b |= STA_PROTECT;
+		PORTE &= ~_BV(PORTE6);	// YELLOW LED ON PE6
 	} else {					/* Write enabled */
 		b &= ~STA_PROTECT;
+		PORTE |= _BV(PORTE6);	// YELLOW LED OFF PE6
 	}
 	if (MMC_CD) {				/* Card inserted */
 		b &= ~STA_NODISK;
+		PORTE |= _BV(PORTE5);	// BLUE LED OFF PE5
 	} else {					/* Socket empty */
 		b |= (STA_NODISK | STA_NOINIT);
+		PORTE &= ~_BV(PORTE5);	// BLUE LED ON PE5
 	}
 	Stat = b;				/* Update MMC status */
 }

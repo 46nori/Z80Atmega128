@@ -38,14 +38,17 @@ struct diskio {
 static uint8_t tmpbuf[512];
 static FRESULT read_result  = FR_OK;
 static FRESULT write_result = FR_OK;
-FATFS file_system;
-#define MAX_FILES	5
-struct FD {
+
+// FatFs
+static FATFS file_system;
+
+#define MAX_FILES	5			// Max num of disk images (A: - E:)
+static struct FD {
 	FIL fil;
 	FRESULT fr;
 	char name[16];
 } fd[MAX_FILES];
-static struct FD *cfd;
+static struct FD *cfd;			// Current disk image file
 
 ///////////////////////////////////////////////////////////////////
 // Initialize emulated device
@@ -65,7 +68,7 @@ void init_em_diskio(void)
 	if (result != FR_OK) {
 		x_puts("SDHC mount error");
 	} else {
-		/* open disk images file */
+		/* open all disk images file in advance */
 		for (int i = MAX_FILES-1; i >= 0; i--) {
 			cfd = &fd[i];
 			sprintf(cfd->name, "DISK%02d.IMG", i);

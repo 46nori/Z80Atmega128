@@ -292,10 +292,16 @@ Petit FatFsからFatFsへの乗り換え作業を実施。意外と簡単に移�
 - `mmc_avr_spi.c`
   - Platform依存のSPIやポートのマクロ定義を`petitfs/diskio_avr.c`の実装からコピぺ。
   - `power_on()`に、SPIの初期化コードを`petitfs/diskio_avr.c`の実装からコピぺ。
+  - `FCLK_SLOW()` 16MHzの1/64に設定。
+  - `FCLK_FAST()` 16MHzの1/2に設定。
+  - `MMC_CD` Card検出をサポート。
+  - `MMC_WP` WRITE PROTECTサポート。未使用だったDIPSW3がON時にプロテクト状態とした。
+  - `disk_timerproc()`で以下をチェック。
+    - MMC_WPなら、YELLOW LEDを点灯させる。
+    - MMC_CD未挿入なら、BLUE LEDを点灯させる。
   - タイムアウト処理を行っているので`disk_timerproc()`を10msごとに呼び出す必要がある。isr.cのTIMER2の10msの周期割り込みハンドラ内で呼び出す。
 - `em_diskio.c`
   - FatFSのAPIに乗り換え。
   - `init_em_diskio()`でDISKイメージファイル5つをすべてオープン。
   - `OUT_0A_DSK_SelectDisk()`でのオープン処理を削除し、カレントDISKイメージのポインタだけ切り替えるように変更。
   - Writeのフラッシュ処理を`f_sync()`に変更。
-
