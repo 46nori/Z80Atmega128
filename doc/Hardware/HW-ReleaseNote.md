@@ -41,3 +41,10 @@
       GND     5V  TX  RX
       ```
 
+----
+## Rev 2.10
+### PCB
+- Fixed Rev 2.00 Errata.
+- Description of DIP SW.
+  - Assigned SW3 to SD Card Write Protect.
+- Changed some silk to white outline.

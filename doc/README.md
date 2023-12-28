@@ -11,7 +11,7 @@
 
 ## Software Specifications
 - Emulated external I/O device specification ([English](./Software/EmulatedDeviceSpec.md) / [Japanese](./Software/EmulatedDeviceSpec.md#port-japanese))
-- BIOS design Spacification ([English](./Software/BIOSDesignSpec.md) / [Japanese](./Software/BIOSDesignSpec-ja.md))
+- CCP/M 2.2 BIOS design Spacification ([English](./Software/BIOSDesignSpec.md) / [Japanese](./Software/BIOSDesignSpec-ja.md))
 
 ## Design Memo
 - CP/M DISK Parameters ([Japanese](./Software/DiskParameters.md))

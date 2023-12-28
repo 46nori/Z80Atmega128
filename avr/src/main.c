@@ -12,6 +12,7 @@
 #include "isr.h"
 #include "xconsoleio.h"
 #include "emuldev/emuldev.h"
+#include "fatfs/diskio.h"
 #include "monitor.h"
 
 int main (void)
@@ -40,9 +41,13 @@ int main (void)
 	// CHeck if DIPSW1(PG3) is ON - CP/M launch control
 	if (bit_is_clear(PING, PORTG3)) {
 		// Check if SD Card is inserted
-		if (PINB & _BV(PORTB4)) {
+		DSTATUS st = disk_status(0);
+		if (st & STA_NODISK) {
 			x_puts("Insert microSDHC card.");
 		} else {
+			if (st & STA_PROTECT) {
+				x_puts("microSDHC card is WRITE PROTECTED.");
+			}
 			// Load 62K CP/M BIOS from EEPROM
 			const uint16_t *src = 0;
 			eeprom_busy_wait();

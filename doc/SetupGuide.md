@@ -32,7 +32,7 @@ Z80Atmega128 Boardにファームウェアを焼き込み、CP/M2.2を単体動�
 |:---:|----------------|--------|---------|
 |  1  | CP/M mode      | Enable | Disable |
 |  2  | UART baud rate |  19200 |    9600 |
-|  3  | Not used       |        |         |
+|  3  | SD Write Protect | ReadOnly | Writable |
 |  4  | SRAM Wait      | 1 wait |  2 wait |
 - SW 1: CP/M BIOSがAVRのEEPROMに書き込まれている場合、ONにすることでCP/Mが起動する。
 - SW 2: 接続する端末の通信速度にあわせる。
@@ -41,8 +41,8 @@ Z80Atmega128 Boardにファームウェアを焼き込み、CP/M2.2を単体動�
 ### LED
 |  #  | 色 | 状態                           |
 |:---:|----|-------------------------------|
-|  1  | 青 | microSDのopen中または失敗時に点灯 |
-|  2  | 黄 | 未使用                         |
+|  1  | 青 | microSDが未挿入、またはマウント失敗時に点灯 |
+|  2  | 黄 | microSDがライトプロテクト状態で点灯 |
 |  3  | 赤 | AVRのハートビート表示(2Hzで点滅)  |
 
 ### 注意
@@ -119,17 +119,34 @@ Z80ATmega128 BoardでCP/M-80を動作させるための手順を説明する。
 
 ### 3-1. ビルド環境の構築
 BIOSのアセンブル、およびCP/Mのディスクイメージの作成はLinux環境で行う。
-Windows/macOSの場合は、VS Code + Dev Containerの環境がおすすめ。
+WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
 
-#### Linux (Debian12)の場合
+#### Linux, WSL (Ubuntu22.04)の場合
 1. 必要なツールのインストール
    ```
-   sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
+   sudo apt-get install -y wget git make unzip gcc
    ```
 2. Z80のクロスアセンブラ(asxxxx)のインストール
    ```
    cd z80/toolchain
    make
+   ```
+3. cpmtoolsのインストール
+   ```
+   sudo apt-get install -y cpmtools
+   ```
+   `/etc/cpmtools/diskdefs`に以下の定義がない場合は追加する。([Issue#13](https://github.com/46nori/Z80Atmega128/issues/13))
+   ```
+   diskdef sdcard
+     seclen 512
+     tracks 256
+     sectrk 64
+     blocksize 8192
+     maxdir 256
+     skew 0
+     boottrk 1
+     os 2.2
+   end
    ```
 
 #### VS Code + Dev Containerの場合
@@ -204,8 +221,8 @@ Windows/macOSの場合は、VS Code + Dev Containerの環境がおすすめ。
     ```
 2. microSD Cardの作成
    - **FAT32**でフォーマットする。
-   - ルートディレクトリに `DISK00.IMG` をコピーする。これは必ず存在する必要がある。
-     - `00`はドライブA:に相当する。`15`(ドライブP:)まで指定可能。
+   - ルートディレクトリに `DISK00.IMG` をコピーする。これはシステムディスクで必ず存在する必要がある。
+     - `00`はドライブA:に相当する。`4`(ドライブE:)まで指定可能。
      - 例えば `DISK00.IMG` を `DISK01.IMG` としてコピーし追加すれば、B:ドライブが見えるようになる。
 
 ### 3-3. CP/M自動起動のための設定
@@ -242,7 +259,7 @@ microSD CardからCP/Mが起動できるようにするための設定を行う�
 ### 3-4. 動作確認
   1. AVR, Z80用のシリアルインターフェースを端末に接続。
   2. CP/Mイメージファイルを書き込んだmicroSD Cardをスロットに挿入する。
-  3. DIP SW 1をON(CP/M起動モード)にして、リセットボタンを押す。
+  3. DIP SW 1をON(CP/M起動モード), DIP SW 3をOFFにして、リセットボタンを押す。
   4. AVR側のシリアル端末には以下のプロンプトが表示される。  
      EEPROMに書き込まれたBIOSがSRAM上にコピーされ、BIOSがmicroSD Cardの予約トラックに書き込まれているCCP+BDOSを読み込んで、CP/Mを起動する。
      ```

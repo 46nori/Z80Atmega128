@@ -32,7 +32,7 @@ The procedure for setting up the firmware on the Z80Atmega128 Board and booting 
 |:---:|----------------|--------|---------|
 |  1  | CP/M mode      | Enable | Disable |
 |  2  | UART baud rate |  19200 |    9600 |
-|  3  | Not used       |        |         |
+|  3  | SD Write Protect | ReadOnly | Writable |
 |  4  | SRAM Wait      | 1 wait |  2 wait |
 
 - SW1: If turned ON, CP/M will start automatically upon powering up, provided the BIOS has been written to the AVR EEPROM.
@@ -42,8 +42,8 @@ The procedure for setting up the firmware on the Z80Atmega128 Board and booting 
 ### LED
 |  #  | Color  | Status                           |
 |:---:|--------|----------------------------------|
-|  1  | Blue   | microSD is opening or fail       |
-|  2  | Yellow | Not used                         |
+|  1  | Blue   | microSD is not inserted / mount failure |
+|  2  | Yellow | microSD is Write Protected       |
 |  3  | Red    | AVR heartbeat (blinking at 2 Hz) |
 
 ### Notes
@@ -120,18 +120,36 @@ Due to licensing, neither the source nor the binary of the CP/M is provided in t
 
 ### 3-1. Setup Build Environment
 Linux is required for BIOS build and the CP/M disk image generation.
-VS Code + Dev Container environment is recommended for Windows and macOS.
+WSL for Windows and VS Code + Dev Container environment for macOS are recommended.
 
-#### Linux (Debian12)
+#### Linux, WSL (Ubuntu22.04)
 1. apt install
    ```
-   sudo apt-get install -y less tree wget git make unzip bzip2 g++ gcc bsdmainutils cpmtools
+   sudo apt-get install -y wget git make unzip gcc
    ```
 2. Install Z80 cross assembler(asxxxx)
    ```
    cd z80/toolchain
    make
    ```
+3. Install cpmtools
+   ```
+   sudo apt-get install -y cpmtools
+   ```
+   In some environments, the following definitions may not be in `/etc/cpmtools/diskdefs`. In that case, add them. ([Issue#13](https://github.com/46nori/Z80Atmega128/issues/13))
+   ```
+   diskdef sdcard
+     seclen 512
+     tracks 256
+     sectrk 64
+     blocksize 8192
+     maxdir 256
+     skew 0
+     boottrk 1
+     os 2.2
+   end
+   ```
+
 
 #### VS Code + Dev Container
 - Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
@@ -205,12 +223,9 @@ VS Code + Dev Container environment is recommended for Windows and macOS.
     ```
 2. Creating a microSD Card
    - Format the microSD card as **FAT32**.
-   - Copy `DISK00.IMG` to the root directory on it. It is mandatory.
-     - `00` corresponds to drive A:. You can specify up to 15 `(drive P:).
-     - For example, copy `DISK00.IMG` as `DISK01.IMG` and add, B: drive will bet visible.
-   - Copy `DISK00.IMG`` to the root directory. This is a mandatory step.
-     - `00` corresponds to drive A:. You can specify drives up to `15`(P:).
-     - For instance, if you copy `DISK00.IMG` as `DISK01.IMG`, drive B: will become visible."
+    - Copy `DISK00.IMG`` to the root directory. This is a mandatory step because it is the system disk.
+     - `00` corresponds to drive A:. You can specify drives up to `4`(E:).
+     - For instance, if you copy `DISK00.IMG` as `DISK01.IMG`, drive B: will become visible.
 
 ### 3-3. Configuration for automatic CP/M startup
 Configure settings to enable CP/M startup from the microSD Card when power on.
@@ -246,7 +261,7 @@ Configure settings to enable CP/M startup from the microSD Card when power on.
 ### 3-4. Functionality Test
   1. Connect the AVR and Z80 serial interfaces to the terminal.
   2. Insert a microSD card with the CP/M image file into the slot.
-  3. Turn on DIP switch SW1 (CP/M start mode) and press the RESET button.
+  3. Turn on DIP switch SW1 (CP/M start mode), turn off SW3, and press the RESET button.
   4. The AVR serial terminal will display the following prompt. The BIOS is copied from the EEPROM to SRAM, after which the BIOS reads the CCP+BDOS from the reserved track on the microSD card and initiates CP/M.
      ```
      === CP/M mode ===

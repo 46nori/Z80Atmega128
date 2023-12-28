@@ -1,4 +1,5 @@
 # Z80ATmega128
+[日本語版READMEはこちら](./README-ja.md)
 ## Overview
 This project aims to build a system utilizing the Z80A and running CP/M-80 directly.
 
@@ -30,7 +31,7 @@ Hence, I've devised the following design principles:
 ├── z80                      Z80 software
 │   ├── cpm22                CP/M-80 Ver2.2
 │   │   ├── bios               BIOS
-│   │   ├── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IP+CCP/BDOS+BIOS)
+│   │   ├── sys                CPM.SYS(CCP/BDOS) and cpm.ihx(IPL+CCP/BDOS+BIOS)
 │   │   └── image              CP/M 2.2 Disk image
 │   └── cpm3                 CP/M 3 (CP/M Plus)
 │       └── image              CP/M 3 Disk image
