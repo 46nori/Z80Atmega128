@@ -41,3 +41,10 @@
       GND     5V  TX  RX
       ```
 
+----
+## Rev 2.10
+### PCB
+- Rev 2.00のErrataの修正
+- DIP SWの説明
+  - SW3をSD CardのWrite Protectに割り当て
+- 一部シルクを白抜き表示に変更
