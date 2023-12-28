@@ -305,3 +305,8 @@ Petit FatFsからFatFsへの乗り換え作業を実施。意外と簡単に移�
   - `init_em_diskio()`でDISKイメージファイル5つをすべてオープン。
   - `OUT_0A_DSK_SelectDisk()`でのオープン処理を削除し、カレントDISKイメージのポインタだけ切り替えるように変更。
   - Writeのフラッシュ処理を`f_sync()`に変更。
+
+## 2023/12/28
+CP/M起動後にmicroSDをWRITE PROTECT ON/OFFしたときに復帰できるよう、以下の変更を実施。現在のメモリ残量は1151bytes。
+- `OUT_0A_DSK_SelectDisk()`で、指定されたDISKイメージファイルがエラー状態だったら、再openし、エラー状態をリセット。
+- エラー発生で全滅しないよう、ドライブごとに状態を独立管理させた。

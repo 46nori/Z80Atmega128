@@ -26,6 +26,11 @@
 static uint8_t int_level_write = 128;
 static uint8_t int_level_read  = 128;
 
+static uint8_t tmpbuf[512];
+
+// FatFs
+static FATFS file_system;
+
 enum DISKIO_STATUS {IDLE, REQUESTING, DOING, REJECTED};
 struct diskio {
 	enum DISKIO_STATUS state;
@@ -33,22 +38,19 @@ struct diskio {
 	void	*buffer;
 	UINT	length;
 	FRESULT	result;
-} rd, wr;
+};
 
-static uint8_t tmpbuf[512];
-static FRESULT read_result  = FR_OK;
-static FRESULT write_result = FR_OK;
-
-// FatFs
-static FATFS file_system;
-
-#define MAX_FILES	5			// Max num of disk images (A: - E:)
-static struct FD {
+struct FD {
 	FIL fil;
-	FRESULT fr;
+	FRESULT open_result;
 	char name[16];
-} fd[MAX_FILES];
-static struct FD *cfd;			// Current disk image file
+	struct diskio read;
+	struct diskio write;
+};
+
+#define MAX_FILES	5			// Max number of disk images (A: - E:)
+static struct FD fd[MAX_FILES];	// List of disk image files
+static struct FD *cfd;			// Current selected disk image file
 
 ///////////////////////////////////////////////////////////////////
 // Initialize emulated device
@@ -63,26 +65,26 @@ void init_em_diskio(void)
 	}
 	
 	/* Mount volume */
-	PORTE &= ~_BV(PORTE5);			// DEBUG: BLUE LED ON PE5
-	FRESULT result = f_mount(&file_system, "", 1);
-	if (result != FR_OK) {
+	PORTE &= ~_BV(PORTE5);			// BLUE LED ON PE5
+	if (f_mount(&file_system, "", 1) != FR_OK) {
 		x_puts("SDHC mount error");
 	} else {
 		/* open all disk images file in advance */
 		for (int i = MAX_FILES-1; i >= 0; i--) {
 			cfd = &fd[i];
 			sprintf(cfd->name, "DISK%02d.IMG", i);
-			cfd->fr = f_open(&cfd->fil, (const char *)&cfd->name, FA_READ | FA_WRITE);
+			cfd->open_result = f_open(&cfd->fil, (const char *)&cfd->name, FA_READ | FA_WRITE);
 #if DEBUG_PRINT_OPEN
-			if (cfd->fr != FR_OK) {
-				x_printf("%s open error : %d\n", cfd->name, cfd->fr);
+			if (cfd->open_result != FR_OK) {
+				x_printf("%s open error : %d\n", cfd->name, cfd->open_result);
 			}
 #endif
+			cfd->read.state   = IDLE;
+			cfd->read.result  = FR_OK;
+			cfd->write.state  = IDLE;
+			cfd->write.result = FR_OK;
 		}
-
-		rd.state = IDLE;
-		wr.state = IDLE;
-		PORTE |= _BV(PORTE5);		// DEBUG: BLUE LED OFF PE5
+		PORTE |= _BV(PORTE5);		// BLUE LED OFF PE5
 	}
 }
 
@@ -99,16 +101,29 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 #endif
 	if (data < MAX_FILES) {
 		cfd = &fd[data];
-		rd.state = IDLE;
-		wr.state = IDLE;
-		read_result  = FR_OK;
-		write_result = FR_OK;
+		// Re-open if previous operation was failure.
+		if (cfd->open_result  != FR_OK ||
+		    cfd->write.result != FR_OK ||
+			cfd->read.result  != FR_OK) {
+#if DEBUG_PRINT_OPEN
+			x_printf("   Result op:%d/rd:%d/wr:%d\n", cfd->open_result, cfd->read.result, cfd->write.result);
+#endif
+			f_close(&cfd->fil);
+			cfd->open_result = f_open(&cfd->fil, (const char *)&cfd->name, FA_READ | FA_WRITE);
+#if DEBUG_PRINT_OPEN
+			x_printf("   Re-open: %d\n", cfd->open_result);
+#endif
+		}
+		cfd->read.state   = IDLE;
+		cfd->read.result  = FR_OK;
+		cfd->write.state  = IDLE;
+		cfd->write.result = FR_OK;
 	}
 }
 
 uint8_t IN_0A_DSK_GetDiskStatus()
 {
-	if (cfd->fr != FR_OK) {
+	if (cfd->open_result != FR_OK) {
 		return 1;	// error
 	}
 	return 0;		// success
@@ -189,9 +204,9 @@ uint8_t IN_0E_DSK_WriteStatus()
 	// CAUTION: don't consume long time
 	cli();
 	uint8_t st = 0x00;
-	switch (wr.state) {
+	switch (cfd->write.state) {
 		case IDLE:
-			if (write_result != FR_OK) {
+			if (cfd->write.result != FR_OK) {
 				st = 0x02;		// error
 			}
 			break;
@@ -210,30 +225,30 @@ uint8_t IN_0E_DSK_WriteStatus()
 void OUT_0E_DSK_Write(uint8_t data)
 {
 #if DEBUG_PRINT_STATE
-	x_printf("WRITE:%d->", wr.state);
+	x_printf("WRITE:%d->", cfd->write.state);
 #endif
 	// Reject if READ is on going
-	if (rd.state == DOING || rd.state == REQUESTING) {
-		wr.state = REJECTED;
+	if (cfd->read.state == DOING || cfd->read.state == REQUESTING) {
+		cfd->write.state = REJECTED;
 	} else {
-		switch (wr.state) {
-		case IDLE:							// 0
-		case REJECTED:						// 3
-			wr.buffer   = (void *)dt_DSK_WriteBuf;
-			wr.length   = dt_DSK_WriteLen;
-			wr.position = dt_DSK_WritePos;
-			wr.state    = REQUESTING;		// 1
+		switch (cfd->write.state) {
+		case IDLE:								// 0
+		case REJECTED:							// 3
+			cfd->write.buffer   = (void *)dt_DSK_WriteBuf;
+			cfd->write.length   = dt_DSK_WriteLen;
+			cfd->write.position = dt_DSK_WritePos;
+			cfd->write.state    = REQUESTING;	// 1
 			break;
-		case REQUESTING:					// 1
-		case DOING:							// 2
-			wr.state = REJECTED;			// 3
+		case REQUESTING:						// 1
+		case DOING:								// 2
+			cfd->write.state = REJECTED;		// 3
 			break;
 		default:
 			break;
 		}
 	}
 #if DEBUG_PRINT_STATE
-	x_printf("%d\n", wr.state);
+	x_printf("%d\n", cfd->write.state);
 #endif
 }
 
@@ -264,31 +279,31 @@ void OUT_0F_DSK_WriteIntLevel(uint8_t data)
 //
 void em_disk_write(void)
 {
-	if (wr.state != REQUESTING) {
+	if (cfd->write.state != REQUESTING) {
 		return;
 	}
-	if (rd.state == DOING || rd.state == REQUESTING) {
-		wr.state = REJECTED;
+	if (cfd->read.state == DOING || cfd->read.state == REQUESTING) {
+		cfd->write.state = REJECTED;
 		if (int_level_write < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
 			Z80_EXTINT_low(int_level_write << 1);
 		}
 		return;
 	}
-	wr.state = DOING;
+	cfd->write.state = DOING;
 
 	UINT bytes;
-	unsigned int offset = wr.position % sizeof(tmpbuf);
-	void *src = wr.buffer;
-	UINT len = wr.length;
+	unsigned int offset = cfd->write.position % sizeof(tmpbuf);
+	void *src = cfd->write.buffer;
+	UINT len = cfd->write.length;
 
 	// move to the first sector to write if necessary
-	DWORD pos = wr.position;
+	DWORD pos = cfd->write.position;
 	if (offset > 0) {
 		pos -= offset;			// set pos previous block boundary
 	}
 	if (pos != f_tell(&cfd->fil)) {
-		if ((write_result = f_lseek(&cfd->fil, pos)) != FR_OK) {
+		if ((cfd->write.result = f_lseek(&cfd->fil, pos)) != FR_OK) {
 			goto error_skip;
 		}		
 	}
@@ -302,13 +317,13 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("$$$ Head Read/");
 #endif
-		write_result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
-		if (write_result != FR_OK) {
+		cfd->write.result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
+		if (cfd->write.result != FR_OK) {
 			goto error_skip;
 		}
 		//rewind
-		write_result = f_lseek(&cfd->fil, f_tell(&cfd->fil) - sizeof(tmpbuf));
-		if (write_result != FR_OK) {
+		cfd->write.result = f_lseek(&cfd->fil, f_tell(&cfd->fil) - sizeof(tmpbuf));
+		if (cfd->write.result != FR_OK) {
 			goto error_skip;
 		}
 		// modify
@@ -330,7 +345,7 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
 #endif
-		if ((write_result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
+		if ((cfd->write.result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
 		src = (uint8_t*)src + plen;
@@ -363,7 +378,7 @@ void em_disk_write(void)
 		memcpy(tmpbuf, src, sizeof(tmpbuf));
 		ExtMem_detach();
 		sei();
-		if ((write_result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
+		if ((cfd->write.result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
 		src = (uint8_t*)src + sizeof(tmpbuf);
@@ -394,13 +409,13 @@ void em_disk_write(void)
 		x_printf("$$$ Tail Read/");
 #endif
 		// read
-		write_result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
-		if (write_result != FR_OK) {
+		cfd->write.result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
+		if (cfd->write.result != FR_OK) {
 			goto error_skip;
 		}
 		// rewind
-		write_result = f_lseek(&cfd->fil, f_tell(&cfd->fil) - sizeof(tmpbuf));
-		if (write_result != FR_OK) {
+		cfd->write.result = f_lseek(&cfd->fil, f_tell(&cfd->fil) - sizeof(tmpbuf));
+		if (cfd->write.result != FR_OK) {
 			goto error_skip;
 		}
 		// modify
@@ -416,7 +431,7 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
 #endif
-		write_result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
+		cfd->write.result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes);
 		f_sync(&cfd->fil);
 #if DEBUG_PRINT_WR_DATA
 		for (unsigned int i = 0; i < len; i++) {
@@ -437,14 +452,14 @@ void em_disk_write(void)
 
 error_skip:
 #if DEBUG_PRINT_WR
-	x_printf("!!!WRITE:%06lx, %04x : %02x\n\n", wr.position, wr.length, write_result);
+	x_printf("!!!WRITE:%06lx, %04x : %02x\n\n", cfd->write.position, cfd->write.length, cfd->write.result);
 	x_puts("-----------");
 #endif
 	if (int_level_write < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
 		Z80_EXTINT_low(int_level_write << 1);
 	}
-	wr.state = IDLE;	
+	cfd->write.state = IDLE;	
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -455,9 +470,9 @@ uint8_t IN_13_DSK_ReadStatus()
 	// CAUTION: don't consume long time
 	cli();
 	uint8_t st = 0x00;
-	switch (rd.state) {
+	switch (cfd->read.state) {
 	case IDLE:
-		if (read_result != FR_OK) {
+		if (cfd->read.result != FR_OK) {
 			st = 0x02;		// error
 		}
 		break;
@@ -476,30 +491,30 @@ uint8_t IN_13_DSK_ReadStatus()
 void OUT_13_DSK_Read(uint8_t data)
 {
 #if DEBUG_PRINT_STATE
-	x_printf("READ:%d->", rd.state);
+	x_printf("READ:%d->", cfd->read.state);
 #endif
 	// Reject if WRITE is on going
-	if (wr.state == DOING || wr.state == REQUESTING) {
-		rd.state = REJECTED;
+	if (cfd->write.state == DOING || cfd->write.state == REQUESTING) {
+		cfd->read.state = REJECTED;
 	} else {
-		switch (rd.state) {
-		case IDLE:						// 0
-		case REJECTED:					// 3
-			rd.buffer   = (void *)dt_DSK_ReadBuf;
-			rd.length   = dt_DSK_ReadLen;
-			rd.position = dt_DSK_ReadPos;
-			rd.state    = REQUESTING;	// 1
+		switch (cfd->read.state) {
+		case IDLE:								// 0
+		case REJECTED:							// 3
+			cfd->read.buffer   = (void *)dt_DSK_ReadBuf;
+			cfd->read.length   = dt_DSK_ReadLen;
+			cfd->read.position = dt_DSK_ReadPos;
+			cfd->read.state    = REQUESTING;	// 1
 			break;
-		case REQUESTING:				// 1
-		case DOING:						// 2
-			rd.state = REJECTED;		// 3
+		case REQUESTING:						// 1
+		case DOING:								// 2
+			cfd->read.state = REJECTED;			// 3
 			break;
 		default:
 			break;
 		}
 	}
 #if DEBUG_PRINT_STATE
-	x_printf("%d\n", rd.state);
+	x_printf("%d\n", cfd->read.state);
 #endif
 }
 
@@ -515,35 +530,35 @@ void OUT_14_DSK_ReadIntLevel(uint8_t data)
 
 void em_disk_read(void)
 {
-	if (rd.state != REQUESTING) {
+	if (cfd->read.state != REQUESTING) {
 		return;
 	}
-	if (wr.state == DOING || wr.state == REQUESTING) {
-		rd.state = REJECTED;
+	if (cfd->write.state == DOING || cfd->write.state == REQUESTING) {
+		cfd->read.state = REJECTED;
 		if (int_level_read < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
 			Z80_EXTINT_low(int_level_read << 1);
 		}
 		return;
 	}
-	rd.state = DOING;
+	cfd->read.state = DOING;
 
 	// move to the first sector to read if necessary
-	if (f_tell(&cfd->fil) != rd.position) {
-		read_result = f_lseek(&cfd->fil, rd.position);
-		if (read_result != FR_OK) {
+	if (f_tell(&cfd->fil) != cfd->read.position) {
+		cfd->read.result = f_lseek(&cfd->fil, cfd->read.position);
+		if (cfd->read.result != FR_OK) {
 			goto error_skip;
 		}
 	}
 
-	void *dst = rd.buffer;
-	UINT len = rd.length;
+	void *dst = cfd->read.buffer;
+	UINT len = cfd->read.length;
 	UINT br;
 
 	unsigned int n = len / sizeof(tmpbuf);
 	for (unsigned int i = 0; i < n; i++) {
-		read_result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &br);
-		if (read_result != FR_OK) {
+		cfd->read.result = f_read(&cfd->fil, tmpbuf, sizeof(tmpbuf), &br);
+		if (cfd->read.result != FR_OK) {
 			goto error_skip;
 		}
 		cli();
@@ -555,8 +570,8 @@ void em_disk_read(void)
 	}
 	len = len % sizeof(tmpbuf);
 	if (len > 0) {
-		read_result = f_read(&cfd->fil, tmpbuf, len, &br);
-		if (read_result == FR_OK) {
+		cfd->read.result = f_read(&cfd->fil, tmpbuf, len, &br);
+		if (cfd->read.result == FR_OK) {
 			cli();
 			ExtMem_attach();
 			memcpy(dst, tmpbuf, len);
@@ -567,12 +582,12 @@ void em_disk_read(void)
 	
 error_skip:
 #if DEBUG_PRINT_RD
-	x_printf(">>>READ:%06lx, %04x : %02x\n\n", rd.position, rd.length, read_result);
+	x_printf(">>>READ:%06lx, %04x : %02x\n\n", cfd->read.position, cfd->read.length, cfd->read.result);
 	x_puts("-----------");
 #endif
 	if (int_level_read < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
 		Z80_EXTINT_low(int_level_read << 1);
 	}
-	rd.state = IDLE;
+	cfd->read.state = IDLE;
 }
