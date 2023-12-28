@@ -32,7 +32,7 @@ The procedure for setting up the firmware on the Z80Atmega128 Board and booting 
 |:---:|----------------|--------|---------|
 |  1  | CP/M mode      | Enable | Disable |
 |  2  | UART baud rate |  19200 |    9600 |
-|  3  | Not used       |        |         |
+|  3  | SD Write Protect | ReadOnly | Writable |
 |  4  | SRAM Wait      | 1 wait |  2 wait |
 
 - SW1: If turned ON, CP/M will start automatically upon powering up, provided the BIOS has been written to the AVR EEPROM.
@@ -42,8 +42,8 @@ The procedure for setting up the firmware on the Z80Atmega128 Board and booting 
 ### LED
 |  #  | Color  | Status                           |
 |:---:|--------|----------------------------------|
-|  1  | Blue   | microSD is opening or fail       |
-|  2  | Yellow | Not used                         |
+|  1  | Blue   | microSD is not inserted / mount failure |
+|  2  | Yellow | microSD is Write Protected       |
 |  3  | Red    | AVR heartbeat (blinking at 2 Hz) |
 
 ### Notes
@@ -261,7 +261,7 @@ Configure settings to enable CP/M startup from the microSD Card when power on.
 ### 3-4. Functionality Test
   1. Connect the AVR and Z80 serial interfaces to the terminal.
   2. Insert a microSD card with the CP/M image file into the slot.
-  3. Turn on DIP switch SW1 (CP/M start mode) and press the RESET button.
+  3. Turn on DIP switch SW1 (CP/M start mode), turn off SW3, and press the RESET button.
   4. The AVR serial terminal will display the following prompt. The BIOS is copied from the EEPROM to SRAM, after which the BIOS reads the CCP+BDOS from the reserved track on the microSD card and initiates CP/M.
      ```
      === CP/M mode ===

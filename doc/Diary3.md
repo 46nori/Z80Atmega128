@@ -232,3 +232,81 @@ Dimensions: 52 x 15 x 8mm
    microSD Card slotの挿入状態が正しく取れていない。以下を確認。  
    - PB6のハンダ不良
    - microSD Card slotの9番ピン、10番ピン(GND)のハンダ不良
+
+## 2023/12/26
+冬休みに入ったので、([Issue #11](https://github.com/46nori/Z80Atmega128/issues/11))に手をつけることにした。
+
+SELDSKが遅いため、ファイルコピーなどドライブの切り替えが発生するとパフォーマンスが著しく低下する問題。ストレスフルなので何とかしたい。
+
+Petit FatFsではファイルが同時に1つしかオープンできない制約があるため、SELDSKでDISKイメージファイルを切り替えるたびにpf_open()を実行する必要がある。ここに2,3秒かかっている。すべてのDISKイメージファイルがあらかじめオープンしておけるなら、pf_open()が不要になるので相当早くなるはずだ。
+
+複数ファイルの同時オープンは[FatFs](http://elm-chan.org/fsw/ff/)を使用すれば可能。そもそもPetit FatFsを採用したのは以下の理由なので、フットプリントの懸念がなければFatFsに乗り換えられる。
+- CP/Mでは同時に複数のディスク(イメージファイル)にアクセスする必要がない。(が、まさかpf_open()がこんなに遅いとは思わなかった。)
+- AVRのRAMが4KBしかない。当初は全体でどのくらいメモリを食うか正確に見積もるのは難しかったため、フットプリントはなるべく小さくしたかった。
+
+改めて[FatFsのフットプリント](http://elm-chan.org/fsw/ff/doc/appnote.html#memory)を調べてみた。
+- 条件
+  - $V=1$ : 1物理ドライブ
+  - $F=5$ : 5ファイル (A: - E:の5 DISKイメージ分)
+- 必要なSRAMサイズ
+  - .bss = $V \times 4 + 2$ = 6
+  - `FF_FS_TINY	== 0`の場合
+    - .bss + Work area $= 6 + V \times 560 + F \times 546 = 3296$
+  - `FF_FS_TINY	== 1`の場合
+    - .bss + Work area $= 6 + V \times 560 + F \times 34 = 736$
+
+現在の残SRAMサイズは2048bytesなので、**`FF_FS_TINY == 1`なら問題ない。**
+
+ということで、ブランチ`feature-FatFs`で作業することにした。
+- FatFsのソース管理用に`avr/src/fatfs/`を作成。(`avr/src/petitfs/`の代替)
+- FatFs本体(R0.15)とパッチを入手し、patch3まで適用してコミット。
+  - [ff15.zip](http://elm-chan.org/fsw/ff/arc/ff15.zip) : FatFs本体(R0.15)
+  - [Patches](http://elm-chan.org/fsw/ff/patches.html) : パッチ
+  - `ffsystem.c`と`ffunicode.c`は不要
+- サンプルをダウンロードしてAVR用のソースを取り出す。
+  - [ffsample.zip](http://elm-chan.org/fsw/ff/ffsample.zip) : サンプル
+  - `diskio.h`,`mmc_avr.h`,`mmc_avr_spi.c`をカスタマイズして使用する。
+  他は不要。
+
+## 2023/12/27
+Petit FatFsからFatFsへの乗り換え作業を実施。意外と簡単に移行できた。  
+非常に速くなった！特にPIPのファイルコピーが劇的に改善された。  
+現在のメモリ残量は1265bytes。
+
+
+### 変更点
+- Microchip StudioのSolution Explorerで、`petitfs/`を削除、`fatfs/`を追加。
+- `petitfs/`は削除。
+- `ffconf.h`
+  - ディレクトリ関連のAPIは不要。RTCはハード的に存在しないので不要。LFNも使用しない。文字列処理やUNICODE対応も不要。
+  - 以下のようにコンフィグレーションを変更する。
+    ```
+    #define FF_FS_MINIMIZE  2
+    #define FF_FS_TINY      1
+    #define FF_FS_NORTC     1
+    ```
+- `diskio.c`
+  - MMCの実装以外は削除。
+- `diskio.h`
+  - `mmc_avr_spi.c`に合うように、サンプルから中身をほぼコピー。
+- `mmc_avr_spi.c`
+  - Platform依存のSPIやポートのマクロ定義を`petitfs/diskio_avr.c`の実装からコピぺ。
+  - `power_on()`に、SPIの初期化コードを`petitfs/diskio_avr.c`の実装からコピぺ。
+  - `FCLK_SLOW()` 16MHzの1/64に設定。
+  - `FCLK_FAST()` 16MHzの1/2に設定。
+  - `MMC_CD` Card検出をサポート。
+  - `MMC_WP` WRITE PROTECTサポート。未使用だったDIPSW3がON時にプロテクト状態とした。
+  - `disk_timerproc()`で以下をチェック。
+    - MMC_WPなら、YELLOW LEDを点灯させる。
+    - MMC_CD未挿入なら、BLUE LEDを点灯させる。
+  - タイムアウト処理を行っているので`disk_timerproc()`を10msごとに呼び出す必要がある。isr.cのTIMER2の10msの周期割り込みハンドラ内で呼び出す。
+- `em_diskio.c`
+  - FatFSのAPIに乗り換え。
+  - `init_em_diskio()`でDISKイメージファイル5つをすべてオープン。
+  - `OUT_0A_DSK_SelectDisk()`でのオープン処理を削除し、カレントDISKイメージのポインタだけ切り替えるように変更。
+  - Writeのフラッシュ処理を`f_sync()`に変更。
+
+## 2023/12/28
+CP/M起動後にmicroSDをWRITE PROTECT ON/OFFしたときに復帰できるよう、以下の変更を実施。現在のメモリ残量は1151bytes。
+- `OUT_0A_DSK_SelectDisk()`で、指定されたDISKイメージファイルがエラー状態だったら、再openし、エラー状態をリセット。
+- エラー発生で全滅しないよう、ドライブごとに状態を独立管理させた。

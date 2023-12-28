@@ -32,7 +32,7 @@ Z80Atmega128 Boardにファームウェアを焼き込み、CP/M2.2を単体動�
 |:---:|----------------|--------|---------|
 |  1  | CP/M mode      | Enable | Disable |
 |  2  | UART baud rate |  19200 |    9600 |
-|  3  | Not used       |        |         |
+|  3  | SD Write Protect | ReadOnly | Writable |
 |  4  | SRAM Wait      | 1 wait |  2 wait |
 - SW 1: CP/M BIOSがAVRのEEPROMに書き込まれている場合、ONにすることでCP/Mが起動する。
 - SW 2: 接続する端末の通信速度にあわせる。
@@ -41,8 +41,8 @@ Z80Atmega128 Boardにファームウェアを焼き込み、CP/M2.2を単体動�
 ### LED
 |  #  | 色 | 状態                           |
 |:---:|----|-------------------------------|
-|  1  | 青 | microSDのopen中または失敗時に点灯 |
-|  2  | 黄 | 未使用                         |
+|  1  | 青 | microSDが未挿入、またはマウント失敗時に点灯 |
+|  2  | 黄 | microSDがライトプロテクト状態で点灯 |
 |  3  | 赤 | AVRのハートビート表示(2Hzで点滅)  |
 
 ### 注意
@@ -259,7 +259,7 @@ microSD CardからCP/Mが起動できるようにするための設定を行う�
 ### 3-4. 動作確認
   1. AVR, Z80用のシリアルインターフェースを端末に接続。
   2. CP/Mイメージファイルを書き込んだmicroSD Cardをスロットに挿入する。
-  3. DIP SW 1をON(CP/M起動モード)にして、リセットボタンを押す。
+  3. DIP SW 1をON(CP/M起動モード), DIP SW 3をOFFにして、リセットボタンを押す。
   4. AVR側のシリアル端末には以下のプロンプトが表示される。  
      EEPROMに書き込まれたBIOSがSRAM上にコピーされ、BIOSがmicroSD Cardの予約トラックに書き込まれているCCP+BDOSを読み込んで、CP/Mを起動する。
      ```

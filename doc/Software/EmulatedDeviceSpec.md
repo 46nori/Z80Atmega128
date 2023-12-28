@@ -102,7 +102,7 @@ From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 |0x0c|OUT|DISKライトバッファアドレス設定|バッファアドレス|
 |0x0d|IN|DISKライトバッファ長参照・シーケンサーリセット|長さ|
 |0x0d|OUT|DISKライトバッファ長設定|長さ|
-|0x0e|IN|DISKライトステータス|Bit0: 完了(0) / リード中(1)<br>Bit1: 成功(0) / エラー(1)|
+|0x0e|IN|DISKライトステータス|Bit0: 完了(0) / ライト中(1)<br>Bit1: 成功(0) / エラー(1)|
 |0x0e|OUT|DISKライト実行||
 |0x0f|IN |DISKライト完了割り込みレベル設定|0-127: Mode2割り込みレベル<br>それ以外: 割り込み禁止|
 |0x0f|OUT|DISKライト完了割り込みレベル取得|割り込みレベル|
