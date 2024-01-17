@@ -19,6 +19,7 @@
 
 ## Developement Log (Japanese)
 - [Summary of progress](./Progress.md)
-- [2023/02/25-2023/07/04](./Diary.md)
-- [2023/07/07-2023/10/22](./Diary2.md)
-- [2023/10/23-](./Diary3.md)
+- [2023/02/25 - 2023/07/04](./Diary.md)
+- [2023/07/07 - 2023/10/22](./Diary2.md)
+- [2023/10/23 - 2023/12/28](./Diary3.md)
+- [2024/01/15 - ](./Diary4.md)

@@ -1,4 +1,4 @@
-# CP/M 3 on ATmega128 Board
+# CP/M 3 on Z80ATmega128 Board
 ## Overview
 It is able to make CP/M 3 work on CP/M 2.2 system.
 However, due to its limited 64KB of memory, it works as the non-bank memory version of CP/M 3. This document provides an explanation of its operation, instructions on generating the required files, and guidance on initiating the system.

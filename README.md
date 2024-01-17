@@ -1,7 +1,7 @@
 # Z80ATmega128
 [日本語版READMEはこちら](./README-ja.md)
 ## Overview
-This project aims to build a system utilizing the Z80A and running CP/M-80 directly.
+This project aims to build a Z80A system and run CP/M-80 natively on it.
 
 You might be wondering why I chose the Z80 today. Well, it happened to be discovered in my collection of electronic components after being tucked away for 30 years. Moreover, it's an original Zilog Z80A from the NMOS process era, likely manufactured around 1980!  
   ![](doc/Fig/Z80A.jpeg)

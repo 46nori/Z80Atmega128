@@ -64,8 +64,8 @@ Dimensions: 52 x 15 x 8mm
 
 ## 2023/11/12
 - CP/M Plusの対応を始めた。
-- [これ](http://www.cpm.z80.de/download/cpm3on2.zip)を利用すれば、CP/M 2.2からCP/M 3が起動できるみたいだ。まずCP/M 2.2を起動し、二段ロケット方式でCP/M3を起動する方式。
-- 62K CP/M 2.2 BIOSがそのまま再利用できる。BIOSのジャンプテーブルを参照可能なシンボルファイルをリンクすることで、CPM3.SYSとCPMLDR.COMを生成する。
+- [これ](http://www.cpm.z80.de/download/cpm3on2.zip)を利用すれば、CP/M 2.2からCP/M 3が起動できるみたいだ。まずCP/M 2.2を起動し、二段ロケット方式でCP/M3を起動する。
+- 62K CP/M 2.2 BIOSがそのまま再利用できる。BIOSのジャンプテーブルを参照可能なシンボルファイルをリンクすることで、CPM3.SYSとCPMLDR.COMを生成する。(CP/M2.2上アセンブラ、リンカを動かして生成する。)
 - このイメージになるように、LDRBIOS.ASMの`bios`を値を、BIOS2の先頭アドレス`f200h`に変更する。
   ```
         CP/M 2.2           CP/M 3
@@ -227,7 +227,7 @@ Dimensions: 52 x 15 x 8mm
 
 #### 基板の動作確認時に地味にハマったことのメモ
 1. TinyMonitorの`test`コマンドがハングアップする。  
-   Z80を載せる。/BUSACKによるZ80のバス解放をAVRのPD6で確認しているため。
+   Z80を載せておかないといけない。/BUSACKによるZ80のバス解放をAVRのPD6で確認しているため。
 2. `Insert microSD Card`が表示される。  
    microSD Card slotの挿入状態が正しく取れていない。以下を確認。  
    - PB6のハンダ不良
@@ -312,3 +312,5 @@ Petit FatFsからFatFsへの乗り換え作業を実施。意外と簡単に移�
   - エラー発生で全滅しないよう、ドライブごとに状態を独立管理させた。
 
 - v3.0リリース
+
+## [続き](Diary4.md)

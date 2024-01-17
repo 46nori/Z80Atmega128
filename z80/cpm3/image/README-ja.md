@@ -1,4 +1,4 @@
-# CP/M 3 on ATmega128 Board
+# CP/M 3 on Z80ATmega128 Board
 ## 概要
 CP/M 3はCP/M 2.2から起動させることができる。  
 ただしZ80ATmega128 Boardは64KBのメモリしかないため、Non bank memory版CP/M 3として動作する。このドキュメントでは、その仕組みと必要なファイルの生成方法、および起動方法について説明する。
