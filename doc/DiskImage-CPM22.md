@@ -10,7 +10,7 @@ Disk image file naming conventions
 
 `DISK00.IMG`, which is drive A: must contain the CP/M system (CCP+BDOS). Due to memory limitations, the BIOS on this system only supports up to 5 drives. Therefore, the actual usable drives are up to 00-04.
 
-The disk image must match the DPB supported by the BIOS. The BIOS uses `sdcard` from the cpmtools format definition `/etc/cpmtools/diskdefs`.
+The disk image must match the DPB supported by the BIOS. When generating a disk image with cpmtools, specify the following format defined in `diskdefs`.
 ```
 diskdef sdcard
 seclen 512

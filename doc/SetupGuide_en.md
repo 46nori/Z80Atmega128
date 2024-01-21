@@ -136,20 +136,6 @@ WSL for Windows and VS Code + Dev Container environment for macOS are recommende
    ```
    sudo apt-get install -y cpmtools
    ```
-   In some environments, the following definitions may not be in `/etc/cpmtools/diskdefs`. In that case, add them. ([Issue#13](https://github.com/46nori/Z80Atmega128/issues/13))
-   ```
-   diskdef sdcard
-     seclen 512
-     tracks 256
-     sectrk 64
-     blocksize 8192
-     maxdir 256
-     skew 0
-     boottrk 1
-     os 2.2
-   end
-   ```
-
 
 #### VS Code + Dev Container
 - Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
