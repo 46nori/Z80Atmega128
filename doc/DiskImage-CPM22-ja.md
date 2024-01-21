@@ -10,8 +10,7 @@ microSD Cardは**FAT32**でフォーマットされていること。
 
 ドライブA:であるDISK00.IMGはCP/Mのシステム(CCP+BDOS)を含む必要がある。メモリの関係上、BIOSでは５ドライブまでしかサポートしていない。したがって実際に使えるのは00-04までである。
 
-
-ディスクイメージは、BIOSでサポートするDPBに合致したものでなければならない。BIOSは、cpmtoolsのフォーマット定義`/etc/cpmtools/diskdefs`のうち、`sdcard`を採用している。
+ディスクイメージは、BIOSのDPBの形式に合致していなければならない。cpmtoolsでディスクイメージを生成する際には`diskdefs`で定義した以下のフォーマットを指定する。
 ```
 diskdef sdcard
 seclen 512

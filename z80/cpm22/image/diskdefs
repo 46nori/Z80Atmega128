@@ -1,0 +1,10 @@
+diskdef sdcard
+  seclen 512
+  tracks 256
+  sectrk 64
+  blocksize 8192
+  maxdir 256
+  skew 0
+  boottrk 1
+  os 2.2
+end

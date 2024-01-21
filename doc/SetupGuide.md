@@ -135,19 +135,6 @@ WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
    ```
    sudo apt-get install -y cpmtools
    ```
-   `/etc/cpmtools/diskdefs`に以下の定義がない場合は追加する。([Issue#13](https://github.com/46nori/Z80Atmega128/issues/13))
-   ```
-   diskdef sdcard
-     seclen 512
-     tracks 256
-     sectrk 64
-     blocksize 8192
-     maxdir 256
-     skew 0
-     boottrk 1
-     os 2.2
-   end
-   ```
 
 #### VS Code + Dev Containerの場合
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) と [VS Code](https://azure.microsoft.com/ja-jp/products/visual-studio-code/)をインストール
