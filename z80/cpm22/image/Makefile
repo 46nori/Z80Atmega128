@@ -18,7 +18,7 @@ CPM_CP		:= cpmcp
 CPM_LS		:= cpmls
 
 # DISK configuration. See /etc/cpmtools/diskdefs
-DISKDEF		:= hoge
+DISKDEF		:= sdcard
 USER		:= 0:
 TMPDIR		:= ./tmp
 
