@@ -16,3 +16,7 @@ cpmfs.c
 ```
 なんだ、カレントディレクトリに自分好みの`diskdefs`を置いとけばいいのか...。  
 ということで、[Issue#13](https://github.com/46nori/Z80Atmega128/issues/13)を修正した。
+
+## 2024/1/23
+**「入門/実習/応用 CP/M」 村瀬康治 著 アスキー出版局**
+この3部作は定番の参考書だった。だが1981,1982年の出版なので、もはや入手は難しい。ところが[INTERNET ARCHIVE](https://archive.org/details/cp-m-ascii-series)に収録されているのをたまたま発見した。ありがたや。
