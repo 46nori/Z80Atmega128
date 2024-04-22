@@ -20,3 +20,8 @@ cpmfs.c
 ## 2024/1/23
 **「入門/実習/応用 CP/M」 村瀬康治 著 アスキー出版局**
 この3部作は定番の参考書だった。だが1981,1982年の出版なので、もはや入手は難しい。ところが[INTERNET ARCHIVE](https://archive.org/details/cp-m-ascii-series)に収録されているのをたまたま発見した。ありがたや。
+
+## 2024/4/20
+あぁ、ついにZ80がディスコンに...。
+- [Z84C00 End of Life/last Time Buy Notification](https://www.mouser.com/PCN/Littelfuse_PCN_Z84C00.pdf)
+- [The legendary Zilog Z80 CPU is being discontinued after nearly 50 years](https://www.techspot.com/news/102684-zilog-discontinuing-z80-microprocessor-after-almost-50-years.html)
