@@ -32,6 +32,4 @@ CP/Mを再配布していものかはっきりしなかったので、CP/M本体
 しかし、本プロジェクト開始のわずか約半年前(2022/7/9)にClarifyされ、実はライセンス問題は解決してたことに気づいた。
 
 - [CP/M's open-source status clarified after 21 years](https://www.theregister.com/2022/07/15/cpm_open_source/)
-- [License agreement for the CP/M material presented on this site](http://)www.cpm.z80.de/license.html
-
-
+- [License agreement for the CP/M material presented on this site](http://www.cpm.z80.de/license.html)
