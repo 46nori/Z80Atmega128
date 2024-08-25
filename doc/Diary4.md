@@ -25,3 +25,13 @@ cpmfs.c
 あぁ、ついにZ80がディスコンに...。
 - [Z84C00 End of Life/last Time Buy Notification](https://www.mouser.com/PCN/Littelfuse_PCN_Z84C00.pdf)
 - [The legendary Zilog Z80 CPU is being discontinued after nearly 50 years](https://www.techspot.com/news/102684-zilog-discontinuing-z80-microprocessor-after-almost-50-years.html)
+
+## 2024/8/25
+CP/Mを再配布していものかはっきりしなかったので、CP/M本体は[The Unofficial CP/M Web site](http://www.cpm.z80.de/)から、オンデマンドでコピーしてビルドするようにしている。
+
+しかし、本プロジェクト開始のわずか約半年前(2022/7/9)にClarifyされ、実はライセンス問題は解決してたことに気づいた。
+
+- [CP/M's open-source status clarified after 21 years](https://www.theregister.com/2022/07/15/cpm_open_source/)
+- [License agreement for the CP/M material presented on this site](http://)www.cpm.z80.de/license.html
+
+
