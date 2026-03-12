@@ -1,15 +1,21 @@
+#
+
 ## [以前の日記](Diary2.md)
 
 ## 2023/10/24
+
 - PCB Rev2.00の更新。
 
 ## 2023/10/26
+
 - PCB Rev2.00をPCBWayに発注。
 
 ## 2023/11/01
+
 - PCB Rev2.00入荷。
 
 ## 2023/11/02
+
 - Rev1.00のバグ修正したfeature-PCB2ブランチをdevelopにマージした。
   - PCB Rev2.00にパーツをマウントし動作確認できた。
   - 配線、パーツ間のクリアランスも問題なし。
@@ -17,25 +23,30 @@
   - [Hardware Release Note](./Hardware/HW-ReleaseNote-ja.md)などのドキュメントも更新。
 
 ## 2023/11/03
+
 - CP/Mのディスクイメージを作りやすくするとともに、ドキュメントを追加した。
   - システムディスク、空ディスク、ZORK I/II/IIIのイメージ作成をMakefileのターゲット指定でできるようにした。
   - developブランチにマージ済み。
 
 ## 2023/11/04
+
 - CP/M BIOSのドキュメント追加。
 - Boot sequenceのドキュメント追加。
 
 ## 2023/11/05
+
 - `z80/cpm22/image/mkimg.sh`で引数チェックのバグを修正。DiskImage-CPM22.mdも更新。
 - v2.0をリリースした。
 
 ## 2023/11/11
+
 10/24にeBayで購入した、旧東ドイツ製 Z80互換CPU(デッドコピー)の`U880`がウクライナから届いた。
 パッケージのシルクは`80A-CPU MME`となっているが、[Wikipedia](https://en.wikipedia.org/wiki/U880)によるとこれはピン間隔2.54mmの輸出版らしい。
 換装して動作確認したところ、あっさり動いた。あたりまえか。
 
 以下が[eBay](https://www.ebay.com/itm/324007899221)にあったスペックだが、Soviet cloneってのはちょっと違うんじゃないか？
-```
+
+```text
 80A CPU MME Soviet Clone Z80A IC 4MHz NMOS MCPU logic 8-bit microprocessor NEW
 
 MME 80A-CPU
@@ -59,15 +70,17 @@ Operating temperature (min./max.): 0 — 70°C
 Package (Socket): Plastic DIP 40-pin (40-pin DIL)
 Dimensions: 52 x 15 x 8mm
 ```
+
 [こんな文書](https://datasheet.datasheetarchive.com/originals/scans/Scans-048/DSAGER000639.pdf)にUA880の記載がある。
 
-
 ## 2023/11/12
+
 - CP/M Plusの対応を始めた。
 - [これ](http://www.cpm.z80.de/download/cpm3on2.zip)を利用すれば、CP/M 2.2からCP/M 3が起動できるみたいだ。まずCP/M 2.2を起動し、二段ロケット方式でCP/M3を起動する。
 - 62K CP/M 2.2 BIOSがそのまま再利用できる。BIOSのジャンプテーブルを参照可能なシンボルファイルをリンクすることで、CPM3.SYSとCPMLDR.COMを生成する。(CP/M2.2上アセンブラ、リンカを動かして生成する。)
 - このイメージになるように、LDRBIOS.ASMの`bios`を値を、BIOS2の先頭アドレス`f200h`に変更する。
-  ```
+
+  ```text
         CP/M 2.2           CP/M 3
   0000H +--------+         +--------+
   0100H |--------|         |--------|
@@ -86,17 +99,21 @@ Dimensions: 52 x 15 x 8mm
         | (E00H) |         | (E00H) |
   FFFFH +--------+ - - - - +--------+
   ```
+
 - `gencpm.com`でCPM3.SYSを生成するが、このメモリマップになるようにするには、以下のようにパラメータをセットする。ノンバンクメモリバージョンで生成。
-  ```
+
+  ```text
   Top page of memory (FF) ? F0
   Bank switched memory (Y) ? N
   ```
 
 ## 2023/11/13
+
 - CP/M 3が動いた。
 - BIOSとCPMLDR.COMの生成は、`gen.sub`のバッチファイルを使うのが便利だが、A:ドライブに置かないといけない。また、CP/M2.2用のsubmit.comを使う必要がある。
 - A:に、CPMLDR.COM, CPM3.SYS, CCP.COMをコピーして、CPMLDR.COMを起動すると、CP/M3が立ち上がった。なんかリターンがたくさん入るけど。。
-  ```
+
+  ```text
   62K CP/M-80 Ver2.2 on Z80ATmega128
   BIOS Copyright (C) 2023 by 46nori
 
@@ -134,9 +151,11 @@ Dimensions: 52 x 15 x 8mm
   51K TPA
   A>
   ```
+
 - PC-8801mkIIでCP/M 2.2を使っていた頃は、CP/M Plusに憧れがあったのだけど、いまのところありがたみも凄みも感じられないなぁ。。
 - DIRコマンドとか？
-  ```
+  
+  ```text
   A>dir.com
 
   Scanning Directory...
@@ -183,10 +202,12 @@ Dimensions: 52 x 15 x 8mm
   ```
 
 ## 2023/11/16
+
 - 以下のパッチをあてるときにエラーになる場合があるので、Issueを上げた。([Issue 10](https://github.com/46nori/Z80Atmega128/issues/10), [Issue 12](https://github.com/46nori/Z80Atmega128/issues/12))
   - z80/cpm22/sys/CPM22-asz80.patch
   - z80/cpm3/image/CPM3-LDRBIOS.patch
-  ```
+
+  ```bash
   vscode@Z80ATmega128:/z80/cpm3/image$ make
 
   ...
@@ -197,35 +218,43 @@ Dimensions: 52 x 15 x 8mm
   1 out of 1 hunk FAILED -- saving rejects to file ./tmp/cpm3on2/LDRBIOS.ASM.rej
   make: *** [Makefile:89: tmp/cpm3on2] Error 1
   ```
+
   - 原因
     - checkout時にファイルの改行コードがLFになるから。パッチ適用先のCP/MのファイルはCRLFなので、Gitで勝手にLFに変換されてしまうと行が一致しないのでエラーになる。
   - 対策
     - `.gitattributes`に以下を追加して、強制的に改行コードをCRLFにする。
-      ```
+
+      ```bash
       *.patch text eol=crlf
       ```
+
     - さらにpatchコマンドにバイナリ比較オプション`--binary`を追加したら解決した。(だが、なぜこれが必要なのかよくわからない。。)
 - Ubuntu 22.04上で`mkfs.cpm`でディスクイメージ作るとエラーになる。`apt install cpmtool`した`/etc/cpmtools/diskdefs`に`sdcard`の定義が存在しないのが原因。コマンドラインで指定できないのでdiskdefsに定義を追加するしかない。wontfix扱いで[Issue 13](https://github.com/46nori/Z80Atmega128/issues/13)を登録した。
 
 ## 2023/11/18
+
 10/24に[eBay](https://www.ebay.com/itm/165487756685)で発注した`Z8400APS`(5個セット)が届いた。深圳からだけどEconomy International Shipping($2USD)だったので時間かかった。
 
 ## 2023/11/24
+
 - [樫木総業](https://www.kashinoki.shop)に発注していたNECのuPD780C-1が届いた。
 - いまのところZ80Aのコレクションはこんな感じ。
-  |Manufacturer|型番|ロット?|その他|
-  |---|---|---|---|
-  |Zilog|Z8400APS |8320|中学生の頃入手|
-  |Zilog|Z8400APS |9013|eBayで購入|
-  |SHARP|LH0080A  |9640|SHARP MZ-80Bで採用|
-  | NEC |uPD780C-1|8338X5|NEC PC-8001で採用|
-  | MME |80A-CPU (U880)||eBayで購入。旧東ドイツ製。輸出版。|
+
+  |Manufacturer|型番          |ロット?|その他                            |
+  |------------|--------------|-------|----------------------------------|
+  |Zilog       |Z8400APS      |8320   |中学生の頃入手                    |
+  |Zilog       |Z8400APS      |9013   |eBayで購入                        |
+  |SHARP       |LH0080A       |9640   |SHARP MZ-80Bで採用                |
+  | NEC        |uPD780C-1     |8338X5 |NEC PC-8001で採用                 |
+  | MME        |80A-CPU (U880)|       |eBayで購入。旧東ドイツ製。輸出版。|
 
 ## 2023/11/25
+
 - Z80を何度も挿抜しているとチップもソケットも傷がつくので、評価用にゼロプレッシャーソケットの基板を1枚作った。
 - eBayで購入した5個セットのZ8400APS、全数チェックしたら1個故障していた。(泣)
 
-#### 基板の動作確認時に地味にハマったことのメモ
+### 基板の動作確認時に地味にハマったことのメモ
+
 1. TinyMonitorの`test`コマンドがハングアップする。  
    Z80を載せておかないといけない。/BUSACKによるZ80のバス解放をAVRのPD6で確認しているため。
 2. `Insert microSD Card`が表示される。  
@@ -234,6 +263,7 @@ Dimensions: 52 x 15 x 8mm
    - microSD Card slotの9番ピン、10番ピン(GND)のハンダ不良
 
 ## 2023/12/26
+
 冬休みに入ったので、([Issue #11](https://github.com/46nori/Z80Atmega128/issues/11))に手をつけることにした。
 
 SELDSKが遅いため、ファイルコピーなどドライブの切り替えが発生するとパフォーマンスが著しく低下する問題。ストレスフルなので何とかしたい。
@@ -241,23 +271,26 @@ SELDSKが遅いため、ファイルコピーなどドライブの切り替え�
 Petit FatFsではファイルが同時に1つしかオープンできない制約があるため、SELDSKでDISKイメージファイルを切り替えるたびにpf_open()を実行する必要がある。ここに2,3秒かかっている。すべてのDISKイメージファイルがあらかじめオープンしておけるなら、pf_open()が不要になるので相当早くなるはずだ。
 
 複数ファイルの同時オープンは[FatFs](http://elm-chan.org/fsw/ff/)を使用すれば可能。そもそもPetit FatFsを採用したのは以下の理由なので、フットプリントの懸念がなければFatFsに乗り換えられる。
+
 - CP/Mでは同時に複数のディスク(イメージファイル)にアクセスする必要がない。(が、まさかpf_open()がこんなに遅いとは思わなかった。)
 - AVRのRAMが4KBしかない。当初は全体でどのくらいメモリを食うか正確に見積もるのは難しかったため、フットプリントはなるべく小さくしたかった。
 
 改めて[FatFsのフットプリント](http://elm-chan.org/fsw/ff/doc/appnote.html#memory)を調べてみた。
+
 - 条件
   - $V=1$ : 1物理ドライブ
   - $F=5$ : 5ファイル (A: - E:の5 DISKイメージ分)
 - 必要なSRAMサイズ
   - .bss = $V \times 4 + 2$ = 6
-  - `FF_FS_TINY	== 0`の場合
+  - `FF_FS_TINY==0`の場合
     - .bss + Work area $= 6 + V \times 560 + F \times 546 = 3296$
-  - `FF_FS_TINY	== 1`の場合
+  - `FF_FS_TINY==1`の場合
     - .bss + Work area $= 6 + V \times 560 + F \times 34 = 736$
 
 現在の残SRAMサイズは2048bytesなので、**`FF_FS_TINY == 1`なら問題ない。**
 
 ということで、ブランチ`feature-FatFs`で作業することにした。
+
 - FatFsのソース管理用に`avr/src/fatfs/`を作成。(`avr/src/petitfs/`の代替)
 - FatFs本体(R0.15)とパッチを入手し、patch3まで適用してコミット。
   - [ff15.zip](http://elm-chan.org/fsw/ff/arc/ff15.zip) : FatFs本体(R0.15)
@@ -269,22 +302,25 @@ Petit FatFsではファイルが同時に1つしかオープンできない制�
   他は不要。
 
 ## 2023/12/27
+
 Petit FatFsからFatFsへの乗り換え作業を実施。意外と簡単に移行できた。  
 非常に速くなった！特にPIPのファイルコピーが劇的に改善された。  
 現在のメモリ残量は1265bytes。
 
-
 ### 変更点
+
 - Microchip StudioのSolution Explorerで、`petitfs/`を削除、`fatfs/`を追加。
 - `petitfs/`は削除。
 - `ffconf.h`
   - ディレクトリ関連のAPIは不要。RTCはハード的に存在しないので不要。LFNも使用しない。文字列処理やUNICODE対応も不要。
   - 以下のようにコンフィグレーションを変更する。
-    ```
+
+    ```c
     #define FF_FS_MINIMIZE  2
     #define FF_FS_TINY      1
     #define FF_FS_NORTC     1
     ```
+
 - `diskio.c`
   - MMCの実装以外は削除。
 - `diskio.h`
@@ -307,6 +343,7 @@ Petit FatFsからFatFsへの乗り換え作業を実施。意外と簡単に移�
   - Writeのフラッシュ処理を`f_sync()`に変更。
 
 ## 2023/12/28
+
 - CP/M起動後にmicroSDをWRITE PROTECT ON/OFFしたときに復帰できるよう、以下の変更を実施。現在のメモリ残量は1151bytes。
   - `OUT_0A_DSK_SelectDisk()`で、指定されたDISKイメージファイルがエラー状態だったら、再openし、エラー状態をリセット。
   - エラー発生で全滅しないよう、ドライブごとに状態を独立管理させた。

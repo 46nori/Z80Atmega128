@@ -1,57 +1,65 @@
 # Z80ATmega128 Board Setup Guide
+
 Z80Atmega128 Boardにファームウェアを焼き込み、CP/M2.2を単体動作させるまでの手順を以下に示す。
 
 ## 基板実装図
-![](Fig/ComponentMountingDiagram.jpeg)
 
-| No.|                   |                           |
-|:--:|-------------------|---------------------------|
-|(1) | DC Jack           |+5V 外部電源(ACアダプタ用)    |
-|(2) | DC Terminal       |+5V 外部電源ターミナル        |
-|(3) | DC Select         |(1)/(2)切替用ジャンパーピン   |
-|(4) | POWER SW          |外部電源SW                  |
-|(5) | POWER LED         |+5V通電時に点灯              |
-|(6) | RESET             |システムリセット              |
-|(7) | DIP SW            |[詳細](#dip-sw)|
+![image](Fig/ComponentMountingDiagram.jpeg)
+
+| No.|                   |                                            |
+|:--:|-------------------|--------------------------------------------|
+|(1) | DC Jack           |+5V 外部電源(ACアダプタ用)                  |
+|(2) | DC Terminal       |+5V 外部電源ターミナル                      |
+|(3) | DC Select         |(1)/(2)切替用ジャンパーピン                 |
+|(4) | POWER SW          |外部電源SW                                  |
+|(5) | POWER LED         |+5V通電時に点灯                             |
+|(6) | RESET             |システムリセット                            |
+|(7) | DIP SW            |[詳細](#dip-sw)                             |
 |(8) | Disable Z80       |Z80強制停止用ジャンパーピン<br>/BUSREQ=Lにする|
-|(9) | /HALT BUSACK LED  |Z80 /HALT=L, /BUSACK=H で点灯|
-|(10)| LED 1 / 2 / 3     |[詳細](#led)|
-|(11)| UART1 for Z80     |Z80用USB-Cシリアルインターフェース |
-|(12)| UART0 for AVR     |AVR用USB-Cシリアルインターフェース |
-|(13)| microSD Card slot |microSDカードスロット            |
-|(14)| SD Access LED     |microSDカードアクセス時に点灯     |
-|(15)| AVR ISP Connector |AVRISP mkII接続用コネクタ       |
+|(9) | /HALT BUSACK LED  |Z80 /HALT=L, /BUSACK=H で点灯               |
+|(10)| LED 1 / 2 / 3     |[詳細](#led)                                |
+|(11)| UART1 for Z80     |Z80用USB-Cシリアルインターフェース          |
+|(12)| UART0 for AVR     |AVR用USB-Cシリアルインターフェース          |
+|(13)| microSD Card slot |microSDカードスロット                       |
+|(14)| SD Access LED     |microSDカードアクセス時に点灯               |
+|(15)| AVR ISP Connector |AVRISP mkII接続用コネクタ                   |
 
 ### 電源
+
 - 300mA以上の電流供給能力が必要。
 - 5.5V以上の電圧は印加しないこと。過電圧保護は行なっていない。
 - DCジャック、外部電源ターミナル、UART用USB-Cから給電できる。
 
 ### DIP SW
-|  #  | 機能           |   ON   |   OFF   |
-|:---:|----------------|--------|---------|
-|  1  | CP/M mode      | Enable | Disable |
-|  2  | UART baud rate |  19200 |    9600 |
+
+|  #  | 機能             |   ON     |   OFF    |
+|:---:|------------------|----------|----------|
+|  1  | CP/M mode        | Enable   | Disable  |
+|  2  | UART baud rate   |  19200   |    9600  |
 |  3  | SD Write Protect | ReadOnly | Writable |
-|  4  | SRAM Wait      | 1 wait |  2 wait |
+|  4  | SRAM Wait        | 1 wait   |  2 wait  |
+
 - SW 1: CP/M BIOSがAVRのEEPROMに書き込まれている場合、ONにすることでCP/Mが起動する。
 - SW 2: 接続する端末の通信速度にあわせる。
 - SW 4: 外部SRAM(HM62256)のアクセスタイムが100nsよりも速い場合、ONにすることで1ウェイト動作になる。
 
 ### LED
-|  #  | 色 | 状態                           |
-|:---:|----|-------------------------------|
-|  1  | 青 | microSDが未挿入、またはマウント失敗時に点灯 |
-|  2  | 黄 | microSDがライトプロテクト状態で点灯 |
-|  3  | 赤 | AVRのハートビート表示(2Hzで点滅)  |
+
+|  #  | 色 | 状態                                      |
+|:---:|----|-------------------------------------------|
+|  1  | 青 | microSDが未挿入、またはマウント失敗時に点灯     |
+|  2  | 黄 | microSDがライトプロテクト状態で点灯       |
+|  3  | 赤 | AVRのハートビート表示(2Hzで点滅)          |
 
 ### 注意
+
 - PCB Rev1.00　配線にバグがあるため、ハード改修の必要がある。
-   - [表面](./Hardware/PCB/PCB1.0-FP-Errata.pdf) : パターンカット7箇所
-   - [裏面](./Hardware/PCB/PCB1.0-BP-Errata.pdf) : パターンカット1箇所、パッチ配線6箇所
+  - [表面](./Hardware/PCB/PCB1.0-FP-Errata.pdf) : パターンカット7箇所
+  - [裏面](./Hardware/PCB/PCB1.0-BP-Errata.pdf) : パターンカット1箇所、パッチ配線6箇所
 - PCB Rev2.00　U18, U19のUARTのシルクが間違っている。
 
 ## 1. 事前準備
+
 - Windowsに[Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio)をインストールする。
   - Ver7.0.2594で動作確認
 - [AVRISP mkII](https://www.microchip.com/en-us/development-tool/ATAVRISP2)を使えるようにしておく。
@@ -64,86 +72,108 @@ Z80Atmega128 Boardにファームウェアを焼き込み、CP/M2.2を単体動�
   - 通信速度はDIP SWの設定に合わせておく。
 
 ## 2. ファームウェアの書き込み
+
 Z80ATmega128 Boardにファームウェアを焼き込み、モニタプログラムを動作させるまでの手順を説明する。  
 
 ### 2-1. AVRファームウェアのビルド
+
 1. WindowsでMicrochip Studioを起動。
 2. `File > Open > Project/Solution...` で、`avr/avr.atsln` を選択。
 3. `Build > Build Solution` を実行。
 4. エラーがないことを確認する。
 
 ### 2-2. ATmega128へのファームウェアの書き込み
+
 1. Z80ATmega128 BoardのAVR ISPコネクタにAVRISP mkIIを接続し、電源を入れる。
 2. Microchip Studioを起動。
 3. `Tools > Device Programming`を選択。
 4. 以下のように値をセットし`Apply`を実行。
-   | 設定       | 値         |
+
+   | 設定      | 値         |
    |-----------|------------|
    | Tool      | AVRISPmkII |
    | Device    | ATmega128  |
    | Interface | ISP        |
+
 5. Deivce signatureの確認  
    `Read` を実行し、値が `0x1E9702` になればOK。  
    エラーになる場合は `Interface setting` を選択し、`ISP Clock` を変更してみる。  
-    ![](Fig/MS-ISPClockSetting.png)
+    ![image](Fig/MS-ISPClockSetting.png)
+
 6. FUSEの設定  
    以下のようにセットする。(設定値の詳細は[こちら](Hardware/Design.md#fuse-bits))
-   ![](Fig/MS-FuseSetting.png)
+   ![image](Fig/MS-FuseSetting.png)
+
 7. ファームウェアの書き込み  
-   `Program` を実行。 
-   ![](Fig/MS-Memories.png)
+   `Program` を実行。  
+   ![image](Fig/MS-Memories.png)
 
 ### 2-3. 動作確認
+
 1. DIP SW 1はOFFにし、CP/M起動を行ないようにする。
 2. microSD Cardはまだセットしない。
 3. AVR用シリアルインターフェースを端末ソフトに接続。
 4. 電源ONまたはリセットボタン押下で、プロンプトが表示されることを確認。
-    ```
+
+    ```text
     ATmega128 Tiny Monitor
     >
     ```
+
 5. メモリテスト
-    ```
+
+    ```text
     >test
     2000-2500
     write sum=7d80
     read  sum=7d80
     XMEM OK!
     ```
+
 6. これでZ80ATmega128 Boardの動作確認が完了。
 
 ## 3. CP/Mの設定
+
 Z80ATmega128 BoardでCP/M-80を動作させるための手順を説明する。  
 
 なお、ライセンスの関係で本リポジトリにはCP/Mのソースもバイナリも置いていない。ここでは、[The Unofficial CP/M Web site](http://www.cpm.z80.de/)にある、[CP/M 2.2 BINARY](http://www.cpm.z80.de/download/cpm22-b.zip)を使用してCP/Mのディスクイメージを作成する。
 
 ### 3-1. ビルド環境の構築
+
 BIOSのアセンブル、およびCP/Mのディスクイメージの作成はLinux環境で行う。
 WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
 
 #### Linux, WSL (Ubuntu22.04)の場合
+
 1. 必要なツールのインストール
-   ```
+
+   ```bash
    sudo apt-get install -y wget git make unzip gcc
    ```
+
 2. Z80のクロスアセンブラ(asxxxx)のインストール
-   ```
+
+   ```bash
    cd z80/toolchain
    make
    ```
+
 3. cpmtoolsのインストール
-   ```
+
+   ```bash
    sudo apt-get install -y cpmtools
    ```
 
 #### VS Code + Dev Containerの場合
 
-**ツールのインストール**
+**ツールのインストール**  
+
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - [VS Code](https://azure.microsoft.com/ja-jp/products/visual-studio-code/)
 - `Dev Containers`プラグイン
 
 **起動方法**  
+
 1. `Z80ATmega128/`でVS Codeを起動する
 2. コマンドパレットを開き、`Dev Containers: Reopen in Container`でコンテナを起動する
 3. VS Codeでターミナルを起動する。
@@ -151,9 +181,11 @@ WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
    - ファイルが見えない場合は、`Dev Containers: Rebuild Without Cache and Reopen in Container`でコンテナイメージをすると解消する場合がある。
 
 ### 3-2. CP/MディスクイメージとmicroSD Cardの作成
-1. CP/Mディスクイメージの生成 (VSCode + Dev Container環境の場合)    
+
+1. CP/Mディスクイメージの生成 (VSCode + Dev Container環境の場合)  
   `z80/cpm22/image` で `DISK00.IMG` を生成する。これがCP/Mのディスクイメージのバイナリファイル。
-    ```
+
+    ```bash
     vscode@Z80ATmega128:/z80/cpm22/image$ make
     mkdir -p ./tmp
     wget -P ./tmp http://www.cpm.z80.de/download/cpm22-b.zip
@@ -214,6 +246,7 @@ WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
     echo `wc -c < DISK00.IMG`
     8429568
     ```
+
 2. microSD Cardの作成
    - **FAT32**でフォーマットする。
    - ルートディレクトリに `DISK00.IMG` をコピーする。これはシステムディスクで必ず存在する必要がある。
@@ -221,11 +254,13 @@ WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
      - 例えば `DISK00.IMG` を `DISK01.IMG` としてコピーし追加すれば、B:ドライブが見えるようになる。
 
 ### 3-3. CP/M自動起動のための設定
+
 microSD CardからCP/Mが起動できるようにするための設定を行う。
 
 1. BIOSのビルド (VSCode + Dev Container環境の場合)  
    `z80/cpm22/bios` で `bios.ihx` を生成する。これはIntel HEX formatのファイル。
-    ```
+
+    ```bash
     vscode@Z80ATmega128:/z80/cpm22/bios$ make bios.ihx
     asz80 -l -o  bios.asm
     
@@ -239,33 +274,40 @@ microSD CardからCP/Mが起動できるようにするための設定を行う�
 2. EEPROMへのBIOSの書き込み
    1. AVR用のシリアルインターフェースを端末に接続。
    2. AVR Tiny Monitorの`xload`コマンドで、Intel HEXフォーマットのBIOSをSRAM上にバイナリ展開する。AVR用端末からXMODEMで `bios.ihx` を送信する。62K CP/M用BIOSなので、バイナリは0xf200から配置される。
-        ```
+
+        ```text
         >xload
         Start XMODEM within 90s...
 
         Received 2816 bytes.
         ```
+
    3. EEPROMにダウンロードしたBIOSイメージをATmega128のEEPROMの0番地に転送する。終了するまで少し時間がかかる。先頭4バイトにはBIOSの先頭アドレス(0xf200)と長さ(0x00b0)が書き込まれる。
-        ```
+
+        ```text
         >esave2 0 $f200 2816
         >
         ```
 
 ### 3-4. 動作確認
+
   1. AVR, Z80用のシリアルインターフェースを端末に接続。
   2. CP/Mイメージファイルを書き込んだmicroSD Cardをスロットに挿入する。
   3. DIP SW 1をON(CP/M起動モード), DIP SW 3をOFFにして、リセットボタンを押す。
   4. AVR側のシリアル端末には以下のプロンプトが表示される。  
      EEPROMに書き込まれたBIOSがSRAM上にコピーされ、BIOSがmicroSD Cardの予約トラックに書き込まれているCCP+BDOSを読み込んで、CP/Mを起動する。
-     ```
+
+     ```text
      === CP/M mode ===
      BIOS: 0xf200 - 0xfcff
      
      ATmega128 Tiny Monitor
      >
      ```
+
      Z80側のシリアル端末に以下が表示されれば成功。
-     ```
+
+     ```text
      62K CP/M-80 Ver2.2 on Z80ATmega128
      BIOS Copyright (C) 2023 by 46nori
      
