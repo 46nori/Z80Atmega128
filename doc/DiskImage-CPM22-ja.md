@@ -100,3 +100,11 @@ cp EMPTY.IMG DISK01.IMG
   - [CP/M source](http://www.cpm.z80.de/source.html)
 - [Commercial CP/M Software](http://www.retroarchive.org/cpm/)
   - [ZORK I/II/III](http://www.retroarchive.org/cpm/games/zork123_80.zip)
+
+## トラブルシューティング
+
+- **CP/Mが起動しない**
+  - DISK00.IMGが存在しない。
+  - DISK00.IMGにシステムが書き込まれていない。
+    - DISK00.IMGには予約トラックにBDOS+CCPが書き込まれている必要がある。
+    - EMPTY.IMGなどをベースにしたイメージファイルをDISK00.IMGにリネームしただけでは、起動ディスクにはらない。`make`で生成されるDISK00.IMGを利用すること。
