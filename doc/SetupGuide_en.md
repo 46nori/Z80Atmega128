@@ -138,10 +138,18 @@ WSL for Windows and VS Code + Dev Container environment for macOS are recommende
    ```
 
 #### VS Code + Dev Container
-- Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- Install [VS Code](https://azure.microsoft.com/en-us/products/visual-studio-code/)
-- Install `Dev Containers` plugin of VS Code
-- Open bash in Dev Container
+
+**Install**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [VS Code](https://azure.microsoft.com/ja-jp/products/visual-studio-code/)
+- `Dev Containers` extension
+
+**How to start**
+1. Launch VS Code in the `Z80ATmega128/` directory.
+2. Open the Command Palette and start the container with `Dev Containers: Reopen in Container`.
+3. Open a terminal in VS Code.
+   - `z80/` is mounted, so work there.
+   - If files are not visible, try `Dev Containers: Rebuild Without Cache and Reopen in Container` to rebuild the container image.
 
 ### 3-2. Creating a CP/M Disk Image for microSD Card
 1. Generating a CP/M Disk Image (VSCode + Dev Container Environment)    

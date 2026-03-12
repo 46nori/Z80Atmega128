@@ -137,10 +137,18 @@ WindowsはWSL、macOSはVS Code + Dev Containerの環境がおすすめ。
    ```
 
 #### VS Code + Dev Containerの場合
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) と [VS Code](https://azure.microsoft.com/ja-jp/products/visual-studio-code/)をインストール
-- VS Codeの`Dev Containers`プラグインをインストール
-- Dev Containerでbashを起動
 
+**ツールのインストール**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [VS Code](https://azure.microsoft.com/ja-jp/products/visual-studio-code/)
+- `Dev Containers`プラグイン
+
+**起動方法**  
+1. `Z80ATmega128/`でVS Codeを起動する
+2. コマンドパレットを開き、`Dev Containers: Reopen in Container`でコンテナを起動する
+3. VS Codeでターミナルを起動する。
+   - `/z80`がマウントされているので、そこで作業を行う。
+   - ファイルが見えない場合は、`Dev Containers: Rebuild Without Cache and Reopen in Container`でコンテナイメージをすると解消する場合がある。
 
 ### 3-2. CP/MディスクイメージとmicroSD Cardの作成
 1. CP/Mディスクイメージの生成 (VSCode + Dev Container環境の場合)    
