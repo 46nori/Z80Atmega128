@@ -1,24 +1,30 @@
 # ATmega128 Tiny Monitor
 
 The ATmega Tiny Monitor has the following main functions:
+
 - Control of AVR microprocessor
 - Access to external SRAM shared with Z80
 - Debugging functions for the Z80
 
 As a typical use case, the following commands can be used to download and setup CP/M
+
 - Write CP/M BIOS to EEPROM. (`esave2`)
 - Download and boot the INTEL HEX image (`cpm22/sys/cpm.ihx`) of CP/M. (`xload`, `reset`)
 
 ## Command Reference
+
 ### Legend
+
 `<>` is mandatory parameter.  
 `[]` is optional parameter.
 
-
 ## Memory command
+
 ### Memory dump
+
 `[adr]` and `[len]` are optional. Default values are 0 and 16 respectively.  
 `[adr]` is automatically incremented.
+
 |command| Parameters      | Memory        |
 |-------|-----------------|---------------|
 | `d`   | `[adr]` `[len]` | External SRAM |
@@ -27,7 +33,9 @@ As a typical use case, the following commands can be used to download and setup 
 | `de`  | `[adr]` `[len]` | EEPROM        |
 
 ### Byte READ and WRITE
+
 `[adr]` is optional. Default values is 0. It is automatically incremented.
+
 |command|Parameters| Memory        | Operation |
 |-------|----------|---------------|:---------:|
 | `r`   | `[adr]`  | External SRAM | READ      |
@@ -35,14 +43,16 @@ As a typical use case, the following commands can be used to download and setup 
 | `ri`  | `[adr]`  | Internal SRAM | READ      |
 | `wi`  | `[adr]`  | Internal SRAM | WRITE     |
 
-### Misc.
+### Miscellaneous
+
 |command | Parameters              | Memory        | Operation |
 |--------|-------------------------|---------------|-----------|
 | `f`    | `<dat>` `<adr>` `<len>` | External SRAM | Fills `<dat>` into the external memory for length:`<len>` from the address:`<adr>`. |
 | `test` | `[adr]`                 | External SRAM | Fill in the memory with test data from specified address:`[adr]` and verify the checksum.<br>The default address is 0x2000 if `[adr]` is omitted.<br>It is helpful for quick checks of external memory access. |
-| `mem`  |                         | Internal SRAM | Show remaining memory size. Note that it includes the stack area. |
+| `mem`  |                         | Internal SRAM | Show remaining memory size. Note that it includes the stack area.|
 
 ## Data transfer command
+
 - Use `esave2` to save the BIOS to EEPROM for automatic CP/M startup.
 - Use `xload` to download CP/M image (`z80/cpm22/sys/cpm.ihx`).
 
@@ -57,34 +67,42 @@ As a typical use case, the following commands can be used to download and setup 
 | `esave2` |`<dst>` `<src>` `<len>` | External SRAM | EEPROM    | `<src>` and `<len>` are stored into EEPROM at address:`<dst>`.<br>And save External SRAM data from the address:`<src>` for the length:`<len>` to the EEPROM from the address:`<dst>`+4. |
 
 ## AVR Intterrupt control command
+
 | command | Parameters | Opetarion        |
 |---------|------------|------------------|
 | `cli`   |            | Disable intrrupt |
 | `sti`   |            | Enable  intrrupt |
 
 ## Z80 command
+
 ### Z80 Control
-| command | Parameters | Opetarion        |
-|---------|------------|------------------|
+
+| command | Parameters | Opetarion                                                                                                |
+|---------|------------|----------------------------------------------------------------------------------------------------------|
 | `reset` | `[0]`      | Reset Z80. If `0` is specified, HALT instruction(0x76) will be set to 0x0000 and stay in the HALT state. |
-| `nmi`   |            | Assert Z80 /NMI. |
+| `nmi`   |            | Assert Z80 /NMI.                                                                                         |
 | `int`   | `<dat>`    | Assert Z80 /INT. Interrupt the Z80. Depending on the Z80's interrupt mode, <dat> is interpreted as follows:<br>Mode0: Instruction<br>Mode1: Ignored<br>Mode2: Interrupt vector number |
-| `sts`   |            | Show the signal state of /BUSREQ, /BUSACK and /HALT. |
+| `sts`   |            | Show the signal state of /BUSREQ, /BUSACK and /HALT.                                                     |
 
 ### Z80 Debugger
-| command | Parameters | Opetarion                     |
-|---------|------------|-------------------------------|
+
+| command | Parameters | Opetarion                                               |
+|---------|------------|---------------------------------------------------------|
 | `brk`   | `[adr]`    | Set breakpoint. List breakpoints if `[adr]` is omitted. |
-| `del`   | `<adr>`    | Delete breakpoint.           |
-| `cont`  |            | Continue program after break. |
+| `del`   | `<adr>`    | Delete breakpoint.                                      |
+| `cont`  |            | Continue program after break.                           |
+
 - Example
-    ```
+
+    ```text
     >brk $f3dd
     >brk
     0: $f3dd $c3 
     ```
+
     Z80 registers and stack data are shown when hit the breakpoint.
-    ```
+
+    ```text
     >>>>Break! at $f3dd
     AF=$0044 [Z:1 C:0] I=$f3
     BC=$0000 DE=$dc06 HL=$f233
@@ -95,11 +113,14 @@ As a typical use case, the following commands can be used to download and setup 
     ```
 
 ## Help command
+
 | command | Parameters | Opetarion           |
 |---------|------------|---------------------|
 | `h`     |            | Shows help message. |
+
 - Example
-    ```
+
+    ```text
     ATmega128 Tiny Monitor
     >h 
     <> : mandatory

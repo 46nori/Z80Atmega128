@@ -1,6 +1,7 @@
 # Emulated external I/O device specification
 
 ## Port (English)
+
 | Port | Direction | Function                              | Value                                |
 | ---- | --------- | ------------------------------------- | ------------------------------------ |
 | 0x00 | IN        | Input single character from Console   | Input character                      |
@@ -71,7 +72,9 @@
 From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 
 ---
+
 ## Port (Japanese)
+
 |Port|Direction|Function|Value|
 |:----|:----|:----|:----|
 |0x00|IN |コンソール1文字入力|入力文字|
@@ -143,7 +146,9 @@ From 0x20 onwards, it becomes a shadow area for 0x00-0x1f.
 - 複数バイトが設定できるPORTはシーケンサーを持つ。値をセットする前にシーケンサーをリセットすること。
 
 ## Console I/O
+
 ### Console Input
+
 AVRはUART1の入力をリングバッファに値を保存しており、Z80からの1文字入力要求があると、このバッファから値を返す。
 割り込み設定を行うことで、リングバッファに文字がキューイングされると同時にZ80に割り込みをかけることができる。
 
@@ -160,6 +165,7 @@ AVRはUART1の入力をリングバッファに値を保存しており、Z80か
   - **[IN]** 現在の割り込みレベルの値を返す。
 
 ### Console Output
+
 - PORT 0x05 コンソール1文字出力
   - **[OUT]** 文字する出力をセットする。
 - PORT 0x06 コンソール出力バッファステータス取得
@@ -175,11 +181,15 @@ AVRはUART1の入力をリングバッファに値を保存しており、Z80か
   - **[IN]** 現在の割り込みレベルの値を返す。
 
 ## DISK I/O
+
 ### DISK選択
+
 - PORT 0x0a DISK選択
   - **[IN]** DISK選択結果　成功(0) / エラー(1)
   - **[OUT]** DISK番号(0-15)を選択しアクセス可能にする。指定したDISK番号のイメージファイルDISKxx.IMG (xxはDISK番号)があらかじめ存在していること。
+
 ### DISK WRITE
+
 - PORT 0x0b
   - **[IN]** DISKライト位置参照・シーケンサーリセット
   - **[OUT]** DISKライト位置を指定する。Highアドレスの値から4バイト書き込む。
@@ -196,7 +206,9 @@ AVRはUART1の入力をリングバッファに値を保存しており、Z80か
     - Bit1: 成功(0) / エラー(1)
 - PORT 0x0f　DISKライト完了割り込み設定
   - **[OUT]** DISKライト完了時にZ80にMode2割り込みをかけることができる。0-127を設定するとそのレベルでの割り込みが発生する。128-255に設定すると割り込みは発生しない。デフォルト値は128。
+
 ### DISK READ
+
 - PORT 0x10
   - **[OUT]** DISKリード位置を指定する。Highアドレスから4バイト書き込む。
   - **[IN]** DISKリード位置参照・シーケンサーリセット
@@ -219,7 +231,9 @@ DISK READ/WRITEの起動はOUT命令の割り込みハンドラで受理され�
 
 rd.DOINGおよびwr.DOINGでSD CardのアクセスとSRAMとのデータ転送が行われる。エラーでも正常終了でもIDLEに戻る(DONEイベント)。
 リードライト要求は、IDLEおよびREJECTED状態で受理される。
+
 - イベント
+
     |Event| READ          | WRITE          |
     |-----|---------------|----------------|
     | REQ | READ実行(0x13) | WRITE実行(0x0e)|
@@ -227,6 +241,7 @@ rd.DOINGおよびwr.DOINGでSD CardのアクセスとSRAMとのデータ転送�
     | INT | 周期割り込み    | 周期割り込み     |
 
 - 状態
+
     |State     | READ                    | WRITE 　　　　　　　　　　　|
     |----------|-------------------------|-------------------------|
     |IDLE      | READ要求待ち。           | WRITE要求待ち。            |
@@ -235,6 +250,7 @@ rd.DOINGおよびwr.DOINGでSD CardのアクセスとSRAMとのデータ転送�
     |REJECTED  | 要求拒否。次のREAD要求待ち。| 要求拒否。次のWRITE要求待ち。|
 
 - ステートチャート
+
     ```mermaid
     stateDiagram-v2
         state READ {
@@ -267,6 +283,7 @@ rd.DOINGおよびwr.DOINGでSD CardのアクセスとSRAMとのデータ転送�
     ```
 
 ## Debug
+
 Z80のデバッグを支援する機能。
 
 以下のようなステップで、ブレークポイント機能を実現できる。
@@ -278,6 +295,7 @@ Z80側の実装例は[CP/M 2.2のBIOS](../../z80/cpm22/bios/bios.asm)の`DEBUGGE
 4. AVRで以前の命令をブレークポイントに書き戻し、外部割り込み(INT4)を与えることで実行を継続できる。
 
 デバッグ情報は以下の順に0x1eに出力すること。
+
 1.  ブレークポイントアドレス (High)
 2.  ブレークポイントアドレス (Low)
 3.  レジスタ SP (High)
@@ -317,6 +335,6 @@ Z80側の実装例は[CP/M 2.2のBIOS](../../z80/cpm22/bios/bios.asm)の`DEBUGGE
   - **[IN]** デバッグ情報通知シーケンスリセット
   - **[OUT]** デバッグ情報(ブレークアドレス/Z80レジスタ/スタックデータ)の通知。デバッグ領域の値を逆順に送る。
 
-
 ## LED
+
 LEDの点灯制御。0x1fに出力した下位3bitのLED設定は、AVRで10msごとにサンプル・反映される。
