@@ -60,9 +60,10 @@ void Transmit_TX1_Buf(void)
 	if (data != '\0') {
 		USART1_Transmit(data);
 //		x_printf("%d %d %d\n", cb_tx1.count, cb_tx1.head, cb_tx1.tail);
-		if (cb_tx1.count == 0 ||
-		    cb_tx1.count == cb_tx1.size / 4 ||
-		    cb_tx1.count == cb_tx1.size / 2) {
+		if (z80_int_num_tx1 < 128 &&
+		    (cb_tx1.count == 0 ||
+		     cb_tx1.count == cb_tx1.size / 4 ||
+		     cb_tx1.count == cb_tx1.size / 2)) {
 			Z80_EXTINT_low(z80_int_num_tx1 << 1);			
 		}
 	}
