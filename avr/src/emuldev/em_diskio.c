@@ -23,8 +23,8 @@
 // DISK I/O emulated device
 //=================================================================
 // Disk parameters
-static uint8_t int_level_write = 128;
-static uint8_t int_level_read  = 128;
+static volatile uint8_t int_level_write = 128;
+static volatile uint8_t int_level_read  = 128;
 
 static uint8_t tmpbuf[512];
 
