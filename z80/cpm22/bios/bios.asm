@@ -339,7 +339,10 @@ LOAD_CCP_BDOS:
         OUT (C), L
 
         ; Load CPP+BDOS
+LOAD_RETRY:
         CALL DISK_READ_SUB
+        CP 4
+        JR Z, LOAD_RETRY               ; retry if rejected
         OR A
         RET Z                           ; Success
 
