@@ -11,7 +11,7 @@
 //=================================================================
 // Console I/O emulated device
 //=================================================================
-#define RX1_BUF_SIZE	8
+#define RX1_BUF_SIZE	64
 #define TX1_BUF_SIZE	128
 static char rx1_buf[RX1_BUF_SIZE];
 static char tx1_buf[TX1_BUF_SIZE];
@@ -41,9 +41,9 @@ void init_em_console(void)
 void Enqueue_RX1_Buf()
 {
 	while (UCSR1A & _BV(RXC1)) {
-		x_enqueue(&cb_rx1, UDR1);
+		int st = x_enqueue(&cb_rx1, UDR1);
 		// Notify Z80 if interrupt setting is enable
-		if (z80_int_num_rx1 < 128) {
+		if (st != 3 && z80_int_num_rx1 < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
 			Z80_EXTINT_low(z80_int_num_rx1 << 1);
 		}
