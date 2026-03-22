@@ -67,10 +67,13 @@ ISR(INT1_vect)
 ///////////////////////////////////////////////////////////////////
 ISR(INT4_vect)
 {
+	// Dequeue current vector from queue
+	uint8_t vector = z80_int_vector;
+
 	// Z80 /INT = High
 	Z80_EXTINT_High();
 	// Z80 int vector
-	PORTA = z80_int_vector;
+	PORTA = vector;
 	DDRA  = 0xff;
 
 	// Clear /WAIT (instead of Z80_CLRWAIT())
@@ -81,6 +84,11 @@ ISR(INT4_vect)
 	PORTA = 0xff;					// 1 CLK Set PortA input and High-Z
 	DDRA  = 0x00;					// 1 CLK
 	SET_BIT(PORTD, PORTD5);			// 2 CLK
+
+	// Consume from queue and re-assert /INT if more entries remain
+	if (Z80_EXTINT_dequeue()) {
+		CLR_BIT(PORTD, PORTD4);		// /INT = Low for next vector
+	}
 }
 
 ///////////////////////////////////////////////////////////////////
