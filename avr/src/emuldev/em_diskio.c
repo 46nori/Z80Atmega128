@@ -101,6 +101,12 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 #endif
 	if (data < MAX_FILES) {
 		cfd = &fd[data];
+#if DEBUG_PRINT_STATE
+		if (cfd->read.state == DOING || cfd->write.state == DOING) {
+			x_printf("!!! SELDSK while I/O active: rd=%d wr=%d\n",
+			         cfd->read.state, cfd->write.state);
+		}
+#endif
 		// Re-open if previous operation was failure.
 		if (cfd->open_result  != FR_OK ||
 		    cfd->write.result != FR_OK ||
