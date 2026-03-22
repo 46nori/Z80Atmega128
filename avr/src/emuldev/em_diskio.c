@@ -202,6 +202,7 @@ TEMPLATE_IN_OUT_2BYTES(12,DSK_ReadLen)
 uint8_t IN_0E_DSK_WriteStatus()
 {
 	// CAUTION: don't consume long time
+	uint8_t sreg = SREG;
 	cli();
 	uint8_t st = 0x00;
 	switch (cfd->write.state) {
@@ -218,7 +219,7 @@ uint8_t IN_0E_DSK_WriteStatus()
 			st = 0x04;			// rejected
 			break;
 	}
-	sei();
+	SREG = sreg;
 	return st;
 }
 
@@ -468,6 +469,7 @@ error_skip:
 uint8_t IN_13_DSK_ReadStatus()
 {
 	// CAUTION: don't consume long time
+	uint8_t sreg = SREG;
 	cli();
 	uint8_t st = 0x00;
 	switch (cfd->read.state) {
@@ -484,7 +486,7 @@ uint8_t IN_13_DSK_ReadStatus()
 		st = 0x04;			// rejected
 		break;
 	}
-	sei();
+	SREG = sreg;
 	return st;
 }
 
