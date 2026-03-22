@@ -336,11 +336,12 @@ void em_disk_write(void)
 		} else {
 			plen = sizeof(tmpbuf) - offset;			
 		}
-		cli();
 		ExtMem_attach();
+		uint8_t sreg1 = SREG;
+		cli();
 		memcpy(&tmpbuf[offset], src, plen);
+		SREG = sreg1;
 		ExtMem_detach();
-		sei();
 		// write
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
@@ -373,11 +374,12 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("$$$ %d/%d\n", i, n);
 #endif
-		cli();
 		ExtMem_attach();
+		uint8_t sreg2 = SREG;
+		cli();
 		memcpy(tmpbuf, src, sizeof(tmpbuf));
+		SREG = sreg2;
 		ExtMem_detach();
-		sei();
 		if ((cfd->write.result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
@@ -422,11 +424,12 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("Modify/");
 #endif
-		cli();
 		ExtMem_attach();
+		uint8_t sreg3 = SREG;
+		cli();
 		memcpy(tmpbuf, src, len);
+		SREG = sreg3;
 		ExtMem_detach();
-		sei();
 		// write
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
@@ -561,22 +564,24 @@ void em_disk_read(void)
 		if (cfd->read.result != FR_OK) {
 			goto error_skip;
 		}
-		cli();
 		ExtMem_attach();
+		uint8_t sreg4 = SREG;
+		cli();
 		memcpy(dst, tmpbuf, sizeof(tmpbuf));
+		SREG = sreg4;
 		ExtMem_detach();
-		sei();
 		dst = (uint8_t*)dst + sizeof(tmpbuf);
 	}
 	len = len % sizeof(tmpbuf);
 	if (len > 0) {
 		cfd->read.result = f_read(&cfd->fil, tmpbuf, len, &br);
 		if (cfd->read.result == FR_OK) {
-			cli();
 			ExtMem_attach();
+			uint8_t sreg5 = SREG;
+			cli();
 			memcpy(dst, tmpbuf, len);
+			SREG = sreg5;
 			ExtMem_detach();
-			sei();
 		}
 	}
 	
