@@ -9,6 +9,7 @@
 #include "z80io.h"
 #include "emuldev/emuldev.h"
 #include "fatfs/diskio.h"
+#include <stdbool.h>
 
 //
 // External Interrupt
@@ -104,8 +105,14 @@ ISR(TIMER0_COMP_vect)
 ///////////////////////////////////////////////////////////////////
 ISR(TIMER2_COMP_vect, ISR_NOBLOCK)
 {
+	static volatile bool in_progress = false;
 	disk_timerproc();
+	if (in_progress) return;
+	in_progress = true;
+
 	em_disk_read();
 	em_disk_write();
 	em_led_heartbeat(2);			// Blink RED LED at 2Hz
+
+	in_progress = false;
 }
