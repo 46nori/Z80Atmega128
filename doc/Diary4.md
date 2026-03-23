@@ -216,3 +216,23 @@ Command:
 - AE-CH340E-TYPECを切り離して直接RX/TXをプローブできるピンを追加しておく。
 - HM62256はTTL互換だがプロセスはCMOSなので、74HCT574は74HC574でも問題ないはず。
 - CMOS版Z80Aを使用するなら、74HCT245は74HC245でも問題ないはず。
+
+## 2026/3/23
+
+- 2026/3/12のハングアップの調査を探るために、Claude Opus 4.6を使ってコードレビューを行い、修正計画を作成した。プルリクエストとしてPR#19〜#32 を登録。
+
+## 2026/3/24
+
+- 動作確認用ブランチ `bugfix/BUG_working` で動作確認を実施。PR#19〜#31をマージした。
+
+- `DISK00.IMG`の生成で以下のエラーが発生した。
+
+   ```bash
+   vscode@Z80ATmega128:/z80/cpm22/image$ make
+   mkfs.cpm -f sdcard -b ./tmp/cpm22/CPM.SYS DISK00.IMG
+   ' in line 9nvalid OS type `2.2
+   make: *** [Makefile:41: DISK00.IMG] Error 1
+   ```
+
+  - 原因は`diskdefs`の改行コードが`CRLF`でパースに失敗するから。**Windows環境**での問題。
+  - [Issue #33](https://github.com/46nori/Z80Atmega128/issues/33)を登録した。
