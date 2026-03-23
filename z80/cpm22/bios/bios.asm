@@ -120,7 +120,7 @@ DEBUGGER:
         EXX
 
         LD SP, (SP_ADR)         ; Restore SP
-;        EI
+        EI
         HALT                    ; Wait for INT 4
         RET                     ; Resume
 
