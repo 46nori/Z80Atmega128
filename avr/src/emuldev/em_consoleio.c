@@ -45,7 +45,7 @@ void Enqueue_RX1_Buf()
 		// Notify Z80 if interrupt setting is enable
 		if (st != 3 && z80_int_num_rx1 < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
-			Z80_EXTINT_low(z80_int_num_rx1 << 1);
+			Z80_EXTINT_enqueue(z80_int_num_rx1 << 1);
 		}
 	}
 }
@@ -67,7 +67,7 @@ void Transmit_TX1_Buf(void)
 		    (cb_tx1.count == 0 ||
 		     cb_tx1.count == cb_tx1.size / 4 ||
 		     cb_tx1.count == cb_tx1.size / 2 - 1)) {
-			Z80_EXTINT_low(z80_int_num_tx1 << 1);			
+			Z80_EXTINT_enqueue(z80_int_num_tx1 << 1);
 		}
 	}
 }
