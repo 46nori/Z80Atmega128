@@ -66,7 +66,7 @@ void Transmit_TX1_Buf(void)
 		if (z80_int_num_tx1 < 128 &&
 		    (cb_tx1.count == 0 ||
 		     cb_tx1.count == cb_tx1.size / 4 ||
-		     cb_tx1.count == cb_tx1.size / 2)) {
+		     cb_tx1.count == cb_tx1.size / 2 - 1)) {
 			Z80_EXTINT_low(z80_int_num_tx1 << 1);			
 		}
 	}
