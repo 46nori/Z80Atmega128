@@ -15,9 +15,9 @@
 typedef struct {
 	char* buffer;
 	int size;
-	int head;
-	int tail;
-	int count;
+	volatile int head;
+	volatile int tail;
+	volatile int count;
 } ConsoleBuffer;
 
 extern void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size);
