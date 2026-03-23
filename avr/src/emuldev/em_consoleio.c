@@ -56,9 +56,12 @@ void Enqueue_RX1_Buf()
 ///////////////////////////////////////////////////////////////////
 void Transmit_TX1_Buf(void)
 {
+	// Skip if UART TX is busy (non-blocking)
+	if (!(UCSR1A & _BV(UDRE1))) return;
+
 	char data = x_dequeue(&cb_tx1);
 	if (data != '\0') {
-		USART1_Transmit(data);
+		UDR1 = data;	// UDRE1 already checked, write directly
 //		x_printf("%d %d %d\n", cb_tx1.count, cb_tx1.head, cb_tx1.tail);
 		if (z80_int_num_tx1 < 128 &&
 		    (cb_tx1.count == 0 ||
