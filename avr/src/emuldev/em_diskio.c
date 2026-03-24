@@ -287,7 +287,7 @@ void em_disk_write(void)
 		cfd->write.state = REJECTED;
 		if (int_level_write < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
-			Z80_EXTINT_low(int_level_write << 1);
+			Z80_EXTINT_enqueue(int_level_write << 1);
 		}
 		return;
 	}
@@ -458,7 +458,7 @@ error_skip:
 #endif
 	if (int_level_write < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(int_level_write << 1);
+		Z80_EXTINT_enqueue(int_level_write << 1);
 	}
 	cfd->write.state = IDLE;	
 }
@@ -539,7 +539,7 @@ void em_disk_read(void)
 		cfd->read.state = REJECTED;
 		if (int_level_read < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
-			Z80_EXTINT_low(int_level_read << 1);
+			Z80_EXTINT_enqueue(int_level_read << 1);
 		}
 		return;
 	}
@@ -589,7 +589,7 @@ error_skip:
 #endif
 	if (int_level_read < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(int_level_read << 1);
+		Z80_EXTINT_enqueue(int_level_read << 1);
 	}
 	cfd->read.state = IDLE;
 }

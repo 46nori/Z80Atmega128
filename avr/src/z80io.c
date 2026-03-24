@@ -135,6 +135,15 @@ void Z80_RESET_GO(uint8_t *adr)
 //
 
 volatile uint8_t z80_int_vector;
+
+//
+// Interrupt vector FIFO queue
+//
+#define INT_QUEUE_SIZE 8
+static volatile uint8_t int_queue[INT_QUEUE_SIZE];
+static volatile uint8_t int_queue_head = 0;
+static volatile uint8_t int_queue_tail = 0;
+
 void Z80_EXTINT_low(uint8_t vector)
 {
 	z80_int_vector = vector;
@@ -144,6 +153,37 @@ void Z80_EXTINT_low(uint8_t vector)
 void Z80_EXTINT_High(void)
 {
 	SET_BIT(PORTD, PORTD4);		// /INT = High
+}
+
+void Z80_EXTINT_enqueue(uint8_t vector)
+{
+	uint8_t sreg = SREG;
+	cli();
+	uint8_t next = (int_queue_tail + 1) % INT_QUEUE_SIZE;
+	if (next != int_queue_head) {
+		int_queue[int_queue_tail] = vector;
+		int_queue_tail = next;
+	}
+	// Assert /INT only when queue transitions from empty (count == 1)
+	uint8_t count = (int_queue_tail - int_queue_head + INT_QUEUE_SIZE) % INT_QUEUE_SIZE;
+	if (count == 1) {
+		z80_int_vector = vector;
+		CLR_BIT(PORTD, PORTD4);		// /INT = Low
+	}
+	SREG = sreg;
+}
+
+uint8_t Z80_EXTINT_dequeue(void)
+{
+	if (int_queue_head == int_queue_tail) {
+		return 0;	// queue empty
+	}
+	int_queue_head = (int_queue_head + 1) % INT_QUEUE_SIZE;
+	if (int_queue_head != int_queue_tail) {
+		z80_int_vector = int_queue[int_queue_head];
+		return 1;	// more entries remain
+	}
+	return 0;	// queue now empty
 }
 
 void Z80_EXTINT(uint8_t vector)
