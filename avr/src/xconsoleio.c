@@ -133,11 +133,12 @@ void initConsoleBuffer(ConsoleBuffer* cb, char* buffer, int size)
 
 void x_flush(ConsoleBuffer* cb)
 {
+	uint8_t sreg = SREG;
 	cli();
 	cb->head = 0;
 	cb->tail = 0;
 	cb->count = 0;
-	sei();
+	SREG = sreg;
 }
 
 int x_enqueue(ConsoleBuffer* cb, char data)
@@ -146,11 +147,12 @@ int x_enqueue(ConsoleBuffer* cb, char data)
 		return 3;	// Buffer is already full. Cannot enqueue.
 	}
 
+	uint8_t sreg = SREG;
 	cli();
 	cb->buffer[cb->tail] = data;
 	cb->tail = (cb->tail + 1) % cb->size;
 	cb->count++;
-	sei();
+	SREG = sreg;
 	if (cb->count == cb->size / 2) {
 		return 1;	// Buffer is half full.
 	}
@@ -166,11 +168,12 @@ char x_dequeue(ConsoleBuffer* cb)
 		return '\0';  // Buffer is empty. Cannot dequeue.
 	}
 
+	uint8_t sreg = SREG;
 	cli();
 	char data = cb->buffer[cb->head];
 	cb->head = (cb->head + 1) % cb->size;
 	cb->count--;
-	sei();
+	SREG = sreg;
 	return data;
 }
 
