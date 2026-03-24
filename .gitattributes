@@ -1,1 +1,2 @@
 *.patch    text eol=crlf
+z80/cpm22/image/diskdefs text eol=lf
