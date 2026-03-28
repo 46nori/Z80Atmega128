@@ -23,6 +23,8 @@ extern void Z80_RESET(void);
 extern void Z80_NMI(void);
 extern void Z80_EXTINT(uint8_t vector);
 extern void Z80_EXTINT_low(uint8_t vector);
+extern void Z80_EXTINT_enqueue(uint8_t vector);
+extern uint8_t Z80_EXTINT_dequeue(void);
 extern void Z80_EXTINT_High(void);
 extern void Z80_CLRWAIT(void);
 extern void Z80_HALT(void);

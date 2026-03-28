@@ -101,6 +101,12 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 #endif
 	if (data < MAX_FILES) {
 		cfd = &fd[data];
+#if DEBUG_PRINT_STATE
+		if (cfd->read.state == DOING || cfd->write.state == DOING) {
+			x_printf("!!! SELDSK while I/O active: rd=%d wr=%d\n",
+			         cfd->read.state, cfd->write.state);
+		}
+#endif
 		// Re-open if previous operation was failure.
 		if (cfd->open_result  != FR_OK ||
 		    cfd->write.result != FR_OK ||
@@ -287,7 +293,7 @@ void em_disk_write(void)
 		cfd->write.state = REJECTED;
 		if (int_level_write < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
-			Z80_EXTINT_low(int_level_write << 1);
+			Z80_EXTINT_enqueue(int_level_write << 1);
 		}
 		return;
 	}
@@ -337,11 +343,12 @@ void em_disk_write(void)
 		} else {
 			plen = sizeof(tmpbuf) - offset;			
 		}
-		cli();
 		ExtMem_attach();
+		uint8_t sreg1 = SREG;
+		cli();
 		memcpy(&tmpbuf[offset], src, plen);
+		SREG = sreg1;
 		ExtMem_detach();
-		sei();
 		// write
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
@@ -374,11 +381,12 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("$$$ %d/%d\n", i, n);
 #endif
-		cli();
 		ExtMem_attach();
+		uint8_t sreg2 = SREG;
+		cli();
 		memcpy(tmpbuf, src, sizeof(tmpbuf));
+		SREG = sreg2;
 		ExtMem_detach();
-		sei();
 		if ((cfd->write.result = f_write(&cfd->fil, tmpbuf, sizeof(tmpbuf), &bytes)) != FR_OK) {
 			goto error_skip;
 		}
@@ -423,11 +431,12 @@ void em_disk_write(void)
 #if DEBUG_PRINT_WR
 		x_printf("Modify/");
 #endif
-		cli();
 		ExtMem_attach();
+		uint8_t sreg3 = SREG;
+		cli();
 		memcpy(tmpbuf, src, len);
+		SREG = sreg3;
 		ExtMem_detach();
-		sei();
 		// write
 #if DEBUG_PRINT_WR
 		x_printf("Write\n");
@@ -458,7 +467,7 @@ error_skip:
 #endif
 	if (int_level_write < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(int_level_write << 1);
+		Z80_EXTINT_enqueue(int_level_write << 1);
 	}
 	cfd->write.state = IDLE;	
 }
@@ -539,7 +548,7 @@ void em_disk_read(void)
 		cfd->read.state = REJECTED;
 		if (int_level_read < 128) {
 			// CAUTION: vector is NOT interrupt number(0-127)
-			Z80_EXTINT_low(int_level_read << 1);
+			Z80_EXTINT_enqueue(int_level_read << 1);
 		}
 		return;
 	}
@@ -563,22 +572,24 @@ void em_disk_read(void)
 		if (cfd->read.result != FR_OK) {
 			goto error_skip;
 		}
-		cli();
 		ExtMem_attach();
+		uint8_t sreg4 = SREG;
+		cli();
 		memcpy(dst, tmpbuf, sizeof(tmpbuf));
+		SREG = sreg4;
 		ExtMem_detach();
-		sei();
 		dst = (uint8_t*)dst + sizeof(tmpbuf);
 	}
 	len = len % sizeof(tmpbuf);
 	if (len > 0) {
 		cfd->read.result = f_read(&cfd->fil, tmpbuf, len, &br);
 		if (cfd->read.result == FR_OK) {
-			cli();
 			ExtMem_attach();
+			uint8_t sreg5 = SREG;
+			cli();
 			memcpy(dst, tmpbuf, len);
+			SREG = sreg5;
 			ExtMem_detach();
-			sei();
 		}
 	}
 	
@@ -589,7 +600,7 @@ error_skip:
 #endif
 	if (int_level_read < 128) {
 		// CAUTION: vector is NOT interrupt number(0-127)
-		Z80_EXTINT_low(int_level_read << 1);
+		Z80_EXTINT_enqueue(int_level_read << 1);
 	}
 	cfd->read.state = IDLE;
 }
