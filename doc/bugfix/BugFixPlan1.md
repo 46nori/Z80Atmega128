@@ -1395,30 +1395,31 @@ void OUT_0A_DSK_SelectDisk(uint8_t data)
 ## 6. 修正順序のまとめ
 
 ```text
-Phase 1（即着手可能、各ステップ独立）
-├── Step 1:  BUG #4  — xconsoleio.c の SREG 保存/復元
-├── Step 2:  BUG #11 — em_diskio.c の Status 関数 SREG 保存/復元
-├── Step 3:  BUG #10 — em_diskio.c の volatile 追加
-├── Step 4:  BUG #13 — xconsoleio.h の ConsoleBuffer volatile 追加
-├── Step 5:  BUG #5  — em_consoleio.c のガード追加
-├── Step 6:  BUG #12 — em_consoleio.c の Enqueue 戻り値チェック
-├── Step 7:  BUG #14 — em_consoleio.c の非ブロッキング TX
-├── Step 8:  BUG #15 — em_consoleio.c の通知閾値修正
-├── Step 9:  BUG #6  — bios.asm LOAD_CCP_BDOS リトライ追加
-├── Step 10: BUG #8  — isr.c Timer2 再入ガード追加
-└── Step 11: BUG #9  — bios.asm DEBUGGER EI 復活
+Phase 1（即着手可能、各ステップ独立）  ★ 全ステップ完了・develop マージ済み（PR #19〜#29）
+├── Step 1:  BUG #4  — xconsoleio.c の SREG 保存/復元                [完了]
+├── Step 2:  BUG #11 — em_diskio.c の Status 関数 SREG 保存/復元     [完了]
+├── Step 3:  BUG #10 — em_diskio.c の volatile 追加                  [完了]
+├── Step 4:  BUG #13 — xconsoleio.h の ConsoleBuffer volatile 追加   [完了]
+├── Step 5:  BUG #5  — em_consoleio.c のガード追加                   [完了]
+├── Step 6:  BUG #12 — em_consoleio.c の Enqueue 戻り値チェック      [完了]
+├── Step 7:  BUG #14 — em_consoleio.c の非ブロッキング TX             [完了]
+├── Step 8:  BUG #15 — em_consoleio.c の通知閾値修正                 [完了]
+├── Step 9:  BUG #6  — bios.asm LOAD_CCP_BDOS リトライ追加           [完了]
+├── Step 10: BUG #8  — isr.c Timer2 再入ガード追加                   [完了]
+└── Step 11: BUG #9  — bios.asm DEBUGGER EI 復活                    [完了]
 
     ※ Step 5, 7, 8 は Transmit_TX1_Buf() を共通で修正
 
-Phase 2（Phase 1 完了後）
-├── Step 12: BUG #1  — z80io.c/isr.c 割り込みキュー化
+Phase 2（Phase 1 完了後）  ★ 全ステップ完了・develop マージ済み（PR #30, #31）
+├── Step 12: BUG #1  — z80io.c/isr.c 割り込みキュー化               [完了] PR #30
 │     前提: Step 1 (BUG #4), Step 2 (BUG #11)
-└── Step 13: BUG #2  — em_diskio.c cli/ExtMem_attach 順序修正
+└── Step 13: BUG #2  — em_diskio.c cli/ExtMem_attach 順序修正       [完了] PR #31
       前提: Step 10 (BUG #8)
 
-Phase 3（Phase 2 完了後、再評価）
-└── Step 14: BUG #7 — em_diskio.c SELDSK 状態リセット安全化
+Phase 3（Phase 2 完了後、再評価）  ★ 暫定修正完了・develop マージ済み（PR #32）
+└── Step 14: BUG #7 — em_diskio.c SELDSK 状態リセット安全化         [暫定完了] PR #32
       前提: Step 12 (BUG #1), Step 10 (BUG #8)
+      ※ デバッグアサーション追加の暫定修正。BUG #1/#8 修正後の動作確認で再評価。
 ```
 
 ---
